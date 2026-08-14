@@ -1,0 +1,168 @@
+{% extends "base.html" %}
+
+{% block title %}
+Contas - Financeiro
+{% endblock %}
+
+{% block content %}
+
+<div class="page-header">
+
+    <h1>Contas</h1>
+
+    <p>
+        Contas bancárias, carteiras e outras fontes de dinheiro.
+    </p>
+
+</div>
+
+
+<div class="cards">
+
+    <div class="card">
+
+        <span class="card-title">
+            Saldo atual
+        </span>
+
+        <strong>
+            R$ {{ saldo_total|moeda }}
+        </strong>
+
+    </div>
+
+</div>
+
+
+<div class="section-header">
+
+    <h2>
+        Minhas contas
+    </h2>
+
+    <a
+        href="{{ url_for('contas.nova') }}"
+        class="btn btn-primary"
+    >
+        + Nova conta
+    </a>
+
+</div>
+
+
+<div class="table-container">
+
+    <table>
+
+        <thead>
+
+            <tr>
+                <th>Conta</th>
+                <th>Tipo</th>
+                <th>Saldo inicial</th>
+                <th>Saldo atual</th>
+                <th>Status</th>
+                <th>Ações</th>
+            </tr>
+
+        </thead>
+
+
+        <tbody>
+
+            {% for conta in contas %}
+
+            <tr>
+
+                <td>
+                    {{ conta.nome }}
+                </td>
+
+                <td>
+                    {{ conta.tipo }}
+                </td>
+
+                <td>
+                    R$ {{ conta.saldo_inicial|moeda }}
+                </td>
+
+                <td>
+
+                    <strong>
+                        R$ {{ conta.saldo_atual()|moeda }}
+                    </strong>
+
+                </td>
+
+                <td>
+
+                    {% if conta.ativa %}
+
+                        <span class="badge badge-success">
+                            Ativa
+                        </span>
+
+                    {% else %}
+
+                        <span class="badge badge-danger">
+                            Inativa
+                        </span>
+
+                    {% endif %}
+
+                </td>
+
+                <td>
+
+                    <div class="actions">
+
+                        {% if not conta.lancamentos %}
+
+                        <form
+                            method="POST"
+                            action="{{ url_for('contas.excluir', id=conta.id) }}"
+                            onsubmit="return confirm('Deseja realmente excluir esta conta?');"
+                        >
+
+                            <button
+                                type="submit"
+                                class="btn btn-danger"
+                            >
+                                Excluir
+                            </button>
+
+                        </form>
+
+                        {% else %}
+
+                        <span class="action-note">
+                            Possui lançamentos
+                        </span>
+
+                        {% endif %}
+
+                    </div>
+
+                </td>
+
+            </tr>
+
+            {% else %}
+
+            <tr>
+
+                <td colspan="6">
+                    Nenhuma conta cadastrada.
+                </td>
+
+            </tr>
+
+            {% endfor %}
+
+        </tbody>
+
+    </table>
+
+</div>
+
+{% endblock %}

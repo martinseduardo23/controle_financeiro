@@ -1,0 +1,282 @@
+{% extends "base.html" %}
+
+{% block title %}
+Categorias - Financeiro
+{% endblock %}
+
+{% block content %}
+
+<div class="page-header">
+
+    <div>
+        <h1>Categorias</h1>
+
+        <p>
+            Organize receitas e despesas do seu jeito.
+        </p>
+    </div>
+
+    <a
+        href="{{ url_for('categorias.nova') }}"
+        class="btn btn-primary"
+    >
+        + Nova categoria
+    </a>
+
+</div>
+
+
+<div class="category-groups">
+
+    <div class="panel">
+
+        <div class="panel-header">
+
+            <div>
+                <h2>Receitas</h2>
+
+                <span class="panel-subtitle">
+                    Categorias usadas para entradas de dinheiro.
+                </span>
+            </div>
+
+        </div>
+
+
+        <div class="category-list">
+
+            {% for categoria in categorias if categoria.tipo == "receita" %}
+
+            <div class="category-item">
+
+                <div class="category-main">
+
+                    <div class="category-icon category-icon-receita">
+                        +
+                    </div>
+
+                    <div>
+
+                        <strong>
+                            {{ categoria.nome }}
+                        </strong>
+
+                        <span>
+                            {{ categoria.quantidade_lancamentos() }}
+                            lançamento(s)
+                            ·
+                            R$ {{ categoria.total_movimentado()|moeda }}
+                        </span>
+
+                    </div>
+
+                </div>
+
+
+                <div class="category-actions">
+
+                    {% if categoria.ativa %}
+
+                        <span class="badge badge-success">
+                            Ativa
+                        </span>
+
+                    {% else %}
+
+                        <span class="badge badge-danger">
+                            Inativa
+                        </span>
+
+                    {% endif %}
+
+
+                    <a
+                        href="{{ url_for('categorias.editar', id=categoria.id) }}"
+                        class="btn btn-secondary"
+                    >
+                        Editar
+                    </a>
+
+
+                    <form
+                        method="POST"
+                        action="{{ url_for('categorias.alternar', id=categoria.id) }}"
+                    >
+
+                        <button
+                            type="submit"
+                            class="btn btn-secondary"
+                        >
+                            {% if categoria.ativa %}
+                                Desativar
+                            {% else %}
+                                Ativar
+                            {% endif %}
+                        </button>
+
+                    </form>
+
+
+                    {% if not categoria.lancamentos %}
+
+                    <form
+                        method="POST"
+                        action="{{ url_for('categorias.excluir', id=categoria.id) }}"
+                        onsubmit="return confirm('Deseja realmente excluir esta categoria?');"
+                    >
+
+                        <button
+                            type="submit"
+                            class="btn btn-danger"
+                        >
+                            Excluir
+                        </button>
+
+                    </form>
+
+                    {% endif %}
+
+                </div>
+
+            </div>
+
+            {% else %}
+
+            <div class="empty-state">
+                Nenhuma categoria de receita cadastrada.
+            </div>
+
+            {% endfor %}
+
+        </div>
+
+    </div>
+
+
+    <div class="panel">
+
+        <div class="panel-header">
+
+            <div>
+                <h2>Despesas</h2>
+
+                <span class="panel-subtitle">
+                    Categorias usadas para saídas de dinheiro.
+                </span>
+            </div>
+
+        </div>
+
+
+        <div class="category-list">
+
+            {% for categoria in categorias if categoria.tipo == "despesa" %}
+
+            <div class="category-item">
+
+                <div class="category-main">
+
+                    <div class="category-icon category-icon-despesa">
+                        −
+                    </div>
+
+                    <div>
+
+                        <strong>
+                            {{ categoria.nome }}
+                        </strong>
+
+                        <span>
+                            {{ categoria.quantidade_lancamentos() }}
+                            lançamento(s)
+                            ·
+                            R$ {{ categoria.total_movimentado()|moeda }}
+                        </span>
+
+                    </div>
+
+                </div>
+
+
+                <div class="category-actions">
+
+                    {% if categoria.ativa %}
+
+                        <span class="badge badge-success">
+                            Ativa
+                        </span>
+
+                    {% else %}
+
+                        <span class="badge badge-danger">
+                            Inativa
+                        </span>
+
+                    {% endif %}
+
+
+                    <a
+                        href="{{ url_for('categorias.editar', id=categoria.id) }}"
+                        class="btn btn-secondary"
+                    >
+                        Editar
+                    </a>
+
+
+                    <form
+                        method="POST"
+                        action="{{ url_for('categorias.alternar', id=categoria.id) }}"
+                    >
+
+                        <button
+                            type="submit"
+                            class="btn btn-secondary"
+                        >
+                            {% if categoria.ativa %}
+                                Desativar
+                            {% else %}
+                                Ativar
+                            {% endif %}
+                        </button>
+
+                    </form>
+
+
+                    {% if not categoria.lancamentos %}
+
+                    <form
+                        method="POST"
+                        action="{{ url_for('categorias.excluir', id=categoria.id) }}"
+                        onsubmit="return confirm('Deseja realmente excluir esta categoria?');"
+                    >
+
+                        <button
+                            type="submit"
+                            class="btn btn-danger"
+                        >
+                            Excluir
+                        </button>
+
+                    </form>
+
+                    {% endif %}
+
+                </div>
+
+            </div>
+
+            {% else %}
+
+            <div class="empty-state">
+                Nenhuma categoria de despesa cadastrada.
+            </div>
+
+            {% endfor %}
+
+        </div>
+
+    </div>
+
+</div>
+
+{% endblock %}

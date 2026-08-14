@@ -1,0 +1,115 @@
+{% extends "base.html" %}
+
+{% block title %}
+{% if categoria %}Editar{% else %}Nova{% endif %} Categoria - Financeiro
+{% endblock %}
+
+{% block content %}
+
+<div class="page-header">
+
+    <h1>
+        {% if categoria %}
+            Editar categoria
+        {% else %}
+            Nova categoria
+        {% endif %}
+    </h1>
+
+    <p>
+        Crie uma categoria personalizada para organizar seus lançamentos.
+    </p>
+
+</div>
+
+
+<div class="form-container">
+
+    {% if erro %}
+
+    <div class="form-error">
+        {{ erro }}
+    </div>
+
+    {% endif %}
+
+
+    <form method="POST">
+
+        <div class="form-group">
+
+            <label for="nome">
+                Nome da categoria
+            </label>
+
+            <input
+                type="text"
+                id="nome"
+                name="nome"
+                value="{{ categoria.nome if categoria else '' }}"
+                placeholder="Ex.: Restaurantes"
+                required
+            >
+
+        </div>
+
+
+        <div class="form-group">
+
+            <label for="tipo">
+                Tipo
+            </label>
+
+            <select
+                id="tipo"
+                name="tipo"
+                required
+            >
+
+                <option
+                    value="despesa"
+                    {% if not categoria or categoria.tipo == "despesa" %}selected{% endif %}
+                >
+                    Despesa
+                </option>
+
+                <option
+                    value="receita"
+                    {% if categoria and categoria.tipo == "receita" %}selected{% endif %}
+                >
+                    Receita
+                </option>
+
+            </select>
+
+        </div>
+
+
+        <div class="actions">
+
+            <button
+                type="submit"
+                class="btn btn-primary"
+            >
+                {% if categoria %}
+                    Salvar alterações
+                {% else %}
+                    Criar categoria
+                {% endif %}
+            </button>
+
+
+            <a
+                href="{{ url_for('categorias.listar') }}"
+                class="btn btn-secondary"
+            >
+                Cancelar
+            </a>
+
+        </div>
+
+    </form>
+
+</div>
+
+{% endblock %}

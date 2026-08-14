@@ -1,0 +1,306 @@
+{% extends "base.html" %}
+
+{% block title %}
+Dashboard - Financeiro
+{% endblock %}
+
+{% block content %}
+
+<div class="page-header">
+
+    <div>
+        <h1>Dashboard</h1>
+
+        <p>
+            Visão geral das suas finanças
+        </p>
+    </div>
+
+</div>
+
+
+<div class="cards">
+
+    <div class="card">
+
+        <span class="card-title">
+            Saldo atual
+        </span>
+
+        <strong class="valor-destaque">
+            R$ {{ saldo_atual|moeda }}
+        </strong>
+
+    </div>
+
+
+    <div class="card">
+
+        <span class="card-title">
+            Receitas no mês
+        </span>
+
+        <strong class="valor-positivo">
+            R$ {{ receitas_mes|moeda }}
+        </strong>
+
+    </div>
+
+
+    <div class="card">
+
+        <span class="card-title">
+            Despesas no mês
+        </span>
+
+        <strong class="valor-negativo">
+            R$ {{ despesas_mes|moeda }}
+        </strong>
+
+    </div>
+
+
+    <div class="card">
+
+        <span class="card-title">
+            Saldo projetado
+        </span>
+
+        <strong>
+            R$ {{ saldo_projetado|moeda }}
+        </strong>
+
+    </div>
+
+</div>
+
+
+<div class="dashboard-grid">
+
+
+    <div class="panel">
+
+        <div class="panel-header">
+
+            <div>
+
+                <h2>
+                    Resultado do mês
+                </h2>
+
+                <span class="panel-subtitle">
+                    Receitas pagas menos despesas pagas
+                </span>
+
+            </div>
+
+        </div>
+
+
+        <div class="result-box">
+
+            <span>
+                Resultado
+            </span>
+
+            <strong
+                class="{% if resultado_mes >= 0 %}valor-positivo{% else %}valor-negativo{% endif %}"
+            >
+                R$ {{ resultado_mes|moeda }}
+            </strong>
+
+        </div>
+
+
+        <div class="mini-stats">
+
+            <div>
+
+                <span>
+                    Receitas pendentes
+                </span>
+
+                <strong class="valor-positivo">
+                    R$ {{ receitas_pendentes|moeda }}
+                </strong>
+
+            </div>
+
+
+            <div>
+
+                <span>
+                    Despesas pendentes
+                </span>
+
+                <strong class="valor-negativo">
+                    R$ {{ despesas_pendentes|moeda }}
+                </strong>
+
+            </div>
+
+        </div>
+
+    </div>
+
+
+    <div class="panel">
+
+        <div class="panel-header">
+
+            <div>
+
+                <h2>
+                    Próximos lançamentos
+                </h2>
+
+                <span class="panel-subtitle">
+                    Contas e receitas ainda não pagas
+                </span>
+
+            </div>
+
+            <a
+                href="{{ url_for('lancamentos.novo') }}"
+                class="btn btn-primary"
+            >
+                + Lançamento
+            </a>
+
+        </div>
+
+
+        {% if proximos %}
+
+            <div class="upcoming-list">
+
+                {% for lancamento in proximos %}
+
+                <div class="upcoming-item">
+
+                    <div class="upcoming-date">
+
+                        <strong>
+                            {{ lancamento.data.strftime("%d") }}
+                        </strong>
+
+                        <span>
+                            {{ lancamento.data.strftime("%m/%Y") }}
+                        </span>
+
+                    </div>
+
+
+                    <div class="upcoming-info">
+
+                        <strong>
+                            {{ lancamento.descricao }}
+                        </strong>
+
+                        <span>
+                            {{ lancamento.conta.nome }}
+                            ·
+                            {{ lancamento.categoria.nome }}
+                        </span>
+
+                    </div>
+
+
+                    <div
+                        class="{% if lancamento.tipo == 'receita' %}valor-positivo{% else %}valor-negativo{% endif %}"
+                    >
+
+                        <strong>
+
+                            {% if lancamento.tipo == "receita" %}
+                                +
+                            {% else %}
+                                -
+                            {% endif %}
+
+                            R$ {{ lancamento.valor|moeda }}
+
+                        </strong>
+
+                    </div>
+
+                </div>
+
+                {% endfor %}
+
+            </div>
+
+        {% else %}
+
+            <div class="empty-state">
+
+                <span class="empty-icon">
+                    ✓
+                </span>
+
+                <strong>
+                    Nenhum lançamento pendente
+                </strong>
+
+                <span>
+                    Suas próximas movimentações aparecerão aqui.
+                </span>
+
+            </div>
+
+        {% endif %}
+
+    </div>
+
+</div>
+
+
+<div class="panel">
+
+    <div class="panel-header">
+
+        <div>
+
+            <h2>
+                Como interpretar os saldos
+            </h2>
+
+        </div>
+
+    </div>
+
+
+    <div class="info-grid">
+
+        <div>
+
+            <strong>
+                Saldo atual
+            </strong>
+
+            <p>
+                Considera o saldo inicial das contas e somente
+                receitas e despesas com status "Pago".
+            </p>
+
+        </div>
+
+
+        <div>
+
+            <strong>
+                Saldo projetado
+            </strong>
+
+            <p>
+                Considera o saldo inicial e todos os lançamentos,
+                incluindo aqueles que ainda estão pendentes ou agendados.
+            </p>
+
+        </div>
+
+    </div>
+
+</div>
+
+{% endblock %}

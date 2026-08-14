@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
+
+    <title>
+        {% block title %}
+        Financeiro
+        {% endblock %}
+    </title>
+
+    <link
+        rel="stylesheet"
+        href="{{ url_for('static', filename='css/style.css') }}"
+    >
+
+</head>
+
+<body>
+
+<div class="app-layout">
+
+    <aside class="sidebar">
+
+        <div class="logo">
+            💰 <span>Financeiro</span>
+        </div>
+
+        <nav class="menu">
+
+            <a href="{{ url_for('dashboard.dashboard') }}">
+                🏠 Dashboard
+            </a>
+
+            <a href="{{ url_for('contas.listar') }}">
+                🏦 Contas
+            </a>
+
+            <a href="{{ url_for('lancamentos.listar') }}">
+                💰 Lançamentos
+            </a>
+
+            <a href="{{ url_for('categorias.listar') }}">
+                📂 Categorias
+            </a>
+
+            <a href="#">
+                💳 Cartões
+            </a>
+
+            <a href="#">
+                🎯 Metas
+            </a>
+
+            <a href="#">
+                📊 Relatórios
+            </a>
+
+        </nav>
+
+    </aside>
+
+    <main class="main-content">
+
+        {% block content %}
+        {% endblock %}
+
+    </main>
+
+</div>
+
+<script
+    src="{{ url_for('static', filename='js/app.js') }}"
+></script>
+
+</body>
+
+</html>

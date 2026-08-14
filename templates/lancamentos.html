@@ -1,0 +1,504 @@
+{% extends "base.html" %}
+
+{% block title %}
+Lançamentos - Financeiro
+{% endblock %}
+
+{% block content %}
+
+<div class="page-header">
+
+    <div>
+        <h1>Lançamentos</h1>
+
+        <p>
+            Controle completo das receitas e despesas.
+        </p>
+    </div>
+
+    <a
+        href="{{ url_for('lancamentos.novo') }}"
+        class="btn btn-primary"
+    >
+        + Novo lançamento
+    </a>
+
+</div>
+
+
+<div class="filter-panel">
+
+    <div class="filter-header">
+
+        <div>
+            <h2>Filtros</h2>
+            <span>
+                Encontre rapidamente qualquer movimentação.
+            </span>
+        </div>
+
+        <a
+            href="{{ url_for('lancamentos.listar') }}"
+            class="btn btn-secondary"
+        >
+            Limpar filtros
+        </a>
+
+    </div>
+
+
+    <form
+        method="GET"
+        action="{{ url_for('lancamentos.listar') }}"
+        class="filters-form"
+    >
+
+        <div class="form-group">
+
+            <label for="busca">
+                Buscar
+            </label>
+
+            <input
+                type="text"
+                id="busca"
+                name="busca"
+                value="{{ filtros.busca }}"
+                placeholder="Descrição ou observação"
+            >
+
+        </div>
+
+
+        <div class="form-group">
+
+            <label for="mes">
+                Mês
+            </label>
+
+            <input
+                type="month"
+                id="mes"
+                name="mes"
+                value="{{ filtros.mes }}"
+            >
+
+        </div>
+
+
+        <div class="form-group">
+
+            <label for="data_inicio">
+                Data inicial
+            </label>
+
+            <input
+                type="date"
+                id="data_inicio"
+                name="data_inicio"
+                value="{{ filtros.data_inicio }}"
+            >
+
+        </div>
+
+
+        <div class="form-group">
+
+            <label for="data_fim">
+                Data final
+            </label>
+
+            <input
+                type="date"
+                id="data_fim"
+                name="data_fim"
+                value="{{ filtros.data_fim }}"
+            >
+
+        </div>
+
+
+        <div class="form-group">
+
+            <label for="tipo">
+                Tipo
+            </label>
+
+            <select
+                id="tipo"
+                name="tipo"
+            >
+
+                <option value="">
+                    Todos
+                </option>
+
+                <option
+                    value="receita"
+                    {% if filtros.tipo == "receita" %}selected{% endif %}
+                >
+                    Receitas
+                </option>
+
+                <option
+                    value="despesa"
+                    {% if filtros.tipo == "despesa" %}selected{% endif %}
+                >
+                    Despesas
+                </option>
+
+            </select>
+
+        </div>
+
+
+        <div class="form-group">
+
+            <label for="status">
+                Status
+            </label>
+
+            <select
+                id="status"
+                name="status"
+            >
+
+                <option value="">
+                    Todos
+                </option>
+
+                <option
+                    value="pago"
+                    {% if filtros.status == "pago" %}selected{% endif %}
+                >
+                    Pago
+                </option>
+
+                <option
+                    value="pendente"
+                    {% if filtros.status == "pendente" %}selected{% endif %}
+                >
+                    Pendente
+                </option>
+
+                <option
+                    value="agendado"
+                    {% if filtros.status == "agendado" %}selected{% endif %}
+                >
+                    Agendado
+                </option>
+
+            </select>
+
+        </div>
+
+
+        <div class="form-group">
+
+            <label for="conta_id">
+                Conta
+            </label>
+
+            <select
+                id="conta_id"
+                name="conta_id"
+            >
+
+                <option value="">
+                    Todas
+                </option>
+
+                {% for conta in contas %}
+
+                <option
+                    value="{{ conta.id }}"
+                    {% if filtros.conta_id == (conta.id|string) %}selected{% endif %}
+                >
+                    {{ conta.nome }}
+                </option>
+
+                {% endfor %}
+
+            </select>
+
+        </div>
+
+
+        <div class="form-group">
+
+            <label for="categoria_id">
+                Categoria
+            </label>
+
+            <select
+                id="categoria_id"
+                name="categoria_id"
+            >
+
+                <option value="">
+                    Todas
+                </option>
+
+                {% for categoria in categorias %}
+
+                <option
+                    value="{{ categoria.id }}"
+                    {% if filtros.categoria_id == (categoria.id|string) %}selected{% endif %}
+                >
+                    {{ categoria.nome }}
+                </option>
+
+                {% endfor %}
+
+            </select>
+
+        </div>
+
+
+        <div class="filter-actions">
+
+            <button
+                type="submit"
+                class="btn btn-primary"
+            >
+                🔎 Aplicar filtros
+            </button>
+
+        </div>
+
+    </form>
+
+</div>
+
+
+<div class="cards summary-cards">
+
+    <div class="card">
+
+        <span class="card-title">
+            Receitas encontradas
+        </span>
+
+        <strong class="valor-positivo">
+            R$ {{ total_receitas|moeda }}
+        </strong>
+
+    </div>
+
+
+    <div class="card">
+
+        <span class="card-title">
+            Despesas encontradas
+        </span>
+
+        <strong class="valor-negativo">
+            R$ {{ total_despesas|moeda }}
+        </strong>
+
+    </div>
+
+
+    <div class="card">
+
+        <span class="card-title">
+            Resultado
+        </span>
+
+        <strong
+            class="{% if saldo_resultado >= 0 %}valor-positivo{% else %}valor-negativo{% endif %}"
+        >
+            R$ {{ saldo_resultado|moeda }}
+        </strong>
+
+    </div>
+
+
+    <div class="card">
+
+        <span class="card-title">
+            Lançamentos
+        </span>
+
+        <strong>
+            {{ lancamentos|length }}
+        </strong>
+
+    </div>
+
+</div>
+
+
+<div class="table-container">
+
+    <table>
+
+        <thead>
+
+            <tr>
+                <th>Data</th>
+                <th>Descrição</th>
+                <th>Categoria</th>
+                <th>Conta</th>
+                <th>Tipo</th>
+                <th>Valor</th>
+                <th>Status</th>
+                <th>Ações</th>
+            </tr>
+
+        </thead>
+
+
+        <tbody>
+
+            {% for lancamento in lancamentos %}
+
+            <tr>
+
+                <td>
+                    {{ lancamento.data.strftime("%d/%m/%Y") }}
+                </td>
+
+                <td>
+
+                    <strong>
+                        {{ lancamento.descricao }}
+                    </strong>
+
+                    {% if lancamento.observacao %}
+
+                    <span class="table-note">
+                        {{ lancamento.observacao }}
+                    </span>
+
+                    {% endif %}
+
+                </td>
+
+                <td>
+                    {{ lancamento.categoria.nome }}
+                </td>
+
+                <td>
+                    {{ lancamento.conta.nome }}
+                </td>
+
+                <td>
+
+                    {% if lancamento.tipo == "receita" %}
+
+                        <span class="badge badge-success">
+                            Receita
+                        </span>
+
+                    {% else %}
+
+                        <span class="badge badge-danger">
+                            Despesa
+                        </span>
+
+                    {% endif %}
+
+                </td>
+
+
+                <td>
+
+                    {% if lancamento.tipo == "receita" %}
+
+                        <strong class="valor-positivo">
+                            + R$ {{ lancamento.valor|moeda }}
+                        </strong>
+
+                    {% else %}
+
+                        <strong class="valor-negativo">
+                            - R$ {{ lancamento.valor|moeda }}
+                        </strong>
+
+                    {% endif %}
+
+                </td>
+
+
+                <td>
+
+                    {% if lancamento.status == "pago" %}
+
+                        <span class="badge badge-success">
+                            Pago
+                        </span>
+
+                    {% elif lancamento.status == "pendente" %}
+
+                        <span class="badge badge-warning">
+                            Pendente
+                        </span>
+
+                    {% else %}
+
+                        <span class="badge badge-info">
+                            Agendado
+                        </span>
+
+                    {% endif %}
+
+                </td>
+
+
+                <td>
+
+                    <div class="actions">
+
+                        <a
+                            href="{{ url_for('lancamentos.editar', id=lancamento.id) }}"
+                            class="btn btn-secondary"
+                        >
+                            Editar
+                        </a>
+
+
+                        <form
+                            method="POST"
+                            action="{{ url_for('lancamentos.excluir', id=lancamento.id) }}"
+                            onsubmit="return confirm('Deseja realmente excluir este lançamento?');"
+                        >
+
+                            <button
+                                type="submit"
+                                class="btn btn-danger"
+                            >
+                                Excluir
+                            </button>
+
+                        </form>
+
+                    </div>
+
+                </td>
+
+            </tr>
+
+            {% else %}
+
+            <tr>
+
+                <td colspan="8">
+
+                    <div class="empty-table">
+                        Nenhum lançamento encontrado com os filtros atuais.
+                    </div>
+
+                </td>
+
+            </tr>
+
+            {% endfor %}
+
+        </tbody>
+
+    </table>
+
+</div>
+
+{% endblock %}
