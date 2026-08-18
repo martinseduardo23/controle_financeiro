@@ -4,6 +4,7 @@ from config import Config
 from database import db
 
 from models import Conta, Categoria, Lancamento
+from routes.faturas_cartao import faturas_cartao_bp
 
 from routes.dashboard import dashboard_bp
 from routes.contas import contas_bp
@@ -46,6 +47,7 @@ def criar_app():
     app.register_blueprint(categorias_bp)
     app.register_blueprint(cartoes_bp)
     app.register_blueprint(compras_cartao_bp)
+    app.register_blueprint(faturas_cartao_bp)
 
     with app.app_context():
         db.create_all()

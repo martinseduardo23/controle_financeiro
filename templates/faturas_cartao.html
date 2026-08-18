@@ -1,0 +1,420 @@
+{% extends "base.html" %}
+
+
+{% block title %}
+Faturas dos cartões - Financeiro
+{% endblock %}
+
+
+{% block content %}
+
+
+{% if cartoes is not none %}
+
+<!-- =====================================================
+     ESCOLHA DO CARTÃO
+===================================================== -->
+
+<div class="page-header">
+
+    <div>
+
+        <h1>
+            Faturas dos cartões
+        </h1>
+
+        <p>
+            Selecione um cartão para visualizar suas faturas.
+        </p>
+
+    </div>
+
+</div>
+
+
+<div class="cards-grid">
+
+    {% for cartao in cartoes %}
+
+        <div class="credit-card">
+
+            <div class="credit-card-top">
+
+                <div class="credit-card-chip">
+                    💳
+                </div>
+
+                <div>
+                    <span class="credit-card-bank">
+                        {{ cartao.banco }}
+                    </span>
+                </div>
+
+            </div>
+
+
+            <div class="credit-card-name">
+                {{ cartao.nome }}
+            </div>
+
+
+            {% if cartao.ultimos_digitos %}
+
+                <div class="credit-card-number">
+                    •••• •••• •••• {{ cartao.ultimos_digitos }}
+                </div>
+
+            {% else %}
+
+                <div class="credit-card-number">
+                    Cartão
+                </div>
+
+            {% endif %}
+
+
+            <div class="credit-card-limit">
+
+                <span>
+                    Limite
+                </span>
+
+                <strong>
+                    R$ {{ cartao.limite|moeda }}
+                </strong>
+
+            </div>
+
+
+            <div class="credit-card-dates">
+
+                <div>
+
+                    <span>
+                        Fechamento
+                    </span>
+
+                    <strong>
+                        Dia {{ cartao.dia_fechamento }}
+                    </strong>
+
+                </div>
+
+
+                <div>
+
+                    <span>
+                        Vencimento
+                    </span>
+
+                    <strong>
+                        Dia {{ cartao.dia_vencimento }}
+                    </strong>
+
+                </div>
+
+            </div>
+
+
+            <div class="credit-card-actions">
+
+                <a
+                    href="{{ url_for(
+                        'faturas_cartao.faturas_cartao',
+                        cartao_id=cartao.id
+                    ) }}"
+                    class="btn btn-primary"
+                >
+                    Ver faturas
+                </a>
+
+            </div>
+
+        </div>
+
+    {% else %}
+
+        <div class="empty-table">
+            Nenhum cartão ativo cadastrado.
+        </div>
+
+    {% endfor %}
+
+</div>
+
+
+{% else %}
+
+<!-- =====================================================
+     FATURAS DO CARTÃO SELECIONADO
+===================================================== -->
+
+<div class="page-header faturas-page-header">
+
+    <div>
+
+        <span class="details-label">
+            FATURAS DO CARTÃO
+        </span>
+
+        <h1>
+            {{ cartao.nome }}
+        </h1>
+
+        {% if cartao.ultimos_digitos %}
+
+            <p>
+                •••• {{ cartao.ultimos_digitos }}
+            </p>
+
+        {% endif %}
+
+    </div>
+
+
+    <div class="faturas-header-actions">
+
+        <a
+            href="{{ url_for('faturas_cartao.listar') }}"
+            class="btn btn-secondary"
+        >
+            ← Escolher outro cartão
+        </a>
+
+    </div>
+
+</div>
+
+
+<!-- =====================================================
+     RESUMO
+===================================================== -->
+
+<div class="cards faturas-summary">
+
+    <div class="card">
+
+        <span class="card-title">
+            Faturas
+        </span>
+
+        <strong>
+            {{ faturas|length }}
+        </strong>
+
+    </div>
+
+
+    <div class="card">
+
+        <span class="card-title">
+            Em aberto
+        </span>
+
+        <strong>
+            R$ {{ total_aberto|moeda }}
+        </strong>
+
+    </div>
+
+
+    <div class="card">
+
+        <span class="card-title">
+            Pagas
+        </span>
+
+        <strong>
+            R$ {{ total_pago|moeda }}
+        </strong>
+
+    </div>
+
+</div>
+
+
+<!-- =====================================================
+     LISTA DE FATURAS
+===================================================== -->
+
+{% if faturas %}
+
+    <div class="faturas-list">
+
+        {% for fatura in faturas %}
+
+            <div class="fatura-card">
+
+
+                <!-- =====================================
+                     CABEÇALHO
+                ====================================== -->
+
+                <div class="fatura-card-header">
+
+                    <div>
+
+                        <span class="fatura-label">
+                            FATURA
+                        </span>
+
+                        <h2>
+                            {{ "%02d"|format(
+                                fatura.mes_referencia
+                            ) }}/{{ fatura.ano_referencia }}
+                        </h2>
+
+                    </div>
+
+
+                    <div class="fatura-status">
+
+                        {% if fatura.status == "paga" %}
+
+                            <span class="status-badge status-paid">
+                                Paga
+                            </span>
+
+                        {% else %}
+
+                            <span class="status-badge status-open">
+                                Em aberto
+                            </span>
+
+                        {% endif %}
+
+                    </div>
+
+                </div>
+
+
+                <!-- =====================================
+                     INFORMAÇÕES
+                ====================================== -->
+
+                <div class="fatura-card-body">
+
+
+                    <div>
+
+                        <span>
+                            Fechamento
+                        </span>
+
+                        <strong>
+                            {{ fatura.data_fechamento.strftime(
+                                "%d/%m/%Y"
+                            ) }}
+                        </strong>
+
+                    </div>
+
+
+                    <div>
+
+                        <span>
+                            Vencimento
+                        </span>
+
+                        <strong>
+                            {{ fatura.data_vencimento.strftime(
+                                "%d/%m/%Y"
+                            ) }}
+                        </strong>
+
+                    </div>
+
+
+                    <div>
+
+                        <span>
+                            Valor da fatura
+                        </span>
+
+                        <strong class="fatura-valor">
+                            R$ {{ fatura.valor_total|moeda }}
+                        </strong>
+
+                    </div>
+
+
+                    <div>
+
+                        <span>
+                            Parcelas
+                        </span>
+
+                        <strong>
+                            {{ fatura.parcelas|length }}
+                        </strong>
+
+                    </div>
+
+
+                </div>
+
+
+                <!-- =====================================
+                     RODAPÉ
+                ====================================== -->
+
+                <div class="fatura-card-footer">
+
+                    <span>
+
+                        {% if fatura.parcelas|length == 1 %}
+
+                            1 parcela
+
+                        {% else %}
+
+                            {{ fatura.parcelas|length }} parcelas
+
+                        {% endif %}
+
+                    </span>
+
+
+                    <a
+                        href="{{ url_for(
+                            'faturas_cartao.detalhes',
+                            id=fatura.id
+                        ) }}"
+                        class="btn btn-secondary"
+                    >
+                        Ver fatura
+                    </a>
+
+                </div>
+
+
+            </div>
+
+        {% endfor %}
+
+    </div>
+
+
+{% else %}
+
+
+    <div class="empty-table faturas-empty">
+
+        <strong>
+            Nenhuma fatura encontrada.
+        </strong>
+
+        <span>
+            Este cartão ainda não possui faturas cadastradas.
+        </span>
+
+    </div>
+
+
+{% endif %}
+
+
+{% endif %}
+
+
+{% endblock %}

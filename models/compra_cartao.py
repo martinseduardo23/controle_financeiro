@@ -63,9 +63,18 @@ class CompraCartao(db.Model):
         backref="compras_cartao"
     )
 
+    parcelas_relacionadas = db.relationship(
+        "ParcelaCartao",
+        back_populates="compra",
+        cascade="all, delete-orphan",
+        order_by="ParcelaCartao.numero"
+    )
+
     def valor_parcela(self):
         if not self.parcelas:
-            return float(self.valor_total or 0)
+            return float(
+                self.valor_total or 0
+            )
 
         return (
             float(self.valor_total or 0)
@@ -73,4 +82,7 @@ class CompraCartao(db.Model):
         )
 
     def __repr__(self):
-        return f"<CompraCartao {self.descricao}>"
+        return (
+            f"<CompraCartao "
+            f"{self.descricao}>"
+        )

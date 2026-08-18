@@ -1,0 +1,522 @@
+{% extends "base.html" %}
+
+
+{% block title %}
+Detalhes da compra - Financeiro
+{% endblock %}
+
+
+{% block content %}
+
+
+<!-- =====================================================
+     CABEÇALHO
+===================================================== -->
+
+<div class="page-header">
+
+
+    <div>
+
+        <h1>
+            Detalhes da compra
+        </h1>
+
+        <p>
+            Informações e parcelas desta compra.
+        </p>
+
+    </div>
+
+
+    <div class="details-header-actions">
+
+
+        <a
+            href="{{ url_for('compras_cartao.listar') }}"
+            class="btn btn-secondary"
+        >
+            ← Voltar
+        </a>
+
+
+        <a
+            href="{{ url_for(
+                'compras_cartao.editar',
+                id=compra.id
+            ) }}"
+            class="btn btn-primary"
+        >
+            Editar compra
+        </a>
+
+
+    </div>
+
+
+</div>
+
+
+<!-- =====================================================
+     RESUMO DA COMPRA
+===================================================== -->
+
+<div class="purchase-details-card">
+
+
+    <div class="purchase-details-header">
+
+
+        <div>
+
+
+            <span class="details-label">
+                COMPRA
+            </span>
+
+
+            <h2>
+                {{ compra.descricao }}
+            </h2>
+
+
+        </div>
+
+
+        <div class="purchase-total">
+
+
+            <span>
+                Valor total
+            </span>
+
+
+            <strong>
+                R$ {{ compra.valor_total|moeda }}
+            </strong>
+
+
+        </div>
+
+
+    </div>
+
+
+    <!-- DADOS DA COMPRA -->
+
+    <div class="purchase-details-grid">
+
+
+        <!-- DATA -->
+
+        <div class="detail-item">
+
+
+            <span>
+                Data da compra
+            </span>
+
+
+            <strong>
+
+                {{ compra.data_compra.strftime(
+                    "%d/%m/%Y"
+                ) }}
+
+            </strong>
+
+
+        </div>
+
+
+        <!-- CARTÃO -->
+
+        <div class="detail-item">
+
+
+            <span>
+                Cartão
+            </span>
+
+
+            <strong>
+
+                {{ compra.cartao.nome }}
+
+            </strong>
+
+
+            {% if compra.cartao.ultimos_digitos %}
+
+                <small>
+
+                    •••• {{ compra.cartao.ultimos_digitos }}
+
+                </small>
+
+            {% endif %}
+
+
+        </div>
+
+
+        <!-- CATEGORIA -->
+
+        <div class="detail-item">
+
+
+            <span>
+                Categoria
+            </span>
+
+
+            <strong>
+
+                {{ compra.categoria.nome }}
+
+            </strong>
+
+
+        </div>
+
+
+        <!-- PARCELAMENTO -->
+
+        <div class="detail-item">
+
+
+            <span>
+                Parcelamento
+            </span>
+
+
+            <strong>
+
+                {{ compra.parcelas }}x
+
+            </strong>
+
+
+            <small>
+
+                R$
+                {{ compra.valor_parcela()|moeda }}
+                por parcela
+
+            </small>
+
+
+        </div>
+
+
+    </div>
+
+
+    <!-- OBSERVAÇÃO -->
+
+    {% if compra.observacao %}
+
+
+        <div class="purchase-observation">
+
+
+            <span>
+                Observação
+            </span>
+
+
+            <p>
+                {{ compra.observacao }}
+            </p>
+
+
+        </div>
+
+
+    {% endif %}
+
+
+</div>
+
+
+<!-- =====================================================
+     RESUMO DAS PARCELAS
+===================================================== -->
+
+<div class="details-summary-cards">
+
+
+    <!-- TOTAL DE PARCELAS -->
+
+    <div class="details-summary-card">
+
+
+        <span>
+            Parcelas
+        </span>
+
+
+        <strong>
+            {{ parcelas|length }}
+        </strong>
+
+
+    </div>
+
+
+    <!-- VALOR TOTAL -->
+
+    <div class="details-summary-card">
+
+
+        <span>
+            Valor total
+        </span>
+
+
+        <strong>
+
+            R$ {{ compra.valor_total|moeda }}
+
+        </strong>
+
+
+    </div>
+
+
+    <!-- STATUS -->
+
+    <div class="details-summary-card">
+
+
+        <span>
+            Status
+        </span>
+
+
+        {% set pagas = (
+            parcelas
+            |selectattr("pago", "equalto", true)
+            |list
+            |length
+        ) %}
+
+
+        <strong>
+
+            {{ pagas }}/{{ parcelas|length }}
+
+        </strong>
+
+
+        <small>
+            parcelas pagas
+        </small>
+
+
+    </div>
+
+
+</div>
+
+
+<!-- =====================================================
+     PARCELAS
+===================================================== -->
+
+<div class="panel purchase-installments-panel">
+
+
+    <div class="panel-header">
+
+
+        <div>
+
+
+            <h2>
+                Parcelas
+            </h2>
+
+
+            <span class="panel-subtitle">
+
+                Detalhamento das parcelas desta compra.
+
+            </span>
+
+
+        </div>
+
+
+    </div>
+
+
+    {% if parcelas %}
+
+
+        <div class="installments-table-container">
+
+
+            <table class="installments-table">
+
+
+                <thead>
+
+
+                    <tr>
+
+
+                        <th>
+                            Parcela
+                        </th>
+
+
+                        <th>
+                            Data prevista
+                        </th>
+
+
+                        <th>
+                            Valor
+                        </th>
+
+
+                        <th>
+                            Status
+                        </th>
+
+
+                    </tr>
+
+
+                </thead>
+
+
+                <tbody>
+
+
+                    {% for parcela in parcelas %}
+
+
+                        <tr>
+
+
+                            <!-- NÚMERO -->
+
+                            <td>
+
+
+                                <strong>
+
+                                    {{ parcela.numero }}/{{ parcela.total_parcelas }}
+
+                                </strong>
+
+
+                            </td>
+
+
+                            <!-- DATA -->
+
+                            <td>
+
+
+                                {% if parcela.data_prevista %}
+
+
+                                    {{ parcela.data_prevista.strftime(
+                                        "%d/%m/%Y"
+                                    ) }}
+
+
+                                {% else %}
+
+
+                                    —
+
+
+                                {% endif %}
+
+
+                            </td>
+
+
+                            <!-- VALOR -->
+
+                            <td>
+
+
+                                <strong>
+
+                                    R$
+                                    {{ parcela.valor|moeda }}
+
+                                </strong>
+
+
+                            </td>
+
+
+                            <!-- STATUS -->
+
+                            <td>
+
+
+                                {% if parcela.pago %}
+
+
+                                    <span
+                                        class="status-badge status-paid"
+                                    >
+                                        Pago
+                                    </span>
+
+
+                                {% else %}
+
+
+                                    <span
+                                        class="status-badge status-open"
+                                    >
+                                        Em aberto
+                                    </span>
+
+
+                                {% endif %}
+
+
+                            </td>
+
+
+                        </tr>
+
+
+                    {% endfor %}
+
+
+                </tbody>
+
+
+            </table>
+
+
+        </div>
+
+
+    {% else %}
+
+
+        <div class="empty-state">
+
+            Nenhuma parcela encontrada para esta compra.
+
+        </div>
+
+
+    {% endif %}
+
+
+</div>
+
+
+{% endblock %}

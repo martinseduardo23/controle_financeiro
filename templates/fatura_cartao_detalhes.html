@@ -1,0 +1,502 @@
+{% extends "base.html" %}
+
+
+{% block title %}
+Fatura {{ "%02d"|format(fatura.mes_referencia) }}/{{ fatura.ano_referencia }} - Financeiro
+{% endblock %}
+
+
+{% block content %}
+
+
+<!-- =====================================================
+     CABEÇALHO
+===================================================== -->
+
+<div class="page-header fatura-page-header">
+
+    <div>
+
+        <span class="details-label">
+            FATURA DO CARTÃO
+        </span>
+
+        <h1>
+            Fatura
+            {{ "%02d"|format(fatura.mes_referencia) }}/{{ fatura.ano_referencia }}
+        </h1>
+
+        <p>
+
+            {{ fatura.cartao.nome }}
+
+            {% if fatura.cartao.ultimos_digitos %}
+
+                •••• {{ fatura.cartao.ultimos_digitos }}
+
+            {% endif %}
+
+        </p>
+
+    </div>
+
+
+    <div class="details-header-actions">
+
+        <a
+            href="{{ url_for(
+                'faturas_cartao.faturas_cartao',
+                cartao_id=fatura.cartao.id
+            ) }}"
+            class="btn btn-secondary"
+        >
+            ← Voltar para faturas
+        </a>
+
+    </div>
+
+</div>
+
+
+<!-- =====================================================
+     RESUMO
+===================================================== -->
+
+<div class="cards fatura-summary">
+
+
+    <div class="card">
+
+        <span class="card-title">
+            Valor da fatura
+        </span>
+
+        <strong>
+            R$ {{ fatura.valor_total|moeda }}
+        </strong>
+
+    </div>
+
+
+    <div class="card">
+
+        <span class="card-title">
+            Vencimento
+        </span>
+
+        <strong>
+
+            {{ fatura.data_vencimento.strftime(
+                "%d/%m/%Y"
+            ) }}
+
+        </strong>
+
+    </div>
+
+
+    <div class="card">
+
+        <span class="card-title">
+            Status
+        </span>
+
+        {% if fatura.status == "paga" %}
+
+            <strong class="fatura-status-text pago">
+                Paga
+            </strong>
+
+        {% else %}
+
+            <strong class="fatura-status-text aberta">
+                Em aberto
+            </strong>
+
+        {% endif %}
+
+    </div>
+
+
+</div>
+
+
+<!-- =====================================================
+     PAGAMENTO
+===================================================== -->
+
+{% if fatura.status != "paga" %}
+
+
+<div class="fatura-payment-card">
+
+
+    <div class="fatura-payment-header">
+
+        <div>
+
+            <span class="details-label">
+                PAGAMENTO
+            </span>
+
+            <h2>
+                Pagar esta fatura
+            </h2>
+
+            <p>
+                Escolha a conta que será usada para pagar
+                esta fatura.
+            </p>
+
+        </div>
+
+
+        <div class="fatura-payment-value">
+
+            <span>
+                Valor
+            </span>
+
+            <strong>
+                R$ {{ fatura.valor_total|moeda }}
+            </strong>
+
+        </div>
+
+    </div>
+
+
+    <form
+        method="POST"
+        action="{{ url_for(
+            'faturas_cartao.pagar',
+            id=fatura.id
+        ) }}"
+    >
+
+
+        <div class="fatura-payment-form">
+
+
+            <div class="form-group">
+
+                <label for="conta_id">
+                    Conta para pagamento
+                </label>
+
+                <select
+                    name="conta_id"
+                    id="conta_id"
+                    required
+                >
+
+                    <option value="">
+                        Selecione uma conta
+                    </option>
+
+
+                    {% for conta in contas %}
+
+                        <option value="{{ conta.id }}">
+
+                            {{ conta.nome }}
+
+                            —
+                            R$
+                            {{ conta.saldo_atual()|moeda }}
+
+                        </option>
+
+                    {% endfor %}
+
+                </select>
+
+            </div>
+
+
+            <div class="fatura-payment-action">
+
+                <button
+                    type="submit"
+                    class="btn btn-primary"
+                    onclick="return confirm(
+                        'Confirma o pagamento desta fatura?'
+                    );"
+                >
+                    ✓ Pagar fatura
+                </button>
+
+            </div>
+
+
+        </div>
+
+
+    </form>
+
+
+</div>
+
+
+{% else %}
+
+
+<div class="fatura-paid-card">
+
+    <div>
+
+        <span class="fatura-paid-title">
+            ✓ Fatura paga
+        </span>
+
+
+        {% if fatura.data_pagamento %}
+
+            <p>
+
+                Pagamento realizado em
+
+                <strong>
+
+                    {{ fatura.data_pagamento.strftime(
+                        "%d/%m/%Y às %H:%M"
+                    ) }}
+
+                </strong>
+
+            </p>
+
+        {% endif %}
+
+    </div>
+
+</div>
+
+
+{% endif %}
+
+
+<!-- =====================================================
+     INFORMAÇÕES
+===================================================== -->
+
+<div class="fatura-info-panel">
+
+
+    <div>
+
+        <span>
+            Fechamento
+        </span>
+
+        <strong>
+
+            {{ fatura.data_fechamento.strftime(
+                "%d/%m/%Y"
+            ) }}
+
+        </strong>
+
+    </div>
+
+
+    <div>
+
+        <span>
+            Vencimento
+        </span>
+
+        <strong>
+
+            {{ fatura.data_vencimento.strftime(
+                "%d/%m/%Y"
+            ) }}
+
+        </strong>
+
+    </div>
+
+
+    <div>
+
+        <span>
+            Parcelas
+        </span>
+
+        <strong>
+
+            {{ parcelas|length }}
+
+        </strong>
+
+    </div>
+
+
+</div>
+
+
+<!-- =====================================================
+     COMPRAS
+===================================================== -->
+
+<div class="section-header fatura-section-header">
+
+    <div>
+
+        <h2>
+            Compras desta fatura
+        </h2>
+
+        <p>
+            Parcelas lançadas nesta fatura.
+        </p>
+
+    </div>
+
+</div>
+
+
+{% if parcelas %}
+
+
+<div class="fatura-compras-table">
+
+
+    <div class="fatura-table-header">
+
+        <div>
+            Compra
+        </div>
+
+        <div>
+            Categoria
+        </div>
+
+        <div>
+            Parcela
+        </div>
+
+        <div>
+            Data
+        </div>
+
+        <div>
+            Valor
+        </div>
+
+    </div>
+
+
+    {% for parcela in parcelas %}
+
+
+        <div class="fatura-table-row">
+
+
+            <div class="fatura-compra-info">
+
+                <strong>
+                    {{ parcela.compra.descricao }}
+                </strong>
+
+
+                {% if parcela.compra.observacao %}
+
+                    <span>
+                        {{ parcela.compra.observacao }}
+                    </span>
+
+                {% endif %}
+
+            </div>
+
+
+            <div>
+
+                {% if parcela.compra.categoria %}
+
+                    <span class="fatura-category">
+
+                        {{ parcela.compra.categoria.nome }}
+
+                    </span>
+
+                {% else %}
+
+                    <span class="table-note">
+                        Sem categoria
+                    </span>
+
+                {% endif %}
+
+            </div>
+
+
+            <div>
+
+                <strong>
+
+                    {{ parcela.numero }}/{{ parcela.total_parcelas }}
+
+                </strong>
+
+            </div>
+
+
+            <div>
+
+                {% if parcela.data_prevista %}
+
+                    {{ parcela.data_prevista.strftime(
+                        "%d/%m/%Y"
+                    ) }}
+
+                {% else %}
+
+                    —
+
+                {% endif %}
+
+            </div>
+
+
+            <div>
+
+                <strong class="fatura-parcela-valor">
+
+                    R$ {{ parcela.valor|moeda }}
+
+                </strong>
+
+            </div>
+
+
+        </div>
+
+
+    {% endfor %}
+
+
+</div>
+
+
+{% else %}
+
+
+<div class="empty-table faturas-empty">
+
+    <strong>
+        Nenhuma compra nesta fatura.
+    </strong>
+
+    <span>
+        Ainda não existem parcelas vinculadas a esta fatura.
+    </span>
+
+</div>
+
+
+{% endif %}
+
+
+{% endblock %}

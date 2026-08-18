@@ -12,7 +12,7 @@
 
     <title>
         {% block title %}
-        Financeiro
+        Controle Financeiro
         {% endblock %}
     </title>
 
@@ -30,7 +30,7 @@
     <aside class="sidebar">
 
         <div class="logo">
-            💰 <span>Financeiro</span>
+            💰 <span>Controle Financeiro</span>
         </div>
 
         <nav class="menu">
@@ -51,12 +51,16 @@
                 📂 Categorias
             </a>
 
-            <a href="{{ url_for('cartoes.listar')}}">
+            <a href="{{ url_for('cartoes.listar') }}">
                 💳 Cartões
             </a>
 
-            <a href="{{url_for('compras_cartao.listar')}}">
+            <a href="{{ url_for('compras_cartao.listar') }}">
                 🛒 Compras no cartão
+            </a>
+
+            <a href="{{ url_for('faturas_cartao.listar') }}">
+                🧾 Faturas dos cartões
             </a>
 
             <a href="#">
@@ -71,6 +75,7 @@
 
     </aside>
 
+
     <main class="main-content">
 
         {% block content %}
@@ -79,6 +84,7 @@
     </main>
 
 </div>
+
 
 <script
     src="{{ url_for('static', filename='js/app.js') }}"

@@ -968,3 +968,1517 @@ tbody tr:hover {
     }
 
 }
+
+/* =========================
+   V9.2 - GRÁFICO POR CATEGORIA
+========================= */
+
+.category-chart-panel {
+    margin-top: 20px;
+}
+
+
+.summary-category {
+    display: block;
+
+    font-size: 18px;
+}
+
+
+.summary-category-value {
+    display: block;
+
+    margin-top: 5px;
+
+    color: var(--text-secondary);
+
+    font-size: 13px;
+}
+
+
+.category-chart {
+    display: flex;
+
+    flex-direction: column;
+
+    gap: 20px;
+}
+
+
+.category-chart-row {
+    display: grid;
+
+    grid-template-columns:
+        180px
+        minmax(150px, 1fr)
+        65px;
+
+    align-items: center;
+
+    gap: 15px;
+}
+
+
+.category-chart-info {
+    display: flex;
+
+    flex-direction: column;
+
+    gap: 4px;
+}
+
+
+.category-chart-info strong {
+    font-size: 14px;
+}
+
+
+.category-chart-info span {
+    color: var(--text-secondary);
+
+    font-size: 12px;
+}
+
+
+.category-chart-bar-container {
+    height: 14px;
+
+    background: rgba(
+        255,
+        255,
+        255,
+        0.06
+    );
+
+    border-radius: 20px;
+
+    overflow: hidden;
+}
+
+
+.category-chart-bar {
+    height: 100%;
+
+    min-width: 3px;
+
+    background: var(--primary);
+
+    border-radius: 20px;
+
+    transition:
+        width 0.4s ease;
+}
+
+
+.category-chart-percent {
+    text-align: right;
+
+    font-size: 13px;
+
+    color: var(--text-secondary);
+}
+
+
+@media (max-width: 700px) {
+
+    .category-chart-row {
+
+        grid-template-columns:
+            1fr
+            55px;
+
+        gap: 8px;
+
+    }
+
+
+    .category-chart-bar-container {
+
+        grid-column: 1 / 2;
+
+    }
+
+
+    .category-chart-percent {
+
+        grid-column: 2 / 3;
+
+        grid-row: 1 / 3;
+
+        align-self: center;
+
+    }
+
+}
+
+/* =========================
+   V9.3 - DETALHES DA COMPRA
+========================= */
+
+.details-header-actions {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+}
+
+
+.purchase-link {
+    color: inherit;
+    text-decoration: none;
+}
+
+
+.purchase-link:hover {
+    color: var(--primary);
+}
+
+
+.purchase-details-card {
+    background:
+        linear-gradient(
+            145deg,
+            #1c2230,
+            #151a24
+        );
+
+    border: 1px solid var(--border);
+
+    border-radius: 15px;
+
+    padding: 25px;
+
+    margin-top: 20px;
+
+    box-shadow:
+        0 10px 25px rgba(
+            0,
+            0,
+            0,
+            0.20
+        );
+}
+
+
+.purchase-details-header {
+    display: flex;
+
+    justify-content: space-between;
+
+    align-items: flex-start;
+
+    gap: 20px;
+
+    padding-bottom: 25px;
+
+    border-bottom:
+        1px solid var(--border);
+}
+
+
+.details-label {
+    display: block;
+
+    color: var(--text-secondary);
+
+    font-size: 12px;
+
+    margin-bottom: 7px;
+
+    letter-spacing: 1px;
+}
+
+
+.purchase-details-header h2 {
+    margin: 0;
+
+    font-size: 25px;
+}
+
+
+.purchase-total {
+    text-align: right;
+}
+
+
+.purchase-total span {
+    display: block;
+
+    color: var(--text-secondary);
+
+    font-size: 12px;
+
+    margin-bottom: 5px;
+}
+
+
+.purchase-total strong {
+    font-size: 25px;
+}
+
+
+.purchase-details-grid {
+    display: grid;
+
+    grid-template-columns:
+        repeat(4, 1fr);
+
+    gap: 20px;
+
+    padding-top: 25px;
+}
+
+
+.detail-item {
+    display: flex;
+
+    flex-direction: column;
+
+    gap: 5px;
+}
+
+
+.detail-item span {
+    color: var(--text-secondary);
+
+    font-size: 12px;
+}
+
+
+.detail-item strong {
+    font-size: 15px;
+}
+
+
+.detail-item small {
+    color: var(--text-secondary);
+
+    font-size: 12px;
+}
+
+
+.purchase-observation {
+    margin-top: 25px;
+
+    padding-top: 20px;
+
+    border-top:
+        1px solid var(--border);
+}
+
+
+.purchase-observation span {
+    color: var(--text-secondary);
+
+    font-size: 12px;
+}
+
+
+.purchase-observation p {
+    margin: 8px 0 0;
+
+    line-height: 1.6;
+}
+
+
+.details-summary-cards {
+    display: grid;
+
+    grid-template-columns:
+        repeat(3, 1fr);
+
+    gap: 20px;
+
+    margin-top: 20px;
+}
+
+
+.details-summary-card {
+    background: var(--surface);
+
+    border: 1px solid var(--border);
+
+    border-radius: 12px;
+
+    padding: 20px;
+}
+
+
+.details-summary-card span {
+    display: block;
+
+    color: var(--text-secondary);
+
+    font-size: 12px;
+
+    margin-bottom: 8px;
+}
+
+
+.details-summary-card strong {
+    display: block;
+
+    font-size: 22px;
+}
+
+
+.details-summary-card small {
+    display: block;
+
+    margin-top: 5px;
+
+    color: var(--text-secondary);
+
+    font-size: 12px;
+}
+
+
+.purchase-installments-panel {
+    margin-top: 20px;
+}
+
+
+.installments-table-container {
+    overflow-x: auto;
+}
+
+
+.installments-table {
+    width: 100%;
+
+    border-collapse: collapse;
+}
+
+
+.installments-table th {
+    text-align: left;
+
+    color: var(--text-secondary);
+
+    font-size: 12px;
+
+    text-transform: uppercase;
+
+    padding: 14px;
+
+    border-bottom:
+        1px solid var(--border);
+}
+
+
+.installments-table td {
+    padding: 16px 14px;
+
+    border-bottom:
+        1px solid var(--border);
+}
+
+
+.installments-table tbody tr:last-child td {
+    border-bottom: none;
+}
+
+
+.status-badge {
+    display: inline-flex;
+
+    align-items: center;
+
+    padding: 5px 10px;
+
+    border-radius: 20px;
+
+    font-size: 12px;
+
+    font-weight: 600;
+}
+
+
+.status-paid {
+    background: rgba(
+        46,
+        204,
+        113,
+        0.15
+    );
+
+    color: #4ade80;
+}
+
+
+.status-open {
+    background: rgba(
+        255,
+        193,
+        7,
+        0.15
+    );
+
+    color: #fbbf24;
+}
+
+
+@media (max-width: 900px) {
+
+    .purchase-details-grid {
+        grid-template-columns:
+            repeat(2, 1fr);
+    }
+
+}
+
+
+@media (max-width: 700px) {
+
+    .details-header-actions {
+        width: 100%;
+
+        flex-direction: column;
+    }
+
+
+    .details-header-actions .btn {
+        width: 100%;
+
+        text-align: center;
+    }
+
+
+    .purchase-details-header {
+        flex-direction: column;
+    }
+
+
+    .purchase-total {
+        text-align: left;
+    }
+
+
+    .purchase-details-grid {
+        grid-template-columns: 1fr;
+    }
+
+
+    .details-summary-cards {
+        grid-template-columns: 1fr;
+    }
+
+}
+
+/* =========================================================
+   V9.4 - DETALHES DA FATURA
+   ========================================================= */
+
+.fatura-page-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 20px;
+}
+
+.fatura-page-header h1 {
+    margin: 0;
+    font-size: 30px;
+}
+
+.fatura-page-header p {
+    margin-top: 7px;
+    color: var(--text-secondary);
+}
+
+.fatura-details-card {
+    background: linear-gradient(145deg, #1c2230, #151a24);
+    border: 1px solid var(--border);
+    border-radius: 15px;
+    padding: 25px;
+    margin-top: 20px;
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.20);
+}
+
+.fatura-details-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 20px;
+    padding-bottom: 25px;
+    border-bottom: 1px solid var(--border);
+}
+
+.fatura-details-header h2 {
+    margin: 0;
+    font-size: 25px;
+}
+
+.fatura-card-number {
+    display: block;
+    margin-top: 6px;
+    color: var(--text-secondary);
+    font-size: 13px;
+    letter-spacing: 1px;
+}
+
+.fatura-status-area {
+    display: flex;
+    align-items: center;
+}
+
+.fatura-info-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 20px;
+    padding-top: 25px;
+}
+
+.fatura-info-item {
+    display: flex;
+    flex-direction: column;
+    gap: 7px;
+}
+
+.fatura-info-item span {
+    color: var(--text-secondary);
+    font-size: 11px;
+    letter-spacing: 0.8px;
+}
+
+.fatura-info-item strong {
+    font-size: 17px;
+}
+
+.fatura-info-item .fatura-total {
+    font-size: 24px;
+}
+
+.fatura-parcelas-panel {
+    margin-top: 20px;
+}
+
+.fatura-parcelas-panel .panel-header {
+    margin-bottom: 10px;
+}
+
+.fatura-parcelas-panel .installments-table {
+    min-width: 750px;
+}
+
+@media (max-width: 1000px) {
+    .fatura-info-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+@media (max-width: 700px) {
+    .fatura-page-header {
+        flex-direction: column;
+    }
+
+    .fatura-page-header .details-header-actions {
+        width: 100%;
+    }
+
+    .fatura-page-header .btn {
+        width: 100%;
+        text-align: center;
+    }
+
+    .fatura-details-header {
+        flex-direction: column;
+    }
+
+    .fatura-status-area {
+        margin-top: 5px;
+    }
+
+    .fatura-info-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .fatura-details-card {
+        padding: 20px;
+    }
+}
+
+/* =========================================================
+   FATURAS DOS CARTÕES
+========================================================= */
+
+.faturas-page-header {
+    margin-bottom: 20px;
+}
+
+
+.faturas-header-actions {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+
+.faturas-summary {
+    margin-bottom: 30px;
+}
+
+
+/* =========================================================
+   LISTA
+========================================================= */
+
+.faturas-list {
+
+    display: grid;
+
+    grid-template-columns:
+        repeat(
+            auto-fit,
+            minmax(420px, 1fr)
+        );
+
+    gap: 20px;
+
+    margin-top: 10px;
+}
+
+
+/* =========================================================
+   CARD DA FATURA
+========================================================= */
+
+.fatura-card {
+
+    background:
+        linear-gradient(
+            145deg,
+            #202638,
+            #151a24
+        );
+
+    border: 1px solid var(--border);
+
+    border-radius: 15px;
+
+    padding: 22px;
+
+    box-shadow:
+        0 10px 25px rgba(0, 0, 0, 0.20);
+
+    transition:
+        transform 0.15s ease,
+        border-color 0.15s ease,
+        box-shadow 0.15s ease;
+}
+
+
+.fatura-card:hover {
+
+    transform: translateY(-2px);
+
+    border-color: var(--primary);
+
+    box-shadow:
+        0 14px 30px rgba(0, 0, 0, 0.28);
+}
+
+
+/* =========================================================
+   CABEÇALHO DO CARD
+========================================================= */
+
+.fatura-card-header {
+
+    display: flex;
+
+    align-items: flex-start;
+
+    justify-content: space-between;
+
+    gap: 20px;
+
+    padding-bottom: 18px;
+
+    border-bottom: 1px solid var(--border);
+}
+
+
+.fatura-label {
+
+    display: block;
+
+    color: var(--text-secondary);
+
+    font-size: 11px;
+
+    font-weight: 600;
+
+    letter-spacing: 0.8px;
+
+    margin-bottom: 5px;
+}
+
+
+.fatura-card-header h2 {
+
+    margin: 0;
+
+    font-size: 25px;
+
+    line-height: 1.2;
+}
+
+
+.fatura-status {
+
+    flex-shrink: 0;
+}
+
+
+/* =========================================================
+   CORPO
+========================================================= */
+
+.fatura-card-body {
+
+    display: grid;
+
+    grid-template-columns:
+        1fr 1fr;
+
+    gap: 20px;
+
+    padding: 20px 0;
+}
+
+
+.fatura-card-body > div {
+
+    display: flex;
+
+    flex-direction: column;
+
+    gap: 5px;
+}
+
+
+.fatura-card-body span {
+
+    color: var(--text-secondary);
+
+    font-size: 12px;
+}
+
+
+.fatura-card-body strong {
+
+    font-size: 15px;
+}
+
+
+.fatura-card-body .fatura-valor {
+
+    font-size: 21px;
+}
+
+
+/* =========================================================
+   RODAPÉ
+========================================================= */
+
+.fatura-card-footer {
+
+    display: flex;
+
+    align-items: center;
+
+    justify-content: space-between;
+
+    gap: 15px;
+
+    padding-top: 17px;
+
+    border-top: 1px solid var(--border);
+}
+
+
+.fatura-card-footer > span {
+
+    color: var(--text-secondary);
+
+    font-size: 13px;
+}
+
+
+.fatura-card-footer .btn {
+
+    white-space: nowrap;
+}
+
+
+/* =========================================================
+   ESTADO VAZIO
+========================================================= */
+
+.faturas-empty {
+
+    display: flex;
+
+    flex-direction: column;
+
+    gap: 7px;
+
+    margin-top: 20px;
+
+    padding: 30px;
+
+    text-align: center;
+}
+
+
+.faturas-empty strong {
+
+    font-size: 16px;
+}
+
+
+.faturas-empty span {
+
+    color: var(--text-secondary);
+
+    font-size: 13px;
+}
+
+
+/* =========================================================
+   RESPONSIVO
+========================================================= */
+
+@media (max-width: 900px) {
+
+    .faturas-list {
+
+        grid-template-columns: 1fr;
+
+    }
+
+}
+
+
+@media (max-width: 650px) {
+
+    .faturas-list {
+
+        grid-template-columns: 1fr;
+
+        gap: 15px;
+
+    }
+
+
+    .fatura-card {
+
+        padding: 18px;
+
+    }
+
+
+    .fatura-card-header {
+
+        flex-direction: column;
+
+        gap: 12px;
+
+    }
+
+
+    .fatura-card-body {
+
+        grid-template-columns: 1fr;
+
+        gap: 15px;
+
+    }
+
+
+    .fatura-card-footer {
+
+        flex-direction: column;
+
+        align-items: stretch;
+
+    }
+
+
+    .fatura-card-footer .btn {
+
+        width: 100%;
+
+        text-align: center;
+
+    }
+
+}
+
+/* =========================================================
+   DETALHES DA FATURA
+========================================================= */
+
+.fatura-page-header {
+    margin-bottom: 25px;
+}
+
+
+.fatura-summary {
+    margin-bottom: 20px;
+}
+
+
+.fatura-status-text {
+    font-size: 20px;
+}
+
+
+.fatura-status-text.aberta {
+    color: #f0b429;
+}
+
+
+.fatura-status-text.pago {
+    color: #4ade80;
+}
+
+
+/* =========================================================
+   INFORMAÇÕES DA FATURA
+========================================================= */
+
+.fatura-info-panel {
+
+    display: grid;
+
+    grid-template-columns:
+        repeat(3, 1fr);
+
+    gap: 20px;
+
+    background:
+        linear-gradient(
+            145deg,
+            #202638,
+            #151a24
+        );
+
+    border: 1px solid var(--border);
+
+    border-radius: 15px;
+
+    padding: 20px;
+
+    margin-bottom: 35px;
+}
+
+
+.fatura-info-panel > div {
+
+    display: flex;
+
+    flex-direction: column;
+
+    gap: 6px;
+}
+
+
+.fatura-info-panel span {
+
+    color: var(--text-secondary);
+
+    font-size: 12px;
+}
+
+
+.fatura-info-panel strong {
+
+    font-size: 16px;
+}
+
+
+/* =========================================================
+   TÍTULO DA SEÇÃO
+========================================================= */
+
+.fatura-section-header {
+
+    margin-bottom: 15px;
+}
+
+
+.fatura-section-header h2 {
+
+    margin: 0;
+
+    font-size: 21px;
+}
+
+
+.fatura-section-header p {
+
+    margin-top: 5px;
+
+    color: var(--text-secondary);
+
+    font-size: 13px;
+}
+
+
+/* =========================================================
+   TABELA DE COMPRAS
+========================================================= */
+
+.fatura-compras-table {
+
+    width: 100%;
+
+    border: 1px solid var(--border);
+
+    border-radius: 15px;
+
+    overflow: hidden;
+
+    background: #191f2b;
+}
+
+
+/* =========================================================
+   CABEÇALHO
+========================================================= */
+
+.fatura-table-header {
+
+    display: grid;
+
+    grid-template-columns:
+        2fr
+        1.3fr
+        0.8fr
+        1fr
+        1fr;
+
+    gap: 15px;
+
+    padding: 15px 18px;
+
+    background: #111620;
+
+    border-bottom: 1px solid var(--border);
+
+    color: var(--text-secondary);
+
+    font-size: 12px;
+
+    font-weight: 600;
+
+    text-transform: uppercase;
+}
+
+
+/* =========================================================
+   LINHA
+========================================================= */
+
+.fatura-table-row {
+
+    display: grid;
+
+    grid-template-columns:
+        2fr
+        1.3fr
+        0.8fr
+        1fr
+        1fr;
+
+    gap: 15px;
+
+    align-items: center;
+
+    padding: 18px;
+
+    border-bottom: 1px solid var(--border);
+
+    font-size: 14px;
+}
+
+
+.fatura-table-row:last-child {
+
+    border-bottom: none;
+
+}
+
+
+.fatura-table-row:hover {
+
+    background: rgba(
+        255,
+        255,
+        255,
+        0.02
+    );
+
+}
+
+
+/* =========================================================
+   INFORMAÇÕES DA COMPRA
+========================================================= */
+
+.fatura-compra-info {
+
+    display: flex;
+
+    flex-direction: column;
+
+    gap: 5px;
+}
+
+
+.fatura-compra-info strong {
+
+    font-size: 15px;
+}
+
+
+.fatura-compra-info span {
+
+    color: var(--text-secondary);
+
+    font-size: 12px;
+
+    white-space: nowrap;
+
+    overflow: hidden;
+
+    text-overflow: ellipsis;
+
+    max-width: 300px;
+}
+
+
+/* =========================================================
+   CATEGORIA
+========================================================= */
+
+.fatura-category {
+
+    display: inline-block;
+
+    padding: 5px 9px;
+
+    border-radius: 7px;
+
+    background: rgba(
+        120,
+        140,
+        180,
+        0.12
+    );
+
+    color: var(--text-secondary);
+
+    font-size: 12px;
+}
+
+
+/* =========================================================
+   VALOR
+========================================================= */
+
+.fatura-parcela-valor {
+
+    font-size: 15px;
+}
+
+
+/* =========================================================
+   RESPONSIVO
+========================================================= */
+
+@media (max-width: 900px) {
+
+    .fatura-info-panel {
+
+        grid-template-columns: 1fr 1fr;
+
+    }
+
+
+    .fatura-table-header {
+
+        display: none;
+
+    }
+
+
+    .fatura-table-row {
+
+        grid-template-columns: 1fr 1fr;
+
+        gap: 15px;
+
+    }
+
+
+    .fatura-compra-info {
+
+        grid-column: 1 / -1;
+
+    }
+
+}
+
+
+@media (max-width: 600px) {
+
+    .fatura-info-panel {
+
+        grid-template-columns: 1fr;
+
+    }
+
+
+    .fatura-table-row {
+
+        grid-template-columns: 1fr;
+
+    }
+
+
+    .fatura-compra-info {
+
+        grid-column: auto;
+
+    }
+
+
+    .fatura-compra-info span {
+
+        max-width: 100%;
+
+    }
+
+}
+
+/* =========================================================
+   PAGAMENTO DA FATURA
+========================================================= */
+
+.fatura-payment-card {
+
+    margin-bottom: 20px;
+
+    background:
+        linear-gradient(
+            145deg,
+            #202638,
+            #151a24
+        );
+
+    border: 1px solid var(--border);
+
+    border-radius: 15px;
+
+    padding: 24px;
+}
+
+
+.fatura-payment-header {
+
+    display: flex;
+
+    align-items: flex-start;
+
+    justify-content: space-between;
+
+    gap: 20px;
+
+    margin-bottom: 20px;
+
+    padding-bottom: 20px;
+
+    border-bottom: 1px solid var(--border);
+}
+
+
+.fatura-payment-header h2 {
+
+    margin: 0;
+
+    font-size: 20px;
+
+}
+
+
+.fatura-payment-header p {
+
+    margin: 6px 0 0;
+
+    color: var(--text-secondary);
+
+    font-size: 13px;
+
+}
+
+
+.fatura-payment-value {
+
+    text-align: right;
+
+}
+
+
+.fatura-payment-value span {
+
+    display: block;
+
+    color: var(--text-secondary);
+
+    font-size: 12px;
+
+    margin-bottom: 5px;
+
+}
+
+
+.fatura-payment-value strong {
+
+    font-size: 23px;
+
+}
+
+
+.fatura-payment-form {
+
+    display: grid;
+
+    grid-template-columns:
+        1fr
+        auto;
+
+    gap: 20px;
+
+    align-items: end;
+
+}
+
+
+.fatura-payment-form .form-group {
+
+    margin-bottom: 0;
+
+}
+
+
+.fatura-payment-form select {
+
+    width: 100%;
+
+    background: #11151d;
+
+    color: white;
+
+    border: 1px solid var(--border);
+
+    border-radius: 7px;
+
+    padding: 11px 12px;
+
+    font-size: 14px;
+
+    outline: none;
+
+}
+
+
+.fatura-payment-form select:focus {
+
+    border-color: var(--primary);
+
+}
+
+
+.fatura-paid-card {
+
+    margin-bottom: 20px;
+
+    padding: 20px 24px;
+
+    background:
+        rgba(
+            34,
+            197,
+            94,
+            0.08
+        );
+
+    border: 1px solid
+        rgba(
+            34,
+            197,
+            94,
+            0.25
+        );
+
+    border-radius: 15px;
+
+}
+
+
+.fatura-paid-title {
+
+    display: block;
+
+    color: #4ade80;
+
+    font-size: 17px;
+
+    font-weight: bold;
+
+}
+
+
+.fatura-paid-card p {
+
+    margin: 6px 0 0;
+
+    color: var(--text-secondary);
+
+    font-size: 13px;
+
+}
+
+
+@media (max-width: 700px) {
+
+    .fatura-payment-header {
+
+        flex-direction: column;
+
+    }
+
+
+    .fatura-payment-value {
+
+        text-align: left;
+
+    }
+
+
+    .fatura-payment-form {
+
+        grid-template-columns: 1fr;
+
+    }
+
+
+    .fatura-payment-action .btn {
+
+        width: 100%;
+
+    }
+
+}
