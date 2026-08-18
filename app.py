@@ -9,6 +9,8 @@ from routes.dashboard import dashboard_bp
 from routes.contas import contas_bp
 from routes.lancamentos import lancamentos_bp
 from routes.categorias import categorias_bp
+from routes.cartoes import cartoes_bp
+from routes.compras_cartao import compras_cartao_bp
 
 
 
@@ -42,6 +44,8 @@ def criar_app():
     app.register_blueprint(contas_bp)
     app.register_blueprint(lancamentos_bp)
     app.register_blueprint(categorias_bp)
+    app.register_blueprint(cartoes_bp)
+    app.register_blueprint(compras_cartao_bp)
 
     with app.app_context():
         db.create_all()

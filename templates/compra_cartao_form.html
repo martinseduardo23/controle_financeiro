@@ -1,0 +1,375 @@
+{% extends "base.html" %}
+
+{% block title %}
+{% if compra %}
+Editar compra
+{% else %}
+Nova compra
+{% endif %}
+- Financeiro
+{% endblock %}
+
+
+{% block content %}
+
+<div class="page-header">
+
+    <div>
+
+        <h1>
+            {% if compra %}
+                Editar compra
+            {% else %}
+                Nova compra
+            {% endif %}
+        </h1>
+
+        <p>
+            Registre uma compra realizada no cartão.
+        </p>
+
+    </div>
+
+</div>
+
+
+<div class="form-container">
+
+    {% if erro %}
+
+    <div class="form-error">
+        {{ erro }}
+    </div>
+
+    {% endif %}
+
+
+    <form method="POST">
+
+
+        <!-- DESCRIÇÃO -->
+
+        <div class="form-group">
+
+            <label for="descricao">
+                Descrição
+            </label>
+
+            <input
+                type="text"
+                id="descricao"
+                name="descricao"
+                value="{{ compra.descricao if compra else '' }}"
+                placeholder="Ex.: Mercado"
+                required
+            >
+
+        </div>
+
+
+        <!-- VALOR -->
+
+        <div class="form-group">
+
+            <label for="valor_total">
+                Valor total da compra
+            </label>
+
+            <div class="currency-input">
+
+                <span class="currency-prefix">
+                    R$
+                </span>
+
+                <input
+                    type="text"
+                    id="valor_total"
+                    name="valor_total"
+                    class="currency-field"
+                    inputmode="decimal"
+                    autocomplete="off"
+                    value="{% if compra %}{{ compra.valor_total|moeda }}{% else %}0,00{% endif %}"
+                    required
+                >
+
+            </div>
+
+        </div>
+
+
+        <!-- DATA -->
+
+        <div class="form-group">
+
+            <label for="data_compra">
+                Data da compra
+            </label>
+
+            <input
+                type="date"
+                id="data_compra"
+                name="data_compra"
+                value="{% if compra %}{{ compra.data_compra.strftime('%Y-%m-%d') }}{% endif %}"
+                required
+            >
+
+        </div>
+
+
+        <!-- CARTÃO -->
+
+        <div class="form-group">
+
+            <label for="cartao_id">
+                Cartão
+            </label>
+
+            <select
+                id="cartao_id"
+                name="cartao_id"
+                required
+            >
+
+                <option value="">
+                    Selecione um cartão
+                </option>
+
+                {% for cartao in cartoes %}
+
+                <option
+                    value="{{ cartao.id }}"
+                    {% if compra and compra.cartao_id == cartao.id %}
+                        selected
+                    {% endif %}
+                >
+
+                    {{ cartao.nome }}
+
+                    {% if cartao.ultimos_digitos %}
+                        •••• {{ cartao.ultimos_digitos }}
+                    {% endif %}
+
+                </option>
+
+                {% endfor %}
+
+            </select>
+
+        </div>
+
+
+        <!-- CATEGORIA -->
+
+        <div class="form-group">
+
+            <label for="categoria_id">
+                Categoria
+            </label>
+
+            <select
+                id="categoria_id"
+                name="categoria_id"
+                required
+            >
+
+                <option value="">
+                    Selecione uma categoria
+                </option>
+
+                {% for categoria in categorias %}
+
+                <option
+                    value="{{ categoria.id }}"
+                    {% if compra and compra.categoria_id == categoria.id %}
+                        selected
+                    {% endif %}
+                >
+                    {{ categoria.nome }}
+                </option>
+
+                {% endfor %}
+
+            </select>
+
+        </div>
+
+
+        <!-- PARCELAS -->
+
+        <div class="form-group">
+
+            <label for="parcelas">
+                Número de parcelas
+            </label>
+
+            <input
+                type="number"
+                id="parcelas"
+                name="parcelas"
+                min="1"
+                max="120"
+                value="{{ compra.parcelas if compra else 1 }}"
+                required
+            >
+
+            <small class="field-help">
+                Use 1 para uma compra à vista.
+            </small>
+
+        </div>
+
+
+        <!-- PREVISÃO DA PARCELA -->
+
+        <div class="installment-preview">
+
+            <span>
+                Valor aproximado por parcela
+            </span>
+
+            <strong id="valor-parcela">
+                R$ 0,00
+            </strong>
+
+        </div>
+
+
+        <!-- OBSERVAÇÃO -->
+
+        <div class="form-group">
+
+            <label for="observacao">
+                Observação
+            </label>
+
+            <textarea
+                id="observacao"
+                name="observacao"
+                rows="4"
+                placeholder="Observações opcionais..."
+            >{{ compra.observacao if compra else '' }}</textarea>
+
+        </div>
+
+
+        <!-- BOTÕES -->
+
+        <div class="actions">
+
+            <button
+                type="submit"
+                class="btn btn-primary"
+            >
+
+                {% if compra %}
+                    Salvar alterações
+                {% else %}
+                    Registrar compra
+                {% endif %}
+
+            </button>
+
+
+            <a
+                href="{{ url_for('compras_cartao.listar') }}"
+                class="btn btn-secondary"
+            >
+                Cancelar
+            </a>
+
+        </div>
+
+
+    </form>
+
+</div>
+
+
+<script>
+
+document.addEventListener("DOMContentLoaded", function () {
+
+    const valor = document.getElementById("valor_total");
+
+    const parcelas = document.getElementById("parcelas");
+
+    const resultado = document.getElementById("valor-parcela");
+
+
+    function converterValor() {
+
+        let texto = valor.value || "";
+
+
+        texto = texto
+            .replace("R$", "")
+            .replace(/\s/g, "")
+            .replace(/\./g, "")
+            .replace(",", ".");
+
+
+        const numero = parseFloat(texto);
+
+
+        if (isNaN(numero)) {
+            return 0;
+        }
+
+
+        return numero;
+
+    }
+
+
+    function atualizarParcela() {
+
+        const valorTotal = converterValor();
+
+
+        const numeroParcelas =
+            parseInt(parcelas.value) || 1;
+
+
+        const valorParcela =
+            valorTotal / numeroParcelas;
+
+
+        resultado.textContent =
+            "R$ " +
+            valorParcela.toLocaleString(
+                "pt-BR",
+                {
+                    minimumFractionDigits: 2,
+                    maximumFractionDigits: 2
+                }
+            );
+
+    }
+
+
+    valor.addEventListener(
+        "input",
+        atualizarParcela
+    );
+
+
+    valor.addEventListener(
+        "valorMoedaAlterado",
+        atualizarParcela
+    );
+
+
+    parcelas.addEventListener(
+        "input",
+        atualizarParcela
+    );
+
+
+    atualizarParcela();
+
+});
+
+</script>
+
+
+{% endblock %}

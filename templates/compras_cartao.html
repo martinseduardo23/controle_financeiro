@@ -1,0 +1,255 @@
+{% extends "base.html" %}
+
+{% block title %}
+Compras no cartão - Financeiro
+{% endblock %}
+
+{% block content %}
+
+<div class="page-header">
+
+    <div>
+
+        <h1>
+            Compras no cartão
+        </h1>
+
+        <p>
+            Controle das compras realizadas nos cartões.
+        </p>
+
+    </div>
+
+    <a
+        href="{{ url_for('compras_cartao.nova') }}"
+        class="btn btn-primary"
+    >
+        + Nova compra
+    </a>
+
+</div>
+
+
+<div class="cards">
+
+    <div class="card">
+
+        <span class="card-title">
+            Compras
+        </span>
+
+        <strong>
+            {{ compras|length }}
+        </strong>
+
+    </div>
+
+
+    <div class="card">
+
+        <span class="card-title">
+            Valor total
+        </span>
+
+        <strong>
+            R$
+            {{ compras|map(attribute="valor_total")|map("float")|sum|moeda }}
+        </strong>
+
+    </div>
+
+
+    <div class="card">
+
+        <span class="card-title">
+            Parcelas
+        </span>
+
+        <strong>
+            {{ compras|map(attribute="parcelas")|sum }}
+        </strong>
+
+    </div>
+
+</div>
+
+
+<div class="table-container">
+
+    <table>
+
+        <thead>
+
+            <tr>
+
+                <th>
+                    Data
+                </th>
+
+                <th>
+                    Compra
+                </th>
+
+                <th>
+                    Cartão
+                </th>
+
+                <th>
+                    Categoria
+                </th>
+
+                <th>
+                    Valor
+                </th>
+
+                <th>
+                    Parcelamento
+                </th>
+
+                <th>
+                    Ações
+                </th>
+
+            </tr>
+
+        </thead>
+
+
+        <tbody>
+
+            {% for compra in compras %}
+
+            <tr>
+
+                <td>
+                    {{ compra.data_compra.strftime("%d/%m/%Y") }}
+                </td>
+
+
+                <td>
+
+                    <strong>
+                        {{ compra.descricao }}
+                    </strong>
+
+                    {% if compra.observacao %}
+
+                    <span class="table-note">
+                        {{ compra.observacao }}
+                    </span>
+
+                    {% endif %}
+
+                </td>
+
+
+                <td>
+
+                    {{ compra.cartao.nome }}
+
+                    {% if compra.cartao.ultimos_digitos %}
+
+                    <span class="table-note">
+                        •••• {{ compra.cartao.ultimos_digitos }}
+                    </span>
+
+                    {% endif %}
+
+                </td>
+
+
+                <td>
+                    {{ compra.categoria.nome }}
+                </td>
+
+
+                <td>
+
+                    <strong class="valor-negativo">
+                        R$ {{ compra.valor_total|moeda }}
+                    </strong>
+
+                </td>
+
+
+                <td>
+
+                    <strong>
+                        {{ compra.parcelas }}x
+                    </strong>
+
+                    <span class="table-note">
+                        R$ {{ compra.valor_parcela()|moeda }}
+                        / parcela
+                    </span>
+
+                </td>
+
+
+                <td>
+
+                    <div class="actions">
+
+                        <a
+                            href="{{ url_for('compras_cartao.editar', id=compra.id) }}"
+                            class="btn btn-secondary"
+                        >
+                            Editar
+                        </a>
+
+
+                        <form
+                            method="POST"
+                            action="{{ url_for('compras_cartao.excluir', id=compra.id) }}"
+                            onsubmit="return confirm('Deseja realmente excluir esta compra?');"
+                        >
+
+                            <button
+                                type="submit"
+                                class="btn btn-danger"
+                            >
+                                Excluir
+                            </button>
+
+                        </form>
+
+                    </div>
+
+                </td>
+
+            </tr>
+
+            {% else %}
+
+            <tr>
+
+                <td colspan="7">
+
+                    <div class="empty-table">
+
+                        Nenhuma compra cadastrada.
+
+                        <br><br>
+
+                        <a
+                            href="{{ url_for('compras_cartao.nova') }}"
+                            class="btn btn-primary"
+                        >
+                            + Cadastrar primeira compra
+                        </a>
+
+                    </div>
+
+                </td>
+
+            </tr>
+
+            {% endfor %}
+
+        </tbody>
+
+    </table>
+
+</div>
+
+{% endblock %}

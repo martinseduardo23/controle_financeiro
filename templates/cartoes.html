@@ -1,0 +1,265 @@
+{% extends "base.html" %}
+
+{% block title %}
+Cartões - Financeiro
+{% endblock %}
+
+{% block content %}
+
+<div class="page-header">
+
+    <div>
+        <h1>Cartões</h1>
+
+        <p>
+            Gerencie seus cartões de crédito e respectivos limites.
+        </p>
+    </div>
+
+    <a
+        href="{{ url_for('cartoes.novo') }}"
+        class="btn btn-primary"
+    >
+        + Novo cartão
+    </a>
+
+</div>
+
+
+<div class="cards">
+
+    <div class="card">
+
+        <span class="card-title">
+            Cartões cadastrados
+        </span>
+
+        <strong>
+            {{ cartoes|length }}
+        </strong>
+
+    </div>
+
+
+    <div class="card">
+
+        <span class="card-title">
+            Cartões ativos
+        </span>
+
+        <strong>
+            {{ cartoes|selectattr("ativo")|list|length }}
+        </strong>
+
+    </div>
+
+
+    <div class="card">
+
+        <span class="card-title">
+            Limite total
+        </span>
+
+        <strong>
+            R$ {{ cartoes|map(attribute="limite")|map("float")|sum|moeda }}
+        </strong>
+
+    </div>
+
+</div>
+
+
+<div class="panel">
+
+    <div class="panel-header">
+
+        <div>
+            <h2>
+                Meus cartões
+            </h2>
+
+            <span class="panel-subtitle">
+                Cartões cadastrados no sistema.
+            </span>
+        </div>
+
+    </div>
+
+
+    <div class="cards-grid">
+
+        {% for cartao in cartoes %}
+
+        <div class="credit-card">
+
+            <div class="credit-card-top">
+
+                <div class="credit-card-chip">
+                    ▣
+                </div>
+
+                {% if cartao.ativo %}
+
+                    <span class="badge badge-success">
+                        Ativo
+                    </span>
+
+                {% else %}
+
+                    <span class="badge badge-danger">
+                        Inativo
+                    </span>
+
+                {% endif %}
+
+            </div>
+
+
+            <div class="credit-card-name">
+                {{ cartao.nome }}
+            </div>
+
+
+            <div class="credit-card-bank">
+                {{ cartao.banco }}
+            </div>
+
+
+            <div class="credit-card-number">
+
+                •••• •••• •••• 
+
+                {% if cartao.ultimos_digitos %}
+                    {{ cartao.ultimos_digitos }}
+                {% else %}
+                    ----
+                {% endif %}
+
+            </div>
+
+
+            <div class="credit-card-limit">
+
+                <span>
+                    Limite
+                </span>
+
+                <strong>
+                    R$ {{ cartao.limite|moeda }}
+                </strong>
+
+            </div>
+
+
+            <div class="credit-card-dates">
+
+                <div>
+
+                    <span>
+                        Fechamento
+                    </span>
+
+                    <strong>
+                        Dia {{ cartao.dia_fechamento }}
+                    </strong>
+
+                </div>
+
+
+                <div>
+
+                    <span>
+                        Vencimento
+                    </span>
+
+                    <strong>
+                        Dia {{ cartao.dia_vencimento }}
+                    </strong>
+
+                </div>
+
+            </div>
+
+
+            <div class="credit-card-actions">
+
+                <a
+                    href="{{ url_for('cartoes.editar', id=cartao.id) }}"
+                    class="btn btn-secondary"
+                >
+                    Editar
+                </a>
+
+
+                <form
+                    method="POST"
+                    action="{{ url_for('cartoes.alternar', id=cartao.id) }}"
+                >
+
+                    <button
+                        type="submit"
+                        class="btn btn-secondary"
+                    >
+                        {% if cartao.ativo %}
+                            Desativar
+                        {% else %}
+                            Ativar
+                        {% endif %}
+                    </button>
+
+                </form>
+
+
+                <form
+                    method="POST"
+                    action="{{ url_for('cartoes.excluir', id=cartao.id) }}"
+                    onsubmit="return confirm('Deseja realmente excluir este cartão?');"
+                >
+
+                    <button
+                        type="submit"
+                        class="btn btn-danger"
+                    >
+                        Excluir
+                    </button>
+
+                </form>
+
+            </div>
+
+        </div>
+
+        {% else %}
+
+        <div class="empty-state">
+
+            <span class="empty-icon">
+                💳
+            </span>
+
+            <strong>
+                Nenhum cartão cadastrado
+            </strong>
+
+            <span>
+                Cadastre seu primeiro cartão para começar.
+            </span>
+
+            <br>
+
+            <a
+                href="{{ url_for('cartoes.novo') }}"
+                class="btn btn-primary"
+            >
+                + Cadastrar cartão
+            </a>
+
+        </div>
+
+        {% endfor %}
+
+    </div>
+
+</div>
+
+{% endblock %}

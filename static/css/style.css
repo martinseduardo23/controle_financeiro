@@ -778,3 +778,193 @@ tbody tr:hover {
         justify-content: flex-start;
     }
 }
+
+/* =========================
+   V9 - CARTÕES
+========================= */
+
+.cards-grid {
+    display: grid;
+    grid-template-columns: repeat(
+        auto-fill,
+        minmax(310px, 1fr)
+    );
+    gap: 20px;
+}
+
+.credit-card {
+    background:
+        linear-gradient(
+            145deg,
+            #202638,
+            #11151d
+        );
+
+    border: 1px solid var(--border);
+    border-radius: 15px;
+    padding: 22px;
+    min-height: 280px;
+
+    box-shadow:
+        0 10px 25px rgba(0, 0, 0, 0.25);
+}
+
+.credit-card-top {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.credit-card-chip {
+    width: 42px;
+    height: 31px;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    border-radius: 7px;
+
+    background: #c9b27c;
+    color: #252525;
+
+    font-size: 18px;
+}
+
+.credit-card-name {
+    margin-top: 25px;
+
+    font-size: 21px;
+    font-weight: bold;
+}
+
+.credit-card-bank {
+    margin-top: 5px;
+
+    color: var(--text-secondary);
+    font-size: 13px;
+}
+
+.credit-card-number {
+    margin-top: 24px;
+
+    font-size: 17px;
+    letter-spacing: 2px;
+}
+
+.credit-card-limit {
+    margin-top: 25px;
+
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.credit-card-limit span {
+    color: var(--text-secondary);
+    font-size: 13px;
+}
+
+.credit-card-limit strong {
+    font-size: 20px;
+}
+
+.credit-card-dates {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+
+    gap: 15px;
+
+    margin-top: 20px;
+}
+
+.credit-card-dates span {
+    display: block;
+
+    color: var(--text-secondary);
+    font-size: 11px;
+    margin-bottom: 4px;
+}
+
+.credit-card-dates strong {
+    font-size: 13px;
+}
+
+.credit-card-actions {
+    display: flex;
+    gap: 6px;
+
+    margin-top: 22px;
+
+    flex-wrap: wrap;
+}
+
+.credit-card-actions form {
+    margin: 0;
+}
+
+.form-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 15px;
+}
+
+.field-help {
+    display: block;
+
+    margin-top: 6px;
+
+    color: var(--text-secondary);
+    font-size: 12px;
+}
+
+@media (max-width: 700px) {
+
+    .cards-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .form-row {
+        grid-template-columns: 1fr;
+        gap: 0;
+    }
+
+}
+
+/* =========================
+   V9.2 - COMPRAS NO CARTÃO
+========================= */
+
+.installment-preview {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+
+    margin: 20px 0;
+
+    padding: 16px;
+
+    border: 1px solid var(--border);
+    border-radius: 8px;
+
+    background: var(--card);
+}
+
+.installment-preview span {
+    color: var(--text-secondary);
+    font-size: 13px;
+}
+
+.installment-preview strong {
+    font-size: 20px;
+}
+
+@media (max-width: 700px) {
+
+    .installment-preview {
+        align-items: flex-start;
+        flex-direction: column;
+        gap: 8px;
+    }
+
+}

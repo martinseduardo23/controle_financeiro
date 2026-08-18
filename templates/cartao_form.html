@@ -1,0 +1,212 @@
+{% extends "base.html" %}
+
+{% block title %}
+
+{% if cartao %}
+    Editar cartão
+{% else %}
+    Novo cartão
+{% endif %}
+
+- Financeiro
+
+{% endblock %}
+
+
+{% block content %}
+
+<div class="page-header">
+
+    <h1>
+
+        {% if cartao %}
+            Editar cartão
+        {% else %}
+            Novo cartão
+        {% endif %}
+
+    </h1>
+
+    <p>
+        Cadastre as informações do seu cartão de crédito.
+    </p>
+
+</div>
+
+
+<div class="form-container">
+
+    {% if erro %}
+
+    <div class="form-error">
+        {{ erro }}
+    </div>
+
+    {% endif %}
+
+
+    <form method="POST">
+
+
+        <div class="form-group">
+
+            <label for="nome">
+                Nome do cartão
+            </label>
+
+            <input
+                type="text"
+                id="nome"
+                name="nome"
+                value="{{ cartao.nome if cartao else '' }}"
+                placeholder="Ex.: Nubank Mastercard"
+                required
+            >
+
+        </div>
+
+
+        <div class="form-group">
+
+            <label for="banco">
+                Banco / Instituição
+            </label>
+
+            <input
+                type="text"
+                id="banco"
+                name="banco"
+                value="{{ cartao.banco if cartao else '' }}"
+                placeholder="Ex.: Nubank"
+                required
+            >
+
+        </div>
+
+
+        <div class="form-group">
+
+            <label for="ultimos_digitos">
+                Últimos 4 dígitos
+            </label>
+
+            <input
+                type="text"
+                id="ultimos_digitos"
+                name="ultimos_digitos"
+                value="{{ cartao.ultimos_digitos if cartao else '' }}"
+                maxlength="4"
+                inputmode="numeric"
+                placeholder="1234"
+            >
+
+            <small class="field-help">
+                Opcional. Use somente os últimos 4 números.
+            </small>
+
+        </div>
+
+
+        <div class="form-group">
+
+            <label for="limite">
+                Limite do cartão
+            </label>
+
+
+            <div class="currency-input">
+
+                <span class="currency-prefix">
+                    R$
+                </span>
+
+                <input
+                    type="text"
+                    id="limite"
+                    name="limite"
+                    class="currency-field"
+                    inputmode="decimal"
+                    autocomplete="off"
+                    value="{% if cartao %}{{ cartao.limite|moeda }}{% else %}0,00{% endif %}"
+                    required
+                >
+
+            </div>
+
+        </div>
+
+
+        <div class="form-row">
+
+            <div class="form-group">
+
+                <label for="dia_fechamento">
+                    Dia de fechamento
+                </label>
+
+                <input
+                    type="number"
+                    id="dia_fechamento"
+                    name="dia_fechamento"
+                    min="1"
+                    max="31"
+                    value="{{ cartao.dia_fechamento if cartao else '' }}"
+                    placeholder="Ex.: 10"
+                    required
+                >
+
+            </div>
+
+
+            <div class="form-group">
+
+                <label for="dia_vencimento">
+                    Dia de vencimento
+                </label>
+
+                <input
+                    type="number"
+                    id="dia_vencimento"
+                    name="dia_vencimento"
+                    min="1"
+                    max="31"
+                    value="{{ cartao.dia_vencimento if cartao else '' }}"
+                    placeholder="Ex.: 17"
+                    required
+                >
+
+            </div>
+
+        </div>
+
+
+        <div class="actions">
+
+            <button
+                type="submit"
+                class="btn btn-primary"
+            >
+
+                {% if cartao %}
+                    Salvar alterações
+                {% else %}
+                    Cadastrar cartão
+                {% endif %}
+
+            </button>
+
+
+            <a
+                href="{{ url_for('cartoes.listar') }}"
+                class="btn btn-secondary"
+            >
+                Cancelar
+            </a>
+
+        </div>
+
+    </form>
+
+</div>
+
+{% endblock %}
