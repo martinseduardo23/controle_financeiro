@@ -1,25 +1,45 @@
 {% extends "base.html" %}
 
+
 {% block title %}
 Dashboard - Financeiro
 {% endblock %}
 
+
 {% block content %}
+
+
+<!-- =====================================================
+     CABEÇALHO
+===================================================== -->
 
 <div class="page-header">
 
     <div>
-        <h1>Dashboard</h1>
+
+        <h1>
+            Dashboard
+        </h1>
 
         <p>
             Visão geral das suas finanças
         </p>
+
     </div>
 
 </div>
 
 
+<!-- =====================================================
+     RESUMO PRINCIPAL
+===================================================== -->
+
 <div class="cards">
+
+
+    <!-- =================================================
+         SALDO ATUAL
+    ================================================== -->
 
     <div class="card">
 
@@ -34,31 +54,51 @@ Dashboard - Financeiro
     </div>
 
 
-    <div class="card">
+    <!-- =================================================
+         COMPROMETIDO NOS CARTÕES
+    ================================================== -->
+
+    <div class="card dashboard-card-cartao">
 
         <span class="card-title">
-            Receitas no mês
-        </span>
-
-        <strong class="valor-positivo">
-            R$ {{ receitas_mes|moeda }}
-        </strong>
-
-    </div>
-
-
-    <div class="card">
-
-        <span class="card-title">
-            Despesas no mês
+            Comprometido nos cartões
         </span>
 
         <strong class="valor-negativo">
-            R$ {{ despesas_mes|moeda }}
+            R$ {{ comprometido_cartoes|moeda }}
         </strong>
 
     </div>
 
+
+    <!-- =================================================
+         DISPONÍVEL APÓS CARTÕES
+    ================================================== -->
+
+    <div class="card dashboard-card-disponivel">
+
+        <span class="card-title">
+            Disponível após cartões
+        </span>
+
+        <strong
+            class="{% if disponivel_apos_cartoes >= 0 %}
+                valor-positivo
+            {% else %}
+                valor-negativo
+            {% endif %}"
+        >
+
+            R$ {{ disponivel_apos_cartoes|moeda }}
+
+        </strong>
+
+    </div>
+
+
+    <!-- =================================================
+         SALDO PROJETADO
+    ================================================== -->
 
     <div class="card">
 
@@ -72,11 +112,137 @@ Dashboard - Financeiro
 
     </div>
 
+
 </div>
 
 
+<!-- =====================================================
+     COMPROMETIMENTO POR CARTÃO
+===================================================== -->
+
+<div class="panel dashboard-cartoes-panel">
+
+    <div class="panel-header">
+
+        <div>
+
+            <h2>
+                Comprometimento dos cartões
+            </h2>
+
+            <span class="panel-subtitle">
+                Faturas ainda não pagas, agrupadas por cartão.
+            </span>
+
+        </div>
+
+
+        <a
+            href="{{ url_for('faturas_cartao.listar') }}"
+            class="btn btn-secondary"
+        >
+            Ver faturas
+        </a>
+
+    </div>
+
+
+    {% if cartoes_comprometidos %}
+
+        {% set maior_valor = cartoes_comprometidos[0].valor %}
+
+
+        <div class="dashboard-cartoes-list">
+
+
+            {% for cartao in cartoes_comprometidos %}
+
+
+                {% if maior_valor > 0 %}
+
+                    {% set percentual = (
+                        cartao.valor / maior_valor * 100
+                    ) %}
+
+                {% else %}
+
+                    {% set percentual = 0 %}
+
+                {% endif %}
+
+
+                <div class="dashboard-cartao-item">
+
+
+                    <div class="dashboard-cartao-header">
+
+                        <strong>
+                            {{ cartao.nome }}
+                        </strong>
+
+
+                        <strong>
+                            R$ {{ cartao.valor|moeda }}
+                        </strong>
+
+                    </div>
+
+
+                    <div class="dashboard-cartao-bar-bg">
+
+                        <div
+                            class="dashboard-cartao-bar"
+                            style="width: {{ percentual }}%;"
+                        ></div>
+
+                    </div>
+
+
+                </div>
+
+
+            {% endfor %}
+
+
+        </div>
+
+
+    {% else %}
+
+
+        <div class="empty-state">
+
+            <span class="empty-icon">
+                ✓
+            </span>
+
+            <strong>
+                Nenhum cartão comprometido
+            </strong>
+
+            <span>
+                Não existem faturas em aberto.
+            </span>
+
+        </div>
+
+
+    {% endif %}
+
+
+</div>
+
+
+<!-- =====================================================
+     RESUMO DO MÊS / PRÓXIMOS LANÇAMENTOS
+===================================================== -->
+
 <div class="dashboard-grid">
 
+
+    <!-- =================================================
+         RESULTADO DO MÊS
+    ================================================== -->
 
     <div class="panel">
 
@@ -103,16 +269,24 @@ Dashboard - Financeiro
                 Resultado
             </span>
 
+
             <strong
-                class="{% if resultado_mes >= 0 %}valor-positivo{% else %}valor-negativo{% endif %}"
+                class="{% if resultado_mes >= 0 %}
+                    valor-positivo
+                {% else %}
+                    valor-negativo
+                {% endif %}"
             >
+
                 R$ {{ resultado_mes|moeda }}
+
             </strong>
 
         </div>
 
 
         <div class="mini-stats">
+
 
             <div>
 
@@ -139,10 +313,15 @@ Dashboard - Financeiro
 
             </div>
 
+
         </div>
 
     </div>
 
+
+    <!-- =================================================
+         PRÓXIMOS LANÇAMENTOS
+    ================================================== -->
 
     <div class="panel">
 
@@ -160,6 +339,7 @@ Dashboard - Financeiro
 
             </div>
 
+
             <a
                 href="{{ url_for('lancamentos.novo') }}"
                 class="btn btn-primary"
@@ -172,65 +352,82 @@ Dashboard - Financeiro
 
         {% if proximos %}
 
+
             <div class="upcoming-list">
+
 
                 {% for lancamento in proximos %}
 
-                <div class="upcoming-item">
 
-                    <div class="upcoming-date">
-
-                        <strong>
-                            {{ lancamento.data.strftime("%d") }}
-                        </strong>
-
-                        <span>
-                            {{ lancamento.data.strftime("%m/%Y") }}
-                        </span>
-
-                    </div>
+                    <div class="upcoming-item">
 
 
-                    <div class="upcoming-info">
+                        <div class="upcoming-date">
 
-                        <strong>
-                            {{ lancamento.descricao }}
-                        </strong>
+                            <strong>
+                                {{ lancamento.data.strftime("%d") }}
+                            </strong>
 
-                        <span>
-                            {{ lancamento.conta.nome }}
-                            ·
-                            {{ lancamento.categoria.nome }}
-                        </span>
+                            <span>
+                                {{ lancamento.data.strftime("%m/%Y") }}
+                            </span>
 
-                    </div>
+                        </div>
 
 
-                    <div
-                        class="{% if lancamento.tipo == 'receita' %}valor-positivo{% else %}valor-negativo{% endif %}"
-                    >
+                        <div class="upcoming-info">
 
-                        <strong>
+                            <strong>
+                                {{ lancamento.descricao }}
+                            </strong>
 
-                            {% if lancamento.tipo == "receita" %}
-                                +
+                            <span>
+
+                                {{ lancamento.conta.nome }}
+
+                                ·
+
+                                {{ lancamento.categoria.nome }}
+
+                            </span>
+
+                        </div>
+
+
+                        <div
+                            class="{% if lancamento.tipo == 'receita' %}
+                                valor-positivo
                             {% else %}
-                                -
-                            {% endif %}
+                                valor-negativo
+                            {% endif %}"
+                        >
 
-                            R$ {{ lancamento.valor|moeda }}
+                            <strong>
 
-                        </strong>
+                                {% if lancamento.tipo == "receita" %}
+                                    +
+                                {% else %}
+                                    -
+                                {% endif %}
+
+                                R$ {{ lancamento.valor|moeda }}
+
+                            </strong>
+
+                        </div>
+
 
                     </div>
 
-                </div>
 
                 {% endfor %}
 
+
             </div>
 
+
         {% else %}
+
 
             <div class="empty-state">
 
@@ -248,12 +445,101 @@ Dashboard - Financeiro
 
             </div>
 
+
         {% endif %}
+
+
+    </div>
+
+
+</div>
+
+
+<!-- =====================================================
+     RESUMO DETALHADO DOS CARTÕES
+===================================================== -->
+
+<div class="panel dashboard-cartoes-resumo-panel">
+
+    <div class="panel-header">
+
+        <div>
+
+            <h2>
+                Visão financeira dos cartões
+            </h2>
+
+            <span class="panel-subtitle">
+                Relação entre o dinheiro disponível e as faturas em aberto.
+            </span>
+
+        </div>
+
+    </div>
+
+
+    <div class="dashboard-cartao-resumo">
+
+
+        <!-- SALDO -->
+
+        <div>
+
+            <span>
+                Saldo disponível
+            </span>
+
+            <strong>
+                R$ {{ saldo_atual|moeda }}
+            </strong>
+
+        </div>
+
+
+        <!-- COMPROMETIDO -->
+
+        <div>
+
+            <span>
+                Comprometido em cartões
+            </span>
+
+            <strong class="valor-negativo">
+                R$ {{ comprometido_cartoes|moeda }}
+            </strong>
+
+        </div>
+
+
+        <!-- DISPONÍVEL -->
+
+        <div>
+
+            <span>
+                Disponível após cartões
+            </span>
+
+            <strong
+                class="{% if disponivel_apos_cartoes >= 0 %}
+                    valor-positivo
+                {% else %}
+                    valor-negativo
+                {% endif %}"
+            >
+                R$ {{ disponivel_apos_cartoes|moeda }}
+            </strong>
+
+        </div>
+
 
     </div>
 
 </div>
 
+
+<!-- =====================================================
+     COMO INTERPRETAR
+===================================================== -->
 
 <div class="panel">
 
@@ -272,6 +558,9 @@ Dashboard - Financeiro
 
     <div class="info-grid">
 
+
+        <!-- SALDO ATUAL -->
+
         <div>
 
             <strong>
@@ -279,12 +568,54 @@ Dashboard - Financeiro
             </strong>
 
             <p>
-                Considera o saldo inicial das contas e somente
-                receitas e despesas com status "Pago".
+
+                Considera o saldo inicial das contas
+                e somente receitas e despesas
+                com status "Pago".
+
             </p>
 
         </div>
 
+
+        <!-- COMPROMETIDO -->
+
+        <div>
+
+            <strong>
+                Comprometido nos cartões
+            </strong>
+
+            <p>
+
+                Soma todas as faturas dos cartões
+                que ainda não foram pagas.
+
+            </p>
+
+        </div>
+
+
+        <!-- DISPONÍVEL -->
+
+        <div>
+
+            <strong>
+                Disponível após cartões
+            </strong>
+
+            <p>
+
+                Mostra quanto sobraria do dinheiro
+                atual depois de considerar todas
+                as faturas de cartão em aberto.
+
+            </p>
+
+        </div>
+
+
+        <!-- PROJETADO -->
 
         <div>
 
@@ -293,14 +624,20 @@ Dashboard - Financeiro
             </strong>
 
             <p>
-                Considera o saldo inicial e todos os lançamentos,
-                incluindo aqueles que ainda estão pendentes ou agendados.
+
+                Considera o saldo inicial e todos
+                os lançamentos, incluindo aqueles
+                que ainda estão pendentes ou
+                agendados.
+
             </p>
 
         </div>
 
+
     </div>
 
 </div>
+
 
 {% endblock %}

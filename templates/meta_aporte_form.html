@@ -1,0 +1,374 @@
+{% extends "base.html" %}
+
+
+{% block title %}
+Aporte - {{ meta.nome }} - Financeiro
+{% endblock %}
+
+
+{% block content %}
+
+
+<div class="page-header">
+
+    <div>
+
+        <span class="details-label">
+            META FINANCEIRA
+        </span>
+
+        <h1>
+            Aportar na meta
+        </h1>
+
+        <p>
+            {{ meta.nome }}
+        </p>
+
+    </div>
+
+
+    <div>
+
+        <a
+            href="{{ url_for('metas.listar') }}"
+            class="btn btn-secondary"
+        >
+            ← Voltar para metas
+        </a>
+
+    </div>
+
+</div>
+
+
+<!-- =====================================================
+     RESUMO DA META
+===================================================== -->
+
+<div class="meta-aporte-summary">
+
+
+    <div>
+
+        <span>
+            Objetivo
+        </span>
+
+        <strong>
+            R$ {{ meta.valor_meta|moeda }}
+        </strong>
+
+    </div>
+
+
+    <div>
+
+        <span>
+            Já acumulado
+        </span>
+
+        <strong>
+            R$ {{ meta.valor_atual|moeda }}
+        </strong>
+
+    </div>
+
+
+    <div>
+
+        <span>
+            Valor estimado
+        </span>
+
+        <strong class="valor-positivo">
+            R$ {{ meta.valor_estimado|moeda }}
+        </strong>
+
+    </div>
+
+
+</div>
+
+
+<!-- =====================================================
+     INFORMAÇÕES DO RENDIMENTO
+===================================================== -->
+
+<div class="meta-aporte-info">
+
+
+    <div>
+
+        <span>
+            Rendimento médio
+        </span>
+
+        <strong>
+            R$ {{ meta.rendimento_diario|moeda }} / dia útil
+        </strong>
+
+    </div>
+
+
+    <div>
+
+        <span>
+            Rendimentos acumulados
+        </span>
+
+        <strong class="valor-positivo">
+            R$ {{ meta.rendimento_acumulado|moeda }}
+        </strong>
+
+    </div>
+
+
+    <div>
+
+        <span>
+            Dias úteis
+        </span>
+
+        <strong>
+
+            {% if meta.data_inicio_rendimento %}
+
+                {{ meta.dias_rendimento() }}
+
+            {% else %}
+
+                0
+
+            {% endif %}
+
+        </strong>
+
+    </div>
+
+
+</div>
+
+
+{% if erro %}
+
+<div class="alert alert-error">
+    {{ erro }}
+</div>
+
+{% endif %}
+
+
+<!-- =====================================================
+     FORMULÁRIO
+===================================================== -->
+
+<div class="form-card">
+
+
+    <form method="POST">
+
+
+        <div class="form-group">
+
+            <label for="valor">
+                Valor do aporte
+            </label>
+
+            <input
+                type="text"
+                id="valor"
+                name="valor"
+                class="money-input"
+                required
+                inputmode="numeric"
+                autocomplete="off"
+                placeholder="R$ 0,00"
+            >
+
+            <small class="field-help">
+                O valor será retirado da conta selecionada e adicionado à meta.
+            </small>
+
+        </div>
+
+
+        <div class="form-group">
+
+            <label for="conta_id">
+                Conta de origem
+            </label>
+
+            <select
+                id="conta_id"
+                name="conta_id"
+                required
+            >
+
+                <option value="">
+                    Selecione uma conta
+                </option>
+
+
+                {% for conta in contas %}
+
+                    <option value="{{ conta.id }}">
+
+                        {{ conta.nome }}
+
+                        —
+                        R$ {{ conta.saldo_atual()|moeda }}
+
+                    </option>
+
+                {% endfor %}
+
+            </select>
+
+
+            <small class="field-help">
+                O aporte será registrado como uma despesa paga nessa conta.
+            </small>
+
+        </div>
+
+
+        <div class="form-group">
+
+            <label for="data">
+                Data do aporte
+            </label>
+
+            <input
+                type="date"
+                id="data"
+                name="data"
+                required
+                value="{% if today %}{{ today.strftime('%Y-%m-%d') }}{% endif %}"
+            >
+
+        </div>
+
+
+        <div class="form-group">
+
+            <label for="observacao">
+                Observação
+            </label>
+
+            <textarea
+                id="observacao"
+                name="observacao"
+                rows="4"
+                placeholder="Observação opcional..."
+            ></textarea>
+
+        </div>
+
+
+        <div class="meta-aporte-warning">
+
+            <strong>
+                Importante
+            </strong>
+
+            <p>
+                O rendimento da meta é calculado separadamente.
+                Ele não altera o saldo bancário.
+            </p>
+
+        </div>
+
+
+        <div class="form-actions">
+
+            <a
+                href="{{ url_for('metas.listar') }}"
+                class="btn btn-secondary"
+            >
+                Cancelar
+            </a>
+
+
+            <button
+                type="submit"
+                class="btn btn-primary"
+                onclick="return confirm(
+                    'Confirma este aporte na meta?'
+                );"
+            >
+                Confirmar aporte
+            </button>
+
+        </div>
+
+
+    </form>
+
+</div>
+
+
+<script>
+
+function formatarMoedaInput(input) {
+
+    let valor = input.value || "";
+
+    let numeros = valor.replace(/\D/g, "");
+
+    if (!numeros) {
+        input.value = "";
+        return;
+    }
+
+    numeros = numeros.replace(/^0+(?=\d)/, "");
+
+    if (numeros.length === 1) {
+        numeros = "0" + numeros;
+    }
+
+    let inteiro = numeros.slice(0, -2);
+    let centavos = numeros.slice(-2);
+
+    inteiro = inteiro.replace(
+        /\B(?=(\d{3})+(?!\d))/g,
+        "."
+    );
+
+    input.value =
+        "R$ " +
+        inteiro +
+        "," +
+        centavos;
+}
+
+
+document
+    .querySelectorAll(".money-input")
+    .forEach(function(input) {
+
+        input.addEventListener(
+            "input",
+            function() {
+
+                formatarMoedaInput(
+                    this
+                );
+
+            }
+        );
+
+        if (input.value) {
+
+            formatarMoedaInput(
+                input
+            );
+
+        }
+
+    });
+
+</script>
+
+
+{% endblock %}

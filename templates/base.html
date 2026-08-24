@@ -12,7 +12,7 @@
 
     <title>
         {% block title %}
-        Controle Financeiro
+        Financeiro
         {% endblock %}
     </title>
 
@@ -23,72 +23,149 @@
 
 </head>
 
+
 <body>
+
 
 <div class="app-layout">
 
+
+    <!-- =====================================================
+         MENU LATERAL
+    ====================================================== -->
+
     <aside class="sidebar">
 
+
+        <!-- LOGO -->
+
         <div class="logo">
-            💰 <span>Controle Financeiro</span>
+
+            💰
+
+            <span>
+                Financeiro
+            </span>
+
         </div>
+
+
+        <!-- MENU -->
 
         <nav class="menu">
 
-            <a href="{{ url_for('dashboard.dashboard') }}">
+
+            <!-- DASHBOARD -->
+
+            <a
+                href="{{ url_for('dashboard.dashboard') }}"
+            >
                 🏠 Dashboard
             </a>
 
-            <a href="{{ url_for('contas.listar') }}">
+
+            <!-- CONTAS -->
+
+            <a
+                href="{{ url_for('contas.listar') }}"
+            >
                 🏦 Contas
             </a>
 
-            <a href="{{ url_for('lancamentos.listar') }}">
+
+            <!-- LANÇAMENTOS -->
+
+            <a
+                href="{{ url_for('lancamentos.listar') }}"
+            >
                 💰 Lançamentos
             </a>
 
-            <a href="{{ url_for('categorias.listar') }}">
+
+            <!-- CATEGORIAS -->
+
+            <a
+                href="{{ url_for('categorias.listar') }}"
+            >
                 📂 Categorias
             </a>
 
-            <a href="{{ url_for('cartoes.listar') }}">
+
+            <!-- CARTÕES -->
+
+            <a
+                href="{{ url_for('cartoes.listar') }}"
+            >
                 💳 Cartões
             </a>
 
-            <a href="{{ url_for('compras_cartao.listar') }}">
+
+            <!-- COMPRAS NO CARTÃO -->
+
+            <a
+                href="{{ url_for('compras_cartao.listar') }}"
+            >
                 🛒 Compras no cartão
             </a>
 
-            <a href="{{ url_for('faturas_cartao.listar') }}">
+
+            <!-- FATURAS -->
+
+            <a
+                href="{{ url_for('faturas_cartao.listar') }}"
+            >
                 🧾 Faturas dos cartões
             </a>
 
-            <a href="#">
+
+            <!-- METAS -->
+
+            <a
+                href="{{ url_for('metas.listar') }}"
+            >
                 🎯 Metas
             </a>
+
+
+            <!-- RELATÓRIOS -->
 
             <a href="#">
                 📊 Relatórios
             </a>
 
+
         </nav>
+
 
     </aside>
 
 
+    <!-- =====================================================
+         CONTEÚDO PRINCIPAL
+    ====================================================== -->
+
     <main class="main-content">
 
+
         {% block content %}
+
         {% endblock %}
 
+
     </main>
+
 
 </div>
 
 
+<!-- =====================================================
+     JAVASCRIPT
+====================================================== -->
+
 <script
     src="{{ url_for('static', filename='js/app.js') }}"
 ></script>
+
 
 </body>
 

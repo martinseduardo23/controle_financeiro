@@ -5,3 +5,5 @@ from .cartao import Cartao
 from .compra_cartao import CompraCartao
 from .parcela_cartao import ParcelaCartao
 from .fatura_cartao import FaturaCartao
+from .meta import Meta
+from .meta_aporte import MetaAporte

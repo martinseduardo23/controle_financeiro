@@ -2482,3 +2482,825 @@ tbody tr:hover {
     }
 
 }
+
+/* =========================================================
+   DASHBOARD - CARTÕES
+========================================================= */
+
+.dashboard-card-cartao strong {
+    font-size: 25px;
+}
+
+
+.dashboard-card-disponivel {
+    border-color: rgba(
+        34,
+        197,
+        94,
+        0.25
+    );
+}
+
+
+.dashboard-cartoes-panel {
+    margin-top: 20px;
+}
+
+
+.dashboard-cartao-resumo {
+
+    display: grid;
+
+    grid-template-columns:
+        repeat(3, 1fr);
+
+    gap: 15px;
+}
+
+
+.dashboard-cartao-resumo > div {
+
+    background: #11151d;
+
+    border: 1px solid var(--border);
+
+    border-radius: 8px;
+
+    padding: 18px;
+}
+
+
+.dashboard-cartao-resumo span {
+
+    display: block;
+
+    color: var(--text-secondary);
+
+    font-size: 13px;
+
+    margin-bottom: 8px;
+}
+
+
+.dashboard-cartao-resumo strong {
+
+    font-size: 20px;
+}
+
+
+@media (max-width: 900px) {
+
+    .dashboard-cartao-resumo {
+
+        grid-template-columns:
+            1fr;
+
+    }
+
+}
+
+/* =========================================================
+   DASHBOARD - COMPROMETIMENTO POR CARTÃO
+========================================================= */
+
+.dashboard-cartoes-panel {
+    margin-top: 20px;
+}
+
+
+.dashboard-cartoes-list {
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+}
+
+
+.dashboard-cartao-item {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+
+.dashboard-cartao-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 15px;
+}
+
+
+.dashboard-cartao-header strong:last-child {
+    font-size: 15px;
+}
+
+
+.dashboard-cartao-bar-bg {
+    width: 100%;
+    height: 12px;
+    background: rgba(255, 255, 255, 0.06);
+    border-radius: 20px;
+    overflow: hidden;
+}
+
+
+.dashboard-cartao-bar {
+    height: 100%;
+    min-width: 3px;
+    background: var(--primary);
+    border-radius: 20px;
+    transition: width 0.4s ease;
+}
+
+
+@media (max-width: 700px) {
+
+    .dashboard-cartao-header {
+        align-items: flex-start;
+        flex-direction: column;
+        gap: 4px;
+    }
+
+}
+
+/* =========================================================
+   METAS
+========================================================= */
+
+.metas-grid {
+
+    display: grid;
+
+    grid-template-columns:
+        repeat(
+            auto-fit,
+            minmax(380px, 1fr)
+        );
+
+    gap: 20px;
+
+}
+
+
+.meta-card {
+
+    background:
+        linear-gradient(
+            145deg,
+            #202638,
+            #151a24
+        );
+
+    border: 1px solid var(--border);
+
+    border-radius: 15px;
+
+    padding: 22px;
+
+    box-shadow:
+        0 10px 25px rgba(
+            0,
+            0,
+            0,
+            0.20
+        );
+
+}
+
+
+.meta-card-header {
+
+    display: flex;
+
+    align-items: flex-start;
+
+    justify-content: space-between;
+
+    gap: 15px;
+
+}
+
+
+.meta-label {
+
+    display: block;
+
+    color: var(--text-secondary);
+
+    font-size: 11px;
+
+    letter-spacing: 0.8px;
+
+    margin-bottom: 5px;
+
+}
+
+
+.meta-card-header h2 {
+
+    margin: 0;
+
+    font-size: 22px;
+
+}
+
+
+.meta-description {
+
+    margin: 15px 0;
+
+    color: var(--text-secondary);
+
+    font-size: 13px;
+
+}
+
+
+.meta-values {
+
+    display: grid;
+
+    grid-template-columns:
+        1fr 1fr;
+
+    gap: 15px;
+
+    margin-top: 20px;
+
+}
+
+
+.meta-values > div {
+
+    display: flex;
+
+    flex-direction: column;
+
+    gap: 5px;
+
+}
+
+
+.meta-values span {
+
+    color: var(--text-secondary);
+
+    font-size: 12px;
+
+}
+
+
+.meta-values strong {
+
+    font-size: 18px;
+
+}
+
+
+.meta-progress {
+
+    margin-top: 25px;
+
+}
+
+
+.meta-progress-header {
+
+    display: flex;
+
+    justify-content: space-between;
+
+    margin-bottom: 8px;
+
+}
+
+
+.meta-progress-header span {
+
+    color: var(--text-secondary);
+
+    font-size: 12px;
+
+}
+
+
+.meta-progress-header strong {
+
+    font-size: 13px;
+
+}
+
+
+.meta-progress-bg {
+
+    width: 100%;
+
+    height: 12px;
+
+    border-radius: 20px;
+
+    background: rgba(
+        255,
+        255,
+        255,
+        0.06
+    );
+
+    overflow: hidden;
+
+}
+
+
+.meta-progress-bar {
+
+    height: 100%;
+
+    min-width: 2px;
+
+    background: var(--primary);
+
+    border-radius: 20px;
+
+    transition: width 0.4s ease;
+
+}
+
+
+.meta-footer {
+
+    display: flex;
+
+    align-items: center;
+
+    justify-content: space-between;
+
+    gap: 15px;
+
+    margin-top: 22px;
+
+    padding-top: 17px;
+
+    border-top: 1px solid var(--border);
+
+}
+
+
+.meta-footer > span {
+
+    color: var(--text-secondary);
+
+    font-size: 12px;
+
+}
+
+
+.meta-actions {
+
+    display: flex;
+
+    align-items: center;
+
+    gap: 7px;
+
+}
+
+
+.meta-actions form {
+
+    margin: 0;
+
+}
+
+
+/* =========================================================
+   FORMULÁRIO DE META
+========================================================= */
+
+.form-card {
+
+    max-width: 850px;
+
+    background:
+        linear-gradient(
+            145deg,
+            #202638,
+            #151a24
+        );
+
+    border: 1px solid var(--border);
+
+    border-radius: 15px;
+
+    padding: 25px;
+
+}
+
+
+.alert-error {
+
+    margin-bottom: 20px;
+
+    padding: 12px 15px;
+
+    border-radius: 8px;
+
+    border: 1px solid rgba(
+        239,
+        68,
+        68,
+        0.35
+    );
+
+    background: rgba(
+        239,
+        68,
+        68,
+        0.08
+    );
+
+    color: #fca5a5;
+
+}
+
+
+.form-actions {
+
+    display: flex;
+
+    justify-content: flex-end;
+
+    gap: 10px;
+
+    margin-top: 25px;
+
+}
+
+
+@media (max-width: 700px) {
+
+    .metas-grid {
+
+        grid-template-columns: 1fr;
+
+    }
+
+
+    .meta-values {
+
+        grid-template-columns: 1fr;
+
+    }
+
+
+    .meta-footer {
+
+        flex-direction: column;
+
+        align-items: stretch;
+
+    }
+
+
+    .meta-actions {
+
+        width: 100%;
+
+    }
+
+
+    .meta-actions .btn {
+
+        flex: 1;
+
+        text-align: center;
+
+    }
+
+
+    .form-actions {
+
+        flex-direction: column;
+
+    }
+
+
+    .form-actions .btn {
+
+        width: 100%;
+
+        text-align: center;
+
+    }
+
+}
+
+/* =========================================================
+   METAS - RENDIMENTO
+========================================================= */
+
+.meta-values {
+    display: grid;
+
+    grid-template-columns:
+        1fr 1fr;
+
+    gap: 15px;
+
+    margin-top: 20px;
+}
+
+
+.meta-values > div {
+    display: flex;
+
+    flex-direction: column;
+
+    gap: 5px;
+}
+
+
+.meta-values span {
+    color: var(--text-secondary);
+
+    font-size: 12px;
+}
+
+
+.meta-values strong {
+    font-size: 17px;
+}
+
+
+.meta-values .meta-total-valor {
+    font-size: 20px;
+}
+
+
+.meta-rendimento-info {
+    display: flex;
+
+    justify-content: space-between;
+
+    align-items: center;
+
+    gap: 10px;
+
+    margin-top: 18px;
+
+    padding: 12px 14px;
+
+    border-radius: 8px;
+
+    background: rgba(
+        255,
+        255,
+        255,
+        0.03
+    );
+
+    border: 1px solid var(--border);
+
+    font-size: 12px;
+}
+
+
+.meta-rendimento-info span {
+    color: var(--text-secondary);
+}
+
+
+.meta-rendimento-info strong {
+    font-size: 13px;
+}
+
+
+.meta-rendimento-dias {
+    margin-top: 10px;
+
+    color: var(--text-secondary);
+
+    font-size: 11px;
+
+    text-align: right;
+}
+
+
+@media (max-width: 700px) {
+
+    .meta-values {
+        grid-template-columns: 1fr;
+    }
+
+    .meta-rendimento-info {
+        flex-direction: column;
+
+        align-items: flex-start;
+    }
+
+}
+
+/* =========================================================
+   FORMULÁRIO DE APORTE DA META
+========================================================= */
+
+.meta-aporte-info {
+
+    display: grid;
+
+    grid-template-columns:
+        repeat(3, 1fr);
+
+    gap: 15px;
+
+    margin-bottom: 20px;
+
+}
+
+
+.meta-aporte-info > div {
+
+    background:
+        linear-gradient(
+            145deg,
+            #202638,
+            #151a24
+        );
+
+    border: 1px solid var(--border);
+
+    border-radius: 12px;
+
+    padding: 18px;
+
+}
+
+
+.meta-aporte-info span {
+
+    display: block;
+
+    color: var(--text-secondary);
+
+    font-size: 12px;
+
+    margin-bottom: 6px;
+
+}
+
+
+.meta-aporte-info strong {
+
+    font-size: 18px;
+
+}
+
+
+.meta-aporte-warning {
+
+    margin-top: 20px;
+
+    padding: 15px 17px;
+
+    border-radius: 9px;
+
+    border: 1px solid var(--border);
+
+    background: rgba(
+        255,
+        255,
+        255,
+        0.03
+    );
+
+}
+
+
+.meta-aporte-warning strong {
+
+    display: block;
+
+    font-size: 13px;
+
+    margin-bottom: 5px;
+
+}
+
+
+.meta-aporte-warning p {
+
+    margin: 0;
+
+    color: var(--text-secondary);
+
+    font-size: 12px;
+
+    line-height: 1.5;
+
+}
+
+
+@media (max-width: 700px) {
+
+    .meta-aporte-info {
+
+        grid-template-columns: 1fr;
+
+    }
+
+}
+
+/* =========================================================
+   META - RESUMO DO APORTE
+========================================================= */
+
+.meta-aporte-summary {
+
+    display: grid;
+
+    grid-template-columns:
+        repeat(3, 1fr);
+
+    gap: 15px;
+
+    margin-bottom: 20px;
+
+}
+
+
+.meta-aporte-summary > div {
+
+    background:
+        linear-gradient(
+            145deg,
+            #202638,
+            #151a24
+        );
+
+    border: 1px solid var(--border);
+
+    border-radius: 12px;
+
+    padding: 20px;
+
+    box-shadow:
+        0 8px 20px rgba(
+            0,
+            0,
+            0,
+            0.15
+        );
+
+}
+
+
+.meta-aporte-summary span {
+
+    display: block;
+
+    color: var(--text-secondary);
+
+    font-size: 12px;
+
+    margin-bottom: 7px;
+
+}
+
+
+.meta-aporte-summary strong {
+
+    display: block;
+
+    font-size: 21px;
+
+}
+
+
+.meta-aporte-summary .valor-positivo {
+
+    color: var(--success);
+
+}
+
+
+/* =========================================================
+   CAMPOS MONETÁRIOS
+========================================================= */
+
+.money-input {
+
+    font-variant-numeric: tabular-nums;
+
+    letter-spacing: 0.2px;
+
+}
+
+
+@media (max-width: 800px) {
+
+    .meta-aporte-summary {
+
+        grid-template-columns: 1fr;
+
+    }
+
+}

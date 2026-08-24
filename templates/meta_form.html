@@ -1,0 +1,312 @@
+{% extends "base.html" %}
+
+
+{% block title %}
+
+{% if meta %}
+Editar meta
+{% else %}
+Nova meta
+{% endif %}
+
+- Financeiro
+
+{% endblock %}
+
+
+{% block content %}
+
+
+<div class="page-header">
+
+    <div>
+
+        <h1>
+
+            {% if meta %}
+                Editar meta
+            {% else %}
+                Nova meta
+            {% endif %}
+
+        </h1>
+
+        <p>
+            Configure seu objetivo financeiro e o rendimento estimado.
+        </p>
+
+    </div>
+
+</div>
+
+
+{% if erro %}
+
+<div class="alert alert-error">
+    {{ erro }}
+</div>
+
+{% endif %}
+
+
+<div class="form-card">
+
+
+    <form method="POST">
+
+
+        <div class="form-group">
+
+            <label for="nome">
+                Nome da meta
+            </label>
+
+            <input
+                type="text"
+                id="nome"
+                name="nome"
+                required
+                maxlength="150"
+                value="{% if meta %}{{ meta.nome }}{% endif %}"
+                placeholder="Ex.: Reserva de emergência"
+            >
+
+        </div>
+
+
+        <div class="form-group">
+
+            <label for="descricao">
+                Descrição
+            </label>
+
+            <textarea
+                id="descricao"
+                name="descricao"
+                rows="4"
+                placeholder="Descreva o objetivo..."
+            >{% if meta %}{{ meta.descricao or "" }}{% endif %}</textarea>
+
+        </div>
+
+
+        <div class="form-row">
+
+
+            <div class="form-group">
+
+                <label for="valor_meta">
+                    Valor da meta
+                </label>
+
+                <input
+                    type="text"
+                    id="valor_meta"
+                    name="valor_meta"
+                    class="money-input"
+                    required
+                    inputmode="numeric"
+                    autocomplete="off"
+                    value="{% if meta %}{{ meta.valor_meta|moeda }}{% endif %}"
+                    placeholder="R$ 0,00"
+                >
+
+            </div>
+
+
+            <div class="form-group">
+
+                <label for="valor_atual">
+                    Valor já acumulado
+                </label>
+
+                <input
+                    type="text"
+                    id="valor_atual"
+                    name="valor_atual"
+                    class="money-input"
+                    inputmode="numeric"
+                    autocomplete="off"
+                    value="{% if meta %}{{ meta.valor_atual|moeda }}{% endif %}"
+                    placeholder="R$ 0,00"
+                    {% if meta %}
+                        readonly
+                    {% endif %}
+                >
+
+                {% if meta %}
+
+                    <small class="field-help">
+                        Os novos valores entram através de aportes.
+                    </small>
+
+                {% endif %}
+
+            </div>
+
+
+        </div>
+
+
+        <div class="form-row">
+
+
+            <div class="form-group">
+
+                <label for="rendimento_diario">
+                    Rendimento médio por dia útil
+                </label>
+
+                <input
+                    type="text"
+                    id="rendimento_diario"
+                    name="rendimento_diario"
+                    class="money-input"
+                    required
+                    inputmode="numeric"
+                    autocomplete="off"
+                    value="{% if meta %}{{ meta.rendimento_diario|moeda }}{% else %}5,68{% endif %}"
+                    placeholder="R$ 5,68"
+                >
+
+                <small class="field-help">
+                    Média estimada de rendimento por dia útil.
+                </small>
+
+            </div>
+
+
+            <div class="form-group">
+
+                <label for="data_inicio_rendimento">
+                    Início do rendimento
+                </label>
+
+                <input
+                    type="date"
+                    id="data_inicio_rendimento"
+                    name="data_inicio_rendimento"
+                    value="{% if meta and meta.data_inicio_rendimento %}{{ meta.data_inicio_rendimento.strftime('%Y-%m-%d') }}{% endif %}"
+                >
+
+                <small class="field-help">
+                    Sábados, domingos e feriados não rendem.
+                </small>
+
+            </div>
+
+
+        </div>
+
+
+        <div class="form-group">
+
+            <label for="prazo">
+                Prazo da meta
+            </label>
+
+            <input
+                type="date"
+                id="prazo"
+                name="prazo"
+                value="{% if meta and meta.prazo %}{{ meta.prazo.strftime('%Y-%m-%d') }}{% endif %}"
+            >
+
+        </div>
+
+
+        <div class="form-actions">
+
+            <a
+                href="{{ url_for('metas.listar') }}"
+                class="btn btn-secondary"
+            >
+                Cancelar
+            </a>
+
+
+            <button
+                type="submit"
+                class="btn btn-primary"
+            >
+
+                {% if meta %}
+                    Salvar alterações
+                {% else %}
+                    Criar meta
+                {% endif %}
+
+            </button>
+
+        </div>
+
+
+    </form>
+
+</div>
+
+
+<script>
+
+function formatarMoedaInput(input) {
+
+    let valor = input.value || "";
+
+    let numeros = valor.replace(/\D/g, "");
+
+    if (!numeros) {
+        input.value = "";
+        return;
+    }
+
+    numeros = numeros.replace(/^0+(?=\d)/, "");
+
+    if (numeros.length === 1) {
+        numeros = "0" + numeros;
+    }
+
+    let inteiro = numeros.slice(0, -2);
+    let centavos = numeros.slice(-2);
+
+    inteiro = inteiro.replace(
+        /\B(?=(\d{3})+(?!\d))/g,
+        "."
+    );
+
+    input.value =
+        "R$ " +
+        inteiro +
+        "," +
+        centavos;
+}
+
+
+document
+    .querySelectorAll(".money-input")
+    .forEach(function(input) {
+
+        input.addEventListener(
+            "input",
+            function() {
+
+                formatarMoedaInput(
+                    this
+                );
+
+            }
+        );
+
+        if (input.value) {
+
+            formatarMoedaInput(
+                input
+            );
+
+        }
+
+    });
+
+</script>
+
+
+{% endblock %}

@@ -1,0 +1,379 @@
+{% extends "base.html" %}
+
+
+{% block title %}
+Metas - Financeiro
+{% endblock %}
+
+
+{% block content %}
+
+
+<div class="page-header">
+
+    <div>
+
+        <h1>
+            Metas
+        </h1>
+
+        <p>
+            Acompanhe seus objetivos financeiros e o rendimento estimado.
+        </p>
+
+    </div>
+
+
+    <a
+        href="{{ url_for('metas.nova') }}"
+        class="btn btn-primary"
+    >
+        + Nova meta
+    </a>
+
+</div>
+
+
+{% if metas %}
+
+
+<div class="metas-grid">
+
+
+    {% for meta in metas %}
+
+
+        <div class="meta-card">
+
+
+            <!-- =================================================
+                 CABEÇALHO
+            ================================================== -->
+
+            <div class="meta-card-header">
+
+
+                <div>
+
+                    <span class="meta-label">
+                        META
+                    </span>
+
+                    <h2>
+                        {{ meta.nome }}
+                    </h2>
+
+                </div>
+
+
+                {% if meta.concluida %}
+
+                    <span class="status-badge status-paid">
+                        Concluída
+                    </span>
+
+                {% else %}
+
+                    <span class="status-badge status-open">
+                        Em andamento
+                    </span>
+
+                {% endif %}
+
+
+            </div>
+
+
+            <!-- =================================================
+                 DESCRIÇÃO
+            ================================================== -->
+
+            {% if meta.descricao %}
+
+                <p class="meta-description">
+                    {{ meta.descricao }}
+                </p>
+
+            {% endif %}
+
+
+            <!-- =================================================
+                 VALORES
+            ================================================== -->
+
+            <div class="meta-values">
+
+
+                <div>
+
+                    <span>
+                        Aportes
+                    </span>
+
+                    <strong>
+                        R$ {{ meta.valor_atual|moeda }}
+                    </strong>
+
+                </div>
+
+
+                <div>
+
+                    <span>
+                        Rendimentos
+                    </span>
+
+                    <strong class="valor-positivo">
+                        R$ {{ meta.rendimento_acumulado|moeda }}
+                    </strong>
+
+                </div>
+
+
+                <div>
+
+                    <span>
+                        Valor estimado
+                    </span>
+
+                    <strong class="meta-total-valor">
+                        R$ {{ meta.valor_estimado|moeda }}
+                    </strong>
+
+                </div>
+
+
+                <div>
+
+                    <span>
+                        Objetivo
+                    </span>
+
+                    <strong>
+                        R$ {{ meta.valor_meta|moeda }}
+                    </strong>
+
+                </div>
+
+
+            </div>
+
+
+            <!-- =================================================
+                 RENDIMENTO
+            ================================================== -->
+
+            <div class="meta-rendimento-info">
+
+
+                <span>
+                    Rendimento médio
+                </span>
+
+
+                <strong>
+                    R$
+                    {{ meta.rendimento_diario|moeda }}
+                    / dia útil
+                </strong>
+
+
+            </div>
+
+
+            <div class="meta-rendimento-dias">
+
+
+                {% if meta.data_inicio_rendimento %}
+
+                    {{ meta.dias_rendimento() }}
+
+                    {% if meta.dias_rendimento() == 1 %}
+
+                        dia útil de rendimento
+
+                    {% else %}
+
+                        dias úteis de rendimento
+
+                    {% endif %}
+
+                {% else %}
+
+                    Rendimento ainda não iniciado
+
+                {% endif %}
+
+
+            </div>
+
+
+            <!-- =================================================
+                 PROGRESSO
+            ================================================== -->
+
+            <div class="meta-progress">
+
+
+                <div class="meta-progress-header">
+
+
+                    <span>
+                        Progresso
+                    </span>
+
+
+                    <strong>
+                        {{ "%.1f"|format(
+                            meta.percentual
+                        ) }}%
+                    </strong>
+
+
+                </div>
+
+
+                <div class="meta-progress-bg">
+
+
+                    <div
+                        class="meta-progress-bar"
+                        style="width: {{ meta.percentual }}%;"
+                    ></div>
+
+
+                </div>
+
+
+            </div>
+
+
+            <!-- =================================================
+                 RODAPÉ
+            ================================================== -->
+
+            <div class="meta-footer">
+
+
+                {% if meta.prazo %}
+
+                    <span>
+
+                        Prazo:
+
+                        {{ meta.prazo.strftime(
+                            "%d/%m/%Y"
+                        ) }}
+
+                    </span>
+
+                {% else %}
+
+                    <span>
+                        Sem prazo definido
+                    </span>
+
+                {% endif %}
+
+
+                <div class="meta-actions">
+
+
+                    {% if not meta.concluida %}
+
+                        <a
+                            href="{{ url_for(
+                                'metas.aportar',
+                                id=meta.id
+                            ) }}"
+                            class="btn btn-primary"
+                        >
+                            + Aportar
+                        </a>
+
+                    {% endif %}
+
+
+                    <a
+                        href="{{ url_for(
+                            'metas.editar',
+                            id=meta.id
+                        ) }}"
+                        class="btn btn-secondary"
+                    >
+                        Editar
+                    </a>
+
+
+                    <form
+                        method="POST"
+                        action="{{ url_for(
+                            'metas.excluir',
+                            id=meta.id
+                        ) }}"
+                        onsubmit="return confirm(
+                            'Deseja excluir esta meta?'
+                        );"
+                    >
+
+                        <button
+                            type="submit"
+                            class="btn btn-danger"
+                        >
+                            Excluir
+                        </button>
+
+                    </form>
+
+
+                </div>
+
+
+            </div>
+
+
+        </div>
+
+
+    {% endfor %}
+
+
+</div>
+
+
+{% else %}
+
+
+<div class="empty-state">
+
+
+    <span class="empty-icon">
+        🎯
+    </span>
+
+
+    <strong>
+        Nenhuma meta cadastrada
+    </strong>
+
+
+    <span>
+        Crie sua primeira meta financeira para começar.
+    </span>
+
+
+    <a
+        href="{{ url_for('metas.nova') }}"
+        class="btn btn-primary"
+    >
+        + Criar primeira meta
+    </a>
+
+
+</div>
+
+
+{% endif %}
+
+
+{% endblock %}
