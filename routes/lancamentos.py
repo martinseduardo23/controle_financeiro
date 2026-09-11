@@ -5,13 +5,14 @@ from flask import (
     render_template,
     request,
     redirect,
-    url_for
+    url_for,
+    flash
 )
 
 from sqlalchemy import or_
 
 from database import db
-from models import Lancamento, Conta, Categoria
+from models import Lancamento, Conta, Categoria, MetaAporte
 
 
 lancamentos_bp = Blueprint(
@@ -212,74 +213,72 @@ def listar():
 )
 def novo():
 
+    erro = None
+
     if request.method == "POST":
 
-        descricao = request.form.get(
-            "descricao"
-        )
+        descricao = request.form.get("descricao", "").strip()
+        valor = request.form.get("valor", "0")
+        tipo = request.form.get("tipo", "").strip()
+        data_str = request.form.get("data", "")
+        status = request.form.get("status", "pendente").strip()
+        conta_id = request.form.get("conta_id", "0")
+        categoria_id = request.form.get("categoria_id", "0")
+        observacao = request.form.get("observacao", "").strip()
 
-        valor = request.form.get(
-            "valor"
-        )
+        try:
+            data = datetime.strptime(
+                data_str,
+                "%Y-%m-%d"
+            ).date()
+        except (TypeError, ValueError):
+            data = None
 
-        tipo = request.form.get(
-            "tipo"
-        )
-
-        data_str = request.form.get(
-            "data"
-        )
-
-        status = request.form.get(
-            "status"
-        )
-
-        conta_id = request.form.get(
-            "conta_id"
-        )
-
-        categoria_id = request.form.get(
-            "categoria_id"
-        )
-
-        observacao = request.form.get(
-            "observacao"
-        )
-
-        data = datetime.strptime(
-            data_str,
-            "%Y-%m-%d"
-        ).date()
+        try:
+            valor_limpo = moeda_brasileira_para_decimal(valor)
+            valor_float = float(valor_limpo)
+        except (TypeError, ValueError):
+            valor_float = 0
 
         categoria = Categoria.query.filter_by(
             id=categoria_id,
             ativa=True
         ).first()
 
-        if not categoria or categoria.tipo != tipo:
-            return redirect(
-                url_for("lancamentos.novo")
+        conta = Conta.query.filter_by(
+            id=conta_id,
+            ativa=True
+        ).first()
+
+        if not descricao:
+            erro = "Informe a descrição do lançamento."
+        elif data is None:
+            erro = "Informe uma data válida."
+        elif valor_float <= 0:
+            erro = "O valor deve ser maior que zero."
+        elif not conta:
+            erro = "Selecione uma conta válida."
+        elif not categoria or categoria.tipo != tipo:
+            erro = "Selecione uma categoria compatível com o tipo do lançamento."
+        else:
+            lancamento = Lancamento(
+                descricao=descricao,
+                valor=valor_limpo,
+                tipo=tipo,
+                data=data,
+                status=status,
+                conta_id=conta.id,
+                categoria_id=categoria.id,
+                observacao=observacao
             )
 
-        lancamento = Lancamento(
-            descricao=descricao,
-            valor=moeda_brasileira_para_decimal(
-                valor
-            ),
-            tipo=tipo,
-            data=data,
-            status=status,
-            conta_id=conta_id,
-            categoria_id=categoria_id,
-            observacao=observacao
-        )
+            db.session.add(lancamento)
+            db.session.commit()
+            flash("Lançamento cadastrado com sucesso!", "success")
 
-        db.session.add(lancamento)
-        db.session.commit()
-
-        return redirect(
-            url_for("lancamentos.listar")
-        )
+            return redirect(
+                url_for("lancamentos.listar")
+            )
 
     contas = Conta.query.filter_by(
         ativa=True
@@ -298,7 +297,8 @@ def novo():
         "lancamento_form.html",
         contas=contas,
         categorias=categorias,
-        lancamento=None
+        lancamento=None,
+        erro=erro
     )
 
 
@@ -309,59 +309,69 @@ def novo():
 def editar(id):
 
     lancamento = Lancamento.query.get_or_404(id)
+    erro = None
 
     if request.method == "POST":
 
-        lancamento.descricao = request.form.get(
-            "descricao"
-        )
+        descricao = request.form.get("descricao", "").strip()
+        valor = request.form.get("valor", "0")
+        tipo = request.form.get("tipo", "").strip()
+        data_str = request.form.get("data", "")
+        status = request.form.get("status", "pendente").strip()
+        conta_id = request.form.get("conta_id", "0")
+        categoria_id = request.form.get("categoria_id", "0")
+        observacao = request.form.get("observacao", "").strip()
 
-        lancamento.valor = (
-            moeda_brasileira_para_decimal(
-                request.form.get("valor")
-            )
-        )
+        try:
+            data = datetime.strptime(
+                data_str,
+                "%Y-%m-%d"
+            ).date()
+        except (TypeError, ValueError):
+            data = None
 
-        lancamento.tipo = request.form.get(
-            "tipo"
-        )
-
-        lancamento.data = datetime.strptime(
-            request.form.get("data"),
-            "%Y-%m-%d"
-        ).date()
-
-        lancamento.status = request.form.get(
-            "status"
-        )
-
-        lancamento.conta_id = request.form.get(
-            "conta_id"
-        )
-
-        lancamento.categoria_id = request.form.get(
-            "categoria_id"
-        )
-
-        lancamento.observacao = request.form.get(
-            "observacao"
-        )
+        try:
+            valor_limpo = moeda_brasileira_para_decimal(valor)
+            valor_float = float(valor_limpo)
+        except (TypeError, ValueError):
+            valor_float = 0
 
         categoria = Categoria.query.filter_by(
-            id=lancamento.categoria_id,
+            id=categoria_id,
             ativa=True
         ).first()
 
-        if not categoria or categoria.tipo != lancamento.tipo:
+        conta = Conta.query.filter_by(
+            id=conta_id,
+            ativa=True
+        ).first()
+
+        if not descricao:
+            erro = "Informe a descrição do lançamento."
+        elif data is None:
+            erro = "Informe uma data válida."
+        elif valor_float <= 0:
+            erro = "O valor deve ser maior que zero."
+        elif not conta:
+            erro = "Selecione uma conta válida."
+        elif not categoria or categoria.tipo != tipo:
+            erro = "Selecione uma categoria compatível com o tipo do lançamento."
+        else:
+            lancamento.descricao = descricao
+            lancamento.valor = valor_limpo
+            lancamento.tipo = tipo
+            lancamento.data = data
+            lancamento.status = status
+            lancamento.conta_id = conta.id
+            lancamento.categoria_id = categoria.id
+            lancamento.observacao = observacao
+
+            db.session.commit()
+            flash("Lançamento atualizado com sucesso!", "success")
+
             return redirect(
-                url_for("lancamentos.editar", id=id)
+                url_for("lancamentos.listar")
             )
-
-        db.session.commit()
-
-        return redirect(
-            url_for("lancamentos.listar")
-        )
 
     contas = Conta.query.filter_by(
         ativa=True
@@ -380,7 +390,8 @@ def editar(id):
         "lancamento_form.html",
         contas=contas,
         categorias=categorias,
-        lancamento=lancamento
+        lancamento=lancamento,
+        erro=erro
     )
 
 
@@ -392,8 +403,16 @@ def excluir(id):
 
     lancamento = Lancamento.query.get_or_404(id)
 
+    aporte_vinculado = MetaAporte.query.filter_by(lancamento_id=id).first()
+    if aporte_vinculado:
+        flash("Este lançamento está vinculado a um aporte de meta financeira e não pode ser excluído diretamente.", "warning")
+        return redirect(
+            url_for("lancamentos.listar")
+        )
+
     db.session.delete(lancamento)
     db.session.commit()
+    flash("Lançamento excluído com sucesso!", "success")
 
     return redirect(
         url_for("lancamentos.listar")

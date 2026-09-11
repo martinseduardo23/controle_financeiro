@@ -1,502 +1,183 @@
 {% extends "base.html" %}
 
-
 {% block title %}
-Fatura {{ "%02d"|format(fatura.mes_referencia) }}/{{ fatura.ano_referencia }} - Financeiro
+Fatura {{ "%02d"|format(fatura.mes_referencia) }}/{{ fatura.ano_referencia }} - Controle Financeiro
 {% endblock %}
-
 
 {% block content %}
 
-
-<!-- =====================================================
-     CABEÇALHO
-===================================================== -->
-
-<div class="page-header fatura-page-header">
-
-    <div>
-
-        <span class="details-label">
-            FATURA DO CARTÃO
-        </span>
-
-        <h1>
-            Fatura
-            {{ "%02d"|format(fatura.mes_referencia) }}/{{ fatura.ano_referencia }}
-        </h1>
-
-        <p>
-
-            {{ fatura.cartao.nome }}
-
-            {% if fatura.cartao.ultimos_digitos %}
-
-                •••• {{ fatura.cartao.ultimos_digitos }}
-
-            {% endif %}
-
-        </p>
-
+<div class="page-header">
+    <div class="page-header-content">
+        <h1>Fatura {{ "%02d"|format(fatura.mes_referencia) }}/{{ fatura.ano_referencia }}</h1>
+        <p>💳 {{ fatura.cartao.nome }} {% if fatura.cartao.ultimos_digitos %}•••• {{ fatura.cartao.ultimos_digitos }}{% endif %}</p>
     </div>
-
-
-    <div class="details-header-actions">
-
-        <a
-            href="{{ url_for(
-                'faturas_cartao.faturas_cartao',
-                cartao_id=fatura.cartao.id
-            ) }}"
-            class="btn btn-secondary"
-        >
-            ← Voltar para faturas
+    <div class="page-header-actions">
+        <a href="{{ url_for('faturas_cartao.faturas_cartao', cartao_id=fatura.cartao.id) }}" class="btn btn-secondary">
+            ← Voltar para Faturas
         </a>
-
     </div>
-
 </div>
 
-
-<!-- =====================================================
-     RESUMO
-===================================================== -->
-
-<div class="cards fatura-summary">
-
-
+<!-- CARDS DE RESUMO DA FATURA -->
+<div class="cards" style="grid-template-columns: repeat(3, 1fr);">
     <div class="card">
-
-        <span class="card-title">
-            Valor da fatura
-        </span>
-
-        <strong>
+        <div class="card-header-line">
+            <span class="card-title">Valor Total da Fatura</span>
+            <div class="card-icon danger">💳</div>
+        </div>
+        <strong class="card-value {% if fatura.status == 'paga' %}valor-positivo{% else %}valor-negativo{% endif %}">
             R$ {{ fatura.valor_total|moeda }}
         </strong>
-
     </div>
 
-
     <div class="card">
-
-        <span class="card-title">
-            Vencimento
-        </span>
-
-        <strong>
-
-            {{ fatura.data_vencimento.strftime(
-                "%d/%m/%Y"
-            ) }}
-
+        <div class="card-header-line">
+            <span class="card-title">Data de Vencimento</span>
+            <div class="card-icon warning">📅</div>
+        </div>
+        <strong class="card-value valor-destaque">
+            {{ fatura.data_vencimento.strftime("%d/%m/%Y") }}
         </strong>
-
+        <span class="card-subtext">Fechou em {{ fatura.data_fechamento.strftime("%d/%m/%Y") }}</span>
     </div>
-
 
     <div class="card">
-
-        <span class="card-title">
-            Status
-        </span>
-
-        {% if fatura.status == "paga" %}
-
-            <strong class="fatura-status-text pago">
-                Paga
-            </strong>
-
-        {% else %}
-
-            <strong class="fatura-status-text aberta">
-                Em aberto
-            </strong>
-
-        {% endif %}
-
+        <div class="card-header-line">
+            <span class="card-title">Status da Fatura</span>
+            <div class="card-icon {% if fatura.status == 'paga' %}success{% else %}warning{% endif %}">
+                {% if fatura.status == 'paga' %}✓{% else %}⏳{% endif %}
+            </div>
+        </div>
+        <div>
+            {% if fatura.status == 'paga' %}
+                <span class="badge badge-success" style="font-size: 14px; padding: 6px 14px;">Paga</span>
+                {% if fatura.data_pagamento %}
+                    <span class="card-subtext" style="display: block;">Paga em {{ fatura.data_pagamento.strftime("%d/%m/%Y") }}</span>
+                {% endif %}
+            {% else %}
+                <span class="badge badge-pendente" style="font-size: 14px; padding: 6px 14px;">Em Aberto</span>
+                <span class="card-subtext" style="display: block;">Aguardando liquidação</span>
+            {% endif %}
+        </div>
     </div>
-
-
 </div>
 
-
-<!-- =====================================================
-     PAGAMENTO
-===================================================== -->
-
+<!-- CARD DE PAGAMENTO DA FATURA -->
 {% if fatura.status != "paga" %}
-
-
-<div class="fatura-payment-card">
-
-
-    <div class="fatura-payment-header">
-
+<div class="panel" style="background: linear-gradient(135deg, rgba(99, 102, 241, 0.12), rgba(17, 23, 38, 0.8)); border-color: rgba(99, 102, 241, 0.3);">
+    <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 20px; flex-wrap: wrap; gap: 16px;">
         <div>
-
-            <span class="details-label">
-                PAGAMENTO
-            </span>
-
-            <h2>
-                Pagar esta fatura
-            </h2>
-
-            <p>
-                Escolha a conta que será usada para pagar
-                esta fatura.
-            </p>
-
+            <span style="font-size: 11px; text-transform: uppercase; letter-spacing: 0.05em; color: var(--primary); font-weight: 700; display: block; margin-bottom: 4px;">Liquidação de Fatura</span>
+            <h2 style="font-size: 20px; font-weight: 700; color: var(--text-primary);">Pagar esta fatura</h2>
+            <p style="font-size: 13px; color: var(--text-secondary);">O pagamento gerará automaticamente uma despesa na conta bancária escolhida e marcará as parcelas como pagas.</p>
         </div>
-
-
-        <div class="fatura-payment-value">
-
-            <span>
-                Valor
-            </span>
-
-            <strong>
-                R$ {{ fatura.valor_total|moeda }}
-            </strong>
-
+        <div style="text-align: right;">
+            <span style="font-size: 12px; color: var(--text-muted);">Valor a Debitar</span>
+            <strong style="font-size: 24px; color: var(--text-primary); display: block;">R$ {{ fatura.valor_total|moeda }}</strong>
         </div>
-
     </div>
 
-
-    <form
-        method="POST"
-        action="{{ url_for(
-            'faturas_cartao.pagar',
-            id=fatura.id
-        ) }}"
-    >
-
-
-        <div class="fatura-payment-form">
-
-
-            <div class="form-group">
-
-                <label for="conta_id">
-                    Conta para pagamento
-                </label>
-
-                <select
-                    name="conta_id"
-                    id="conta_id"
-                    required
-                >
-
-                    <option value="">
-                        Selecione uma conta
-                    </option>
-
-
+    <form method="POST" action="{{ url_for('faturas_cartao.pagar', id=fatura.id) }}" onsubmit="return confirm('Confirma o pagamento desta fatura no valor de R$ {{ fatura.valor_total|moeda }}?');">
+        <div style="display: flex; gap: 14px; align-items: flex-end; flex-wrap: wrap;">
+            <div class="form-group" style="flex: 1; min-width: 250px; margin-bottom: 0;">
+                <label for="conta_id">Debitar da conta bancária:</label>
+                <select name="conta_id" id="conta_id" required style="background: #050507;">
+                    <option value="">Selecione uma conta com saldo</option>
                     {% for conta in contas %}
-
-                        <option value="{{ conta.id }}">
-
-                            {{ conta.nome }}
-
-                            —
-                            R$
-                            {{ conta.saldo_atual()|moeda }}
-
-                        </option>
-
+                    <option value="{{ conta.id }}">
+                        {{ conta.nome }} (Saldo disponível: R$ {{ conta.saldo_atual()|moeda }})
+                    </option>
                     {% endfor %}
-
                 </select>
-
             </div>
-
-
-            <div class="fatura-payment-action">
-
-                <button
-                    type="submit"
-                    class="btn btn-primary"
-                    onclick="return confirm(
-                        'Confirma o pagamento desta fatura?'
-                    );"
-                >
-                    ✓ Pagar fatura
-                </button>
-
-            </div>
-
-
+            <button type="submit" class="btn btn-primary" style="height: 42px; padding: 0 24px;">
+                ✓ Confirmar Pagamento
+            </button>
         </div>
-
-
     </form>
-
-
 </div>
-
-
 {% else %}
-
-
-<div class="fatura-paid-card">
-
-    <div>
-
-        <span class="fatura-paid-title">
-            ✓ Fatura paga
-        </span>
-
-
-        {% if fatura.data_pagamento %}
-
-            <p>
-
-                Pagamento realizado em
-
-                <strong>
-
-                    {{ fatura.data_pagamento.strftime(
-                        "%d/%m/%Y às %H:%M"
-                    ) }}
-
-                </strong>
-
-            </p>
-
-        {% endif %}
-
+<div style="background: rgba(16, 185, 129, 0.08); border: 1px solid rgba(16, 185, 129, 0.25); border-radius: var(--radius-lg); padding: 18px 24px; margin-bottom: 28px; display: flex; align-items: center; justify-content: space-between;">
+    <div style="display: flex; align-items: center; gap: 12px;">
+        <div style="width: 36px; height: 36px; border-radius: 50%; background: rgba(16, 185, 129, 0.2); color: #34d399; display: flex; align-items: center; justify-content: center; font-size: 18px;">✓</div>
+        <div>
+            <strong style="color: #34d399; font-size: 15px; display: block;">Fatura Liquidada</strong>
+            <span style="font-size: 13px; color: var(--text-secondary);">
+                Pago em {{ fatura.data_pagamento.strftime("%d/%m/%Y às %H:%M") if fatura.data_pagamento else "data registrada" }}.
+            </span>
+        </div>
     </div>
-
+    <span class="badge badge-success">Quitada</span>
 </div>
-
-
 {% endif %}
 
-
-<!-- =====================================================
-     INFORMAÇÕES
-===================================================== -->
-
-<div class="fatura-info-panel">
-
-
-    <div>
-
-        <span>
-            Fechamento
-        </span>
-
-        <strong>
-
-            {{ fatura.data_fechamento.strftime(
-                "%d/%m/%Y"
-            ) }}
-
-        </strong>
-
+<!-- TABELA DE PARCELAS VINCULADAS -->
+<div class="panel" style="padding: 0; overflow: hidden;">
+    <div class="panel-header" style="padding: 20px 24px 16px; margin-bottom: 0;">
+        <h2 class="panel-title">Lançamentos / Compras nesta Fatura ({{ parcelas|length }})</h2>
     </div>
 
-
-    <div>
-
-        <span>
-            Vencimento
-        </span>
-
-        <strong>
-
-            {{ fatura.data_vencimento.strftime(
-                "%d/%m/%Y"
-            ) }}
-
-        </strong>
-
-    </div>
-
-
-    <div>
-
-        <span>
-            Parcelas
-        </span>
-
-        <strong>
-
-            {{ parcelas|length }}
-
-        </strong>
-
-    </div>
-
-
-</div>
-
-
-<!-- =====================================================
-     COMPRAS
-===================================================== -->
-
-<div class="section-header fatura-section-header">
-
-    <div>
-
-        <h2>
-            Compras desta fatura
-        </h2>
-
-        <p>
-            Parcelas lançadas nesta fatura.
-        </p>
-
-    </div>
-
-</div>
-
-
-{% if parcelas %}
-
-
-<div class="fatura-compras-table">
-
-
-    <div class="fatura-table-header">
-
-        <div>
-            Compra
-        </div>
-
-        <div>
-            Categoria
-        </div>
-
-        <div>
-            Parcela
-        </div>
-
-        <div>
-            Data
-        </div>
-
-        <div>
-            Valor
-        </div>
-
-    </div>
-
-
-    {% for parcela in parcelas %}
-
-
-        <div class="fatura-table-row">
-
-
-            <div class="fatura-compra-info">
-
-                <strong>
-                    {{ parcela.compra.descricao }}
-                </strong>
-
-
-                {% if parcela.compra.observacao %}
-
-                    <span>
-                        {{ parcela.compra.observacao }}
-                    </span>
-
-                {% endif %}
-
-            </div>
-
-
-            <div>
-
-                {% if parcela.compra.categoria %}
-
-                    <span class="fatura-category">
-
+    <div class="table-container" style="border: none; border-radius: 0; margin-bottom: 0;">
+        <table>
+            <thead>
+                <tr>
+                    <th>Compra</th>
+                    <th>Categoria</th>
+                    <th>Data da Compra</th>
+                    <th style="text-align: center;">Parcela</th>
+                    <th>Vencimento Previsto</th>
+                    <th style="text-align: right;">Valor</th>
+                    <th style="text-align: center;">Status</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for parcela in parcelas %}
+                <tr>
+                    <td>
+                        <strong style="color: var(--text-primary);">{{ parcela.compra.descricao }}</strong>
+                        {% if parcela.compra.observacao %}
+                            <span style="display: block; font-size: 11.5px; color: var(--text-muted);">
+                                {{ parcela.compra.observacao }}
+                            </span>
+                        {% endif %}
+                    </td>
+                    <td style="color: var(--text-secondary);">
                         {{ parcela.compra.categoria.nome }}
-
-                    </span>
-
+                    </td>
+                    <td style="color: var(--text-muted);">
+                        {{ parcela.compra.data_compra.strftime("%d/%m/%Y") }}
+                    </td>
+                    <td style="text-align: center;">
+                        <span class="badge badge-info">{{ parcela.numero }}/{{ parcela.total_parcelas }}</span>
+                    </td>
+                    <td style="color: var(--text-secondary); white-space: nowrap;">
+                        {{ parcela.data_prevista.strftime("%d/%m/%Y") }}
+                    </td>
+                    <td style="text-align: right; font-weight: 600; font-variant-numeric: tabular-nums;" class="valor-negativo">
+                        R$ {{ parcela.valor|moeda }}
+                    </td>
+                    <td style="text-align: center;">
+                        {% if parcela.pago %}
+                            <span class="badge badge-success">Paga</span>
+                        {% else %}
+                            <span class="badge badge-pendente">Aberta</span>
+                        {% endif %}
+                    </td>
+                </tr>
                 {% else %}
-
-                    <span class="table-note">
-                        Sem categoria
-                    </span>
-
-                {% endif %}
-
-            </div>
-
-
-            <div>
-
-                <strong>
-
-                    {{ parcela.numero }}/{{ parcela.total_parcelas }}
-
-                </strong>
-
-            </div>
-
-
-            <div>
-
-                {% if parcela.data_prevista %}
-
-                    {{ parcela.data_prevista.strftime(
-                        "%d/%m/%Y"
-                    ) }}
-
-                {% else %}
-
-                    —
-
-                {% endif %}
-
-            </div>
-
-
-            <div>
-
-                <strong class="fatura-parcela-valor">
-
-                    R$ {{ parcela.valor|moeda }}
-
-                </strong>
-
-            </div>
-
-
-        </div>
-
-
-    {% endfor %}
-
-
+                <tr>
+                    <td colspan="7">
+                        <div class="empty-state">
+                            <div class="empty-state-icon">🧾</div>
+                            <strong>Nenhum item nesta fatura</strong>
+                            <span>Não há parcelas vinculadas a esta referência.</span>
+                        </div>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
 </div>
-
-
-{% else %}
-
-
-<div class="empty-table faturas-empty">
-
-    <strong>
-        Nenhuma compra nesta fatura.
-    </strong>
-
-    <span>
-        Ainda não existem parcelas vinculadas a esta fatura.
-    </span>
-
-</div>
-
-
-{% endif %}
-
 
 {% endblock %}

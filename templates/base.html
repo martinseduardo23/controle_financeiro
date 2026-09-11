@@ -1,171 +1,173 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
-
 <head>
-
     <meta charset="UTF-8">
-
-    <meta
-        name="viewport"
-        content="width=device-width, initial-scale=1.0"
-    >
-
-    <title>
-        {% block title %}
-        Financeiro
-        {% endblock %}
-    </title>
-
-    <link
-        rel="stylesheet"
-        href="{{ url_for('static', filename='css/style.css') }}"
-    >
-
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Controle Financeiro{% endblock %}</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}?v=dark_black_1">
+    <style>
+        :root {
+            color-scheme: dark;
+        }
+        html, body, .app-layout, .main-wrapper {
+            background-color: #000000 !important;
+            color: #f8fafc !important;
+        }
+    </style>
 </head>
+<body style="background-color: #000000 !important; color: #f8fafc !important;">
 
-
-<body>
-
+<div class="sidebar-overlay" id="sidebar-overlay"></div>
 
 <div class="app-layout">
-
 
     <!-- =====================================================
          MENU LATERAL
     ====================================================== -->
-
     <aside class="sidebar">
-
-
         <!-- LOGO -->
-
         <div class="logo">
-
-            💰
-
-            <span>
-                Financeiro
-            </span>
-
+            <div class="logo-icon">
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                </svg>
+            </div>
+            <div class="logo-text">Controle <span>Financeiro</span></div>
         </div>
 
-
         <!-- MENU -->
-
         <nav class="menu">
-
-
-            <!-- DASHBOARD -->
-
-            <a
-                href="{{ url_for('dashboard.dashboard') }}"
-            >
-                🏠 Dashboard
+            <span class="menu-section-label">Principal</span>
+            
+            <a href="{{ url_for('dashboard.dashboard') }}" class="{% if request.endpoint and request.endpoint.startswith('dashboard') %}active{% endif %}">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/>
+                </svg>
+                Dashboard
             </a>
 
-
-            <!-- CONTAS -->
-
-            <a
-                href="{{ url_for('contas.listar') }}"
-            >
-                🏦 Contas
+            <a href="{{ url_for('lancamentos.listar') }}" class="{% if request.endpoint and request.endpoint.startswith('lancamentos') %}active{% endif %}">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                </svg>
+                Lançamentos
             </a>
 
-
-            <!-- LANÇAMENTOS -->
-
-            <a
-                href="{{ url_for('lancamentos.listar') }}"
-            >
-                💰 Lançamentos
+            <a href="{{ url_for('contas.listar') }}" class="{% if request.endpoint and request.endpoint.startswith('contas') %}active{% endif %}">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/>
+                </svg>
+                Contas
             </a>
 
-
-            <!-- CATEGORIAS -->
-
-            <a
-                href="{{ url_for('categorias.listar') }}"
-            >
-                📂 Categorias
+            <a href="{{ url_for('categorias.listar') }}" class="{% if request.endpoint and request.endpoint.startswith('categorias') %}active{% endif %}">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z"/>
+                </svg>
+                Categorias
             </a>
 
+            <span class="menu-section-label">Cartões de Crédito</span>
 
-            <!-- CARTÕES -->
-
-            <a
-                href="{{ url_for('cartoes.listar') }}"
-            >
-                💳 Cartões
+            <a href="{{ url_for('cartoes.listar') }}" class="{% if request.endpoint and request.endpoint.startswith('cartoes') %}active{% endif %}">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"/>
+                </svg>
+                Meus Cartões
             </a>
 
-
-            <!-- COMPRAS NO CARTÃO -->
-
-            <a
-                href="{{ url_for('compras_cartao.listar') }}"
-            >
-                🛒 Compras no cartão
+            <a href="{{ url_for('compras_cartao.listar') }}" class="{% if request.endpoint and request.endpoint.startswith('compras_cartao') %}active{% endif %}">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"/>
+                </svg>
+                Compras no Cartão
             </a>
 
-
-            <!-- FATURAS -->
-
-            <a
-                href="{{ url_for('faturas_cartao.listar') }}"
-            >
-                🧾 Faturas dos cartões
+            <a href="{{ url_for('faturas_cartao.listar') }}" class="{% if request.endpoint and request.endpoint.startswith('faturas_cartao') %}active{% endif %}">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+                </svg>
+                Faturas dos Cartões
             </a>
 
+            <span class="menu-section-label">Planejamento</span>
 
-            <!-- METAS -->
-
-            <a
-                href="{{ url_for('metas.listar') }}"
-            >
-                🎯 Metas
+            <a href="{{ url_for('metas.listar') }}" class="{% if request.endpoint and request.endpoint.startswith('metas') %}active{% endif %}">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/>
+                </svg>
+                Metas & Objetivos
             </a>
 
-
-            <!-- RELATÓRIOS -->
-
-           <a href="{{ url_for('relatorios.listar') }}">
-                📊 Relatórios
-           </a>
-
+            <a href="{{ url_for('relatorios.listar') }}" class="{% if request.endpoint and request.endpoint.startswith('relatorios') %}active{% endif %}">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/>
+                </svg>
+                Relatórios
+            </a>
         </nav>
-
-
     </aside>
-
 
     <!-- =====================================================
          CONTEÚDO PRINCIPAL
     ====================================================== -->
+    <div class="main-wrapper">
+        <div class="top-bar">
+            <button type="button" class="top-bar-btn" id="sidebar-toggle" aria-label="Abrir menu">
+                <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/>
+                </svg>
+            </button>
+            <div class="logo-text" style="font-size: 16px;">Controle <span>Financeiro</span></div>
+            <div style="width: 32px;"></div>
+        </div>
 
-    <main class="main-content">
+        <main class="main-content">
+            <!-- FLASH MESSAGES -->
+            {% with messages = get_flashed_messages(with_categories=true) %}
+                {% if messages %}
+                    <div class="alerts-container">
+                        {% for category, message in messages %}
+                            <div class="alert alert-{{ category }}">
+                                <div class="alert-content">
+                                    {% if category == 'success' %}
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+                                        </svg>
+                                    {% elif category == 'danger' %}
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                                        </svg>
+                                    {% elif category == 'warning' %}
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
+                                        </svg>
+                                    {% else %}
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                                        </svg>
+                                    {% endif %}
+                                    <span>{{ message }}</span>
+                                </div>
+                                <button type="button" class="alert-close" aria-label="Fechar">&times;</button>
+                            </div>
+                        {% endfor %}
+                    </div>
+                {% endif %}
+            {% endwith %}
 
-
-        {% block content %}
-
-        {% endblock %}
-
-
-    </main>
-
+            {% block content %}
+            {% endblock %}
+        </main>
+    </div>
 
 </div>
 
-
-<!-- =====================================================
-     JAVASCRIPT
-====================================================== -->
-
-<script
-    src="{{ url_for('static', filename='js/app.js') }}"
-></script>
-
+<!-- JAVASCRIPT -->
+<script src="{{ url_for('static', filename='js/app.js') }}"></script>
 
 </body>
-
 </html>

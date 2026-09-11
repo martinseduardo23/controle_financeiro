@@ -1,17 +1,17 @@
 ﻿{% extends "base.html" %}
 
 {% block title %}
-Nova Conta - Controle Financeiro
+Editar Conta - Controle Financeiro
 {% endblock %}
 
 {% block content %}
 
 <div class="page-header">
     <div class="page-header-content">
-        <h1>Nova Conta</h1>
-        <p>Cadastre uma conta corrente, poupança, carteira ou investimento.</p>
-    </div>
-    <div class="page-header-actions">
+        <div>
+            <h1>Editar Conta</h1>
+            <p>Atualize as informações da conta.</p>
+        </div>
         <a href="{{ url_for('contas.listar') }}" class="btn btn-secondary">
             ← Voltar para Contas
         </a>
@@ -20,9 +20,7 @@ Nova Conta - Controle Financeiro
 
 {% if erro %}
 <div class="alert alert-danger">
-    <div class="alert-content">
-        <span>{{ erro }}</span>
-    </div>
+    {{ erro }}
 </div>
 {% endif %}
 
@@ -34,20 +32,20 @@ Nova Conta - Controle Financeiro
                 type="text"
                 id="nome"
                 name="nome"
-                placeholder="Ex.: Nubank, Itaú, Carteira física"
+                value="{{ conta.nome }}"
+                placeholder="Ex.: Nubank"
                 required
-                autofocus
             >
         </div>
 
         <div class="form-group">
-            <label for="tipo">Tipo da conta</label>
+            <label for="tipo">Tipo</label>
             <select id="tipo" name="tipo" required>
-                <option value="Conta corrente">Conta corrente</option>
-                <option value="Conta poupança">Conta poupança</option>
-                <option value="Carteira">Carteira (Dinheiro físico)</option>
-                <option value="Investimentos">Investimentos</option>
-                <option value="Outro">Outro</option>
+                {% for tipo_opcao in ["Conta corrente", "Conta poupança", "Carteira", "Dinheiro", "Investimentos", "Outro"] %}
+                <option value="{{ tipo_opcao }}" {% if conta.tipo == tipo_opcao %}selected{% endif %}>
+                    {{ tipo_opcao }}
+                </option>
+                {% endfor %}
             </select>
         </div>
 
@@ -62,18 +60,23 @@ Nova Conta - Controle Financeiro
                     class="currency-field"
                     inputmode="decimal"
                     autocomplete="off"
-                    value="0,00"
+                    value="{{ conta.saldo_inicial|moeda }}"
                     required
                 >
             </div>
-            <span style="font-size: 12px; color: var(--text-muted); margin-top: 6px; display: block;">
-                O valor que você já possui nesta conta atualmente.
-            </span>
+        </div>
+
+        <div class="form-group form-check">
+            <label class="checkbox-container">
+                <input type="checkbox" name="ativa" id="ativa" {% if conta.ativa %}checked{% endif %}>
+                <span class="checkmark"></span>
+                Conta ativa (exibir nos resumos e cálculos)
+            </label>
         </div>
 
         <div class="form-actions">
             <button type="submit" class="btn btn-primary">
-                Salvar Conta
+                Salvar Alterações
             </button>
             <a href="{{ url_for('contas.listar') }}" class="btn btn-secondary">
                 Cancelar

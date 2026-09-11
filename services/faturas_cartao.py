@@ -158,6 +158,50 @@ def obter_fatura(
 
 
 # =========================================================
+# RECÁLCULO DO VALOR DA FATURA
+# =========================================================
+
+def recalcular_valor_fatura(fatura):
+    """
+    Garante que o valor_total da fatura seja exatamente igual à soma
+    de suas parcelas vinculadas, evitando divergências por edição/exclusão.
+    """
+    total = sum(
+        (Decimal(str(p.valor or 0)) for p in fatura.parcelas),
+        Decimal("0.00")
+    )
+    fatura.valor_total = total.quantize(Decimal("0.01"))
+    return fatura
+
+
+# =========================================================
+# VERIFICAÇÃO DE PARCELAS PAGAS
+# =========================================================
+
+def compra_tem_parcela_paga(compra):
+    """
+    Verifica se alguma parcela da compra já foi paga ou pertence a uma fatura quitada.
+    """
+    for parcela in compra.parcelas_relacionadas:
+        if parcela.pago or parcela.status == "paga":
+            return True
+        if parcela.fatura and parcela.fatura.status == "paga":
+            return True
+    return False
+
+
+def obter_faturas_da_compra(compra):
+    """
+    Retorna uma lista de faturas associadas às parcelas da compra.
+    """
+    faturas = set()
+    for parcela in compra.parcelas_relacionadas:
+        if parcela.fatura:
+            faturas.add(parcela.fatura)
+    return list(faturas)
+
+
+# =========================================================
 # VINCULA UMA PARCELA À FATURA
 # =========================================================
 
@@ -167,46 +211,18 @@ def vincular_parcela(
 ):
 
     ano, mes = periodo_fatura(
-
         parcela.data_prevista,
-
         cartao.dia_fechamento
-
     )
-
 
     fatura = obter_fatura(
-
         cartao,
-
         ano,
-
         mes
-
     )
-
 
     parcela.fatura_id = fatura.id
-
-
-    fatura.valor_total = (
-
-        Decimal(
-            str(
-                fatura.valor_total or 0
-            )
-        )
-
-        +
-
-        Decimal(
-            str(
-                parcela.valor or 0
-            )
-        )
-
-    )
-
+    recalcular_valor_fatura(fatura)
 
     return fatura
 
@@ -220,16 +236,19 @@ def vincular_parcelas_compra(
 ):
 
     cartao = compra.cartao
-
+    faturas_afetadas = set()
 
     for parcela in (
         compra.parcelas_relacionadas
     ):
 
-        vincular_parcela(
+        fatura = vincular_parcela(
             parcela,
             cartao
         )
+        faturas_afetadas.add(fatura)
 
+    for fatura in faturas_afetadas:
+        recalcular_valor_fatura(fatura)
 
     db.session.flush()

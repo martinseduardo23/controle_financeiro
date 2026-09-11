@@ -7,7 +7,8 @@ from flask import (
     render_template,
     request,
     redirect,
-    url_for
+    url_for,
+    flash
 )
 
 from database import db
@@ -20,7 +21,10 @@ from models import (
 )
 
 from services.faturas_cartao import (
-    vincular_parcelas_compra
+    vincular_parcelas_compra,
+    recalcular_valor_fatura,
+    compra_tem_parcela_paga,
+    obter_faturas_da_compra
 )
 
 
@@ -530,9 +534,8 @@ def nova():
                     compra
                 )
 
-
                 db.session.commit()
-
+                flash("Compra cadastrada com sucesso!", "success")
 
                 return redirect(
                     url_for(
@@ -581,6 +584,10 @@ def editar(id):
     compra = CompraCartao.query.get_or_404(
         id
     )
+
+    if compra_tem_parcela_paga(compra):
+        flash("Esta compra não pode ser editada pois possui parcelas em faturas já quitadas.", "warning")
+        return redirect(url_for("compras_cartao.detalhes", id=compra.id))
 
     erro = None
 
@@ -745,6 +752,9 @@ def editar(id):
 
             else:
 
+                # Guarda faturas vinculadas antes da exclusão das parcelas
+                faturas_afetadas = set(obter_faturas_da_compra(compra))
+
                 # =========================================
                 # REMOVE PARCELAS ANTIGAS
                 # =========================================
@@ -752,13 +762,15 @@ def editar(id):
                 for parcela in (
                     compra.parcelas_relacionadas
                 ):
-
                     db.session.delete(
                         parcela
                     )
 
                 db.session.flush()
 
+                # Recalcula as faturas anteriores sem as parcelas deletadas
+                for f in faturas_afetadas:
+                    recalcular_valor_fatura(f)
 
                 # =========================================
                 # ATUALIZA A COMPRA
@@ -794,7 +806,6 @@ def editar(id):
 
                 db.session.flush()
 
-
                 # =========================================
                 # CRIA AS NOVAS PARCELAS
                 # =========================================
@@ -805,7 +816,6 @@ def editar(id):
 
                 db.session.flush()
 
-
                 # =========================================
                 # VINCULA ÀS FATURAS
                 # =========================================
@@ -814,9 +824,13 @@ def editar(id):
                     compra
                 )
 
+                # Garante recálculo completo de todas as faturas impactadas
+                novas_faturas = obter_faturas_da_compra(compra)
+                for f in faturas_afetadas.union(novas_faturas):
+                    recalcular_valor_fatura(f)
 
                 db.session.commit()
-
+                flash("Compra atualizada com sucesso!", "success")
 
                 return redirect(
                     url_for(
@@ -838,17 +852,11 @@ def editar(id):
     ).all()
 
     return render_template(
-
         "compra_cartao_form.html",
-
         compra=compra,
-
         cartoes=cartoes,
-
         categorias=categorias,
-
         erro=erro
-
     )
 
 
@@ -866,11 +874,28 @@ def excluir(id):
         id
     )
 
+    if compra_tem_parcela_paga(compra):
+        flash("Esta compra não pode ser excluída pois possui parcelas em faturas já quitadas.", "warning")
+        return redirect(
+            url_for(
+                "compras_cartao.detalhes",
+                id=compra.id
+            )
+        )
+
+    faturas_afetadas = set(obter_faturas_da_compra(compra))
+
     db.session.delete(
         compra
     )
 
+    db.session.flush()
+
+    for fatura in faturas_afetadas:
+        recalcular_valor_fatura(fatura)
+
     db.session.commit()
+    flash("Compra excluída com sucesso!", "success")
 
     return redirect(
         url_for(

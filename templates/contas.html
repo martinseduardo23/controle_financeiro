@@ -1,168 +1,118 @@
-{% extends "base.html" %}
+﻿{% extends "base.html" %}
 
 {% block title %}
-Contas - Financeiro
+Contas - Controle Financeiro
 {% endblock %}
 
 {% block content %}
 
 <div class="page-header">
-
-    <h1>Contas</h1>
-
-    <p>
-        Contas bancárias, carteiras e outras fontes de dinheiro.
-    </p>
-
+    <div class="page-header-content">
+        <h1>Minhas Contas</h1>
+        <p>Gerencie suas contas bancárias, carteiras físicas e investimentos.</p>
+    </div>
+    <div class="page-header-actions">
+        <a href="{{ url_for('contas.nova') }}" class="btn btn-primary">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
+            </svg>
+            Nova Conta
+        </a>
+    </div>
 </div>
 
-
-<div class="cards">
-
+<div class="cards" style="grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));">
     <div class="card">
-
-        <span class="card-title">
-            Saldo atual
-        </span>
-
-        <strong>
+        <div class="card-header-line">
+            <span class="card-title">Saldo Consolidado (Contas Ativas)</span>
+            <div class="card-icon success">
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                </svg>
+            </div>
+        </div>
+        <strong class="card-value {% if saldo_total >= 0 %}valor-positivo{% else %}valor-negativo{% endif %}">
             R$ {{ saldo_total|moeda }}
         </strong>
+        <span class="card-subtext">{{ contas|length }} conta(s) cadastrada(s)</span>
+    </div>
+</div>
 
+<div class="panel" style="padding: 0; overflow: hidden;">
+    <div class="panel-header" style="padding: 20px 24px 16px; margin-bottom: 0;">
+        <h2 class="panel-title">Lista de Contas</h2>
     </div>
 
-</div>
-
-
-<div class="section-header">
-
-    <h2>
-        Minhas contas
-    </h2>
-
-    <a
-        href="{{ url_for('contas.nova') }}"
-        class="btn btn-primary"
-    >
-        + Nova conta
-    </a>
-
-</div>
-
-
-<div class="table-container">
-
-    <table>
-
-        <thead>
-
-            <tr>
-                <th>Conta</th>
-                <th>Tipo</th>
-                <th>Saldo inicial</th>
-                <th>Saldo atual</th>
-                <th>Status</th>
-                <th>Ações</th>
-            </tr>
-
-        </thead>
-
-
-        <tbody>
-
-            {% for conta in contas %}
-
-            <tr>
-
-                <td>
-                    {{ conta.nome }}
-                </td>
-
-                <td>
-                    {{ conta.tipo }}
-                </td>
-
-                <td>
-                    R$ {{ conta.saldo_inicial|moeda }}
-                </td>
-
-                <td>
-
-                    <strong>
+    <div class="table-container" style="border: none; border-radius: 0; margin-bottom: 0;">
+        <table>
+            <thead>
+                <tr>
+                    <th>Nome da Conta</th>
+                    <th>Tipo</th>
+                    <th>Saldo Inicial</th>
+                    <th>Saldo Atual</th>
+                    <th style="text-align: center;">Status</th>
+                    <th style="text-align: right;">Ações</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for conta in contas %}
+                <tr>
+                    <td>
+                        <strong style="color: var(--text-primary); font-size: 14px;">{{ conta.nome }}</strong>
+                    </td>
+                    <td style="color: var(--text-secondary);">
+                        {{ conta.tipo }}
+                    </td>
+                    <td style="color: var(--text-muted); font-variant-numeric: tabular-nums;">
+                        R$ {{ conta.saldo_inicial|moeda }}
+                    </td>
+                    <td style="font-variant-numeric: tabular-nums; font-weight: 600;" class="{% if conta.saldo_atual() >= 0 %}valor-positivo{% else %}valor-negativo{% endif %}">
                         R$ {{ conta.saldo_atual()|moeda }}
-                    </strong>
-
-                </td>
-
-                <td>
-
-                    {% if conta.ativa %}
-
-                        <span class="badge badge-success">
-                            Ativa
-                        </span>
-
-                    {% else %}
-
-                        <span class="badge badge-danger">
-                            Inativa
-                        </span>
-
-                    {% endif %}
-
-                </td>
-
-                <td>
-
-                    <div class="actions">
-
-                        {% if not conta.lancamentos %}
-
-                        <form
-                            method="POST"
-                            action="{{ url_for('contas.excluir', id=conta.id) }}"
-                            onsubmit="return confirm('Deseja realmente excluir esta conta?');"
-                        >
-
-                            <button
-                                type="submit"
-                                class="btn btn-danger"
-                            >
-                                Excluir
-                            </button>
-
-                        </form>
-
+                    </td>
+                    <td style="text-align: center;">
+                        {% if conta.ativa %}
+                            <span class="badge badge-success">Ativa</span>
                         {% else %}
-
-                        <span class="action-note">
-                            Possui lançamentos
-                        </span>
-
+                            <span class="badge badge-danger">Inativa</span>
                         {% endif %}
+                    </td>
+                    <td>
+                        <div style="display: flex; align-items: center; justify-content: flex-end; gap: 8px;">
+                            <a href="{{ url_for('contas.editar', id=conta.id) }}" class="btn btn-secondary btn-sm">
+                                Editar
+                            </a>
 
-                    </div>
+                            <form method="POST" action="{{ url_for('contas.alternar', id=conta.id) }}">
+                                <button type="submit" class="btn btn-secondary btn-sm" title="{% if conta.ativa %}Desativar conta{% else %}Ativar conta{% endif %}">
+                                    {% if conta.ativa %}Desativar{% else %}Ativar{% endif %}
+                                </button>
+                            </form>
 
-                </td>
-
-            </tr>
-
-            {% else %}
-
-            <tr>
-
-                <td colspan="6">
-                    Nenhuma conta cadastrada.
-                </td>
-
-            </tr>
-
-            {% endfor %}
-
-        </tbody>
-
-    </table>
-
+                            {% if not conta.lancamentos %}
+                                <form method="POST" action="{{ url_for('contas.excluir', id=conta.id) }}" onsubmit="return confirm('Deseja realmente excluir esta conta?');">
+                                    <button type="submit" class="btn btn-danger btn-sm">
+                                        Excluir
+                                    </button>
+                                </form>
+                            {% endif %}
+                        </div>
+                    </td>
+                </tr>
+                {% else %}
+                <tr>
+                    <td colspan="6">
+                        <div class="empty-state">
+                            <div class="empty-state-icon">🏦</div>
+                            <strong>Nenhuma conta cadastrada</strong>
+                            <span>Adicione sua primeira conta bancária ou carteira para começar.</span>
+                        </div>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
 </div>
 
 {% endblock %}

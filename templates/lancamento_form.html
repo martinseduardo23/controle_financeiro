@@ -1,287 +1,169 @@
-{% extends "base.html" %}
+﻿{% extends "base.html" %}
 
 {% block title %}
-{% if lancamento %}Editar{% else %}Novo{% endif %} Lançamento - Financeiro
+{% if lancamento %}Editar{% else %}Novo{% endif %} Lançamento - Controle Financeiro
 {% endblock %}
 
 {% block content %}
 
 <div class="page-header">
-
-    <h1>
-        {% if lancamento %}
-            Editar lançamento
-        {% else %}
-            Novo lançamento
-        {% endif %}
-    </h1>
-
-    <p>
-        {% if lancamento %}
-            Altere os dados desta movimentação.
-        {% else %}
-            Registre uma receita ou despesa.
-        {% endif %}
-    </p>
-
+    <div class="page-header-content">
+        <h1>{% if lancamento %}Editar Lançamento{% else %}Novo Lançamento{% endif %}</h1>
+        <p>{% if lancamento %}Atualize os detalhes desta movimentação.{% else %}Registre uma receita ou despesa na sua conta.{% endif %}</p>
+    </div>
+    <div class="page-header-actions">
+        <a href="{{ url_for('lancamentos.listar') }}" class="btn btn-secondary">
+            ← Voltar para Lançamentos
+        </a>
+    </div>
 </div>
 
+{% if erro %}
+<div class="alert alert-danger">
+    <div class="alert-content">
+        <span>{{ erro }}</span>
+    </div>
+</div>
+{% endif %}
 
-<div class="form-container">
-
+<div class="form-card">
     <form method="POST">
-
-
         <div class="form-group">
-
-            <label for="descricao">
-                Descrição
-            </label>
-
+            <label for="descricao">Descrição</label>
             <input
                 type="text"
                 id="descricao"
                 name="descricao"
                 value="{{ lancamento.descricao if lancamento else '' }}"
-                placeholder="Ex.: Supermercado"
+                placeholder="Ex.: Supermercado, Salário, Energia elétrica"
                 required
+                autofocus
             >
-
         </div>
 
-
-        <div class="form-group">
-
-            <label for="valor">
-                Valor
-            </label>
-
-            <div class="currency-input">
-
-                <span class="currency-prefix">
-                    R$
-                </span>
-
-                <input
-                    type="text"
-                    id="valor"
-                    name="valor"
-                    class="currency-field"
-                    inputmode="decimal"
-                    autocomplete="off"
-                    value="{% if lancamento %}{{ lancamento.valor|moeda }}{% else %}0,00{% endif %}"
-                    required
-                >
-
+        <div class="form-grid">
+            <div class="form-group">
+                <label for="valor">Valor</label>
+                <div class="currency-input">
+                    <span class="currency-prefix">R$</span>
+                    <input
+                        type="text"
+                        id="valor"
+                        name="valor"
+                        class="currency-field"
+                        inputmode="decimal"
+                        autocomplete="off"
+                        value="{% if lancamento %}{{ lancamento.valor|moeda }}{% else %}0,00{% endif %}"
+                        required
+                    >
+                </div>
             </div>
 
+            <div class="form-group">
+                <label for="tipo">Tipo</label>
+                <select id="tipo" name="tipo" required>
+                    <option value="despesa" {% if not lancamento or lancamento.tipo == "despesa" %}selected{% endif %}>
+                        Despesa (-)
+                    </option>
+                    <option value="receita" {% if lancamento and lancamento.tipo == "receita" %}selected{% endif %}>
+                        Receita (+)
+                    </option>
+                </select>
+            </div>
         </div>
 
-
-        <div class="form-group">
-
-            <label for="tipo">
-                Tipo
-            </label>
-
-            <select
-                id="tipo"
-                name="tipo"
-                required
-            >
-
-                <option
-                    value="despesa"
-                    {% if not lancamento or lancamento.tipo == "despesa" %}selected{% endif %}
+        <div class="form-grid">
+            <div class="form-group">
+                <label for="data">Data do lançamento</label>
+                <input
+                    type="date"
+                    id="data"
+                    name="data"
+                    value="{% if lancamento %}{{ lancamento.data.strftime('%Y-%m-%d') }}{% else %}{{ today if today else '' }}{% endif %}"
+                    required
                 >
-                    Despesa
-                </option>
+            </div>
 
-                <option
-                    value="receita"
-                    {% if lancamento and lancamento.tipo == "receita" %}selected{% endif %}
-                >
-                    Receita
-                </option>
-
-            </select>
-
+            <div class="form-group">
+                <label for="status">Status</label>
+                <select id="status" name="status" required>
+                    <option value="pago" {% if lancamento and lancamento.status == "pago" %}selected{% endif %}{% if not lancamento %}selected{% endif %}>
+                        Pago
+                    </option>
+                    <option value="pendente" {% if lancamento and lancamento.status == "pendente" %}selected{% endif %}>
+                        Pendente
+                    </option>
+                    <option value="agendado" {% if lancamento and lancamento.status == "agendado" %}selected{% endif %}>
+                        Agendado
+                    </option>
+                </select>
+            </div>
         </div>
 
+        <div class="form-grid">
+            <div class="form-group">
+                <label for="conta_id">Conta bancária / Carteira</label>
+                <select id="conta_id" name="conta_id" required>
+                    <option value="">Selecione a conta</option>
+                    {% for conta in contas %}
+                    <option value="{{ conta.id }}" {% if lancamento and lancamento.conta_id == conta.id %}selected{% endif %}>
+                        {{ conta.nome }} (Saldo: R$ {{ conta.saldo_atual()|moeda }})
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
 
-        <div class="form-group">
-
-            <label for="data">
-                Data
-            </label>
-
-            <input
-                type="date"
-                id="data"
-                name="data"
-                value="{% if lancamento %}{{ lancamento.data.strftime('%Y-%m-%d') }}{% endif %}"
-                required
-            >
-
+            <div class="form-group">
+                <label for="categoria_id">Categoria</label>
+                <select id="categoria_id" name="categoria_id" required>
+                    <option value="">Selecione uma categoria</option>
+                    {% for categoria in categorias %}
+                    <option
+                        value="{{ categoria.id }}"
+                        data-tipo="{{ categoria.tipo }}"
+                        {% if lancamento and lancamento.categoria_id == categoria.id %}selected{% endif %}
+                    >
+                        {{ categoria.nome }} ({{ categoria.tipo|capitalize }})
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
         </div>
 
-
         <div class="form-group">
-
-            <label for="conta_id">
-                Conta
-            </label>
-
-            <select
-                id="conta_id"
-                name="conta_id"
-                required
-            >
-
-                <option value="">
-                    Selecione uma conta
-                </option>
-
-                {% for conta in contas %}
-
-                <option
-                    value="{{ conta.id }}"
-                    {% if lancamento and lancamento.conta_id == conta.id %}selected{% endif %}
-                >
-                    {{ conta.nome }}
-                </option>
-
-                {% endfor %}
-
-            </select>
-
-        </div>
-
-
-        <div class="form-group">
-
-            <label for="categoria_id">
-                Categoria
-            </label>
-
-            <select
-                id="categoria_id"
-                name="categoria_id"
-                required
-            >
-
-                <option value="">
-                    Selecione uma categoria
-                </option>
-
-                {% for categoria in categorias %}
-
-                <option
-                    value="{{ categoria.id }}"
-                    data-tipo="{{ categoria.tipo }}"
-                    {% if lancamento and lancamento.categoria_id == categoria.id %}selected{% endif %}
-                >
-                    {{ categoria.nome }}
-                    - {{ categoria.tipo|capitalize }}
-                </option>
-
-                {% endfor %}
-
-            </select>
-
-        </div>
-
-
-        <div class="form-group">
-
-            <label for="status">
-                Status
-            </label>
-
-            <select
-                id="status"
-                name="status"
-                required
-            >
-
-                <option
-                    value="pago"
-                    {% if lancamento and lancamento.status == "pago" %}selected{% endif %}
-                    {% if not lancamento %}selected{% endif %}
-                >
-                    Pago
-                </option>
-
-                <option
-                    value="pendente"
-                    {% if lancamento and lancamento.status == "pendente" %}selected{% endif %}
-                >
-                    Pendente
-                </option>
-
-                <option
-                    value="agendado"
-                    {% if lancamento and lancamento.status == "agendado" %}selected{% endif %}
-                >
-                    Agendado
-                </option>
-
-            </select>
-
-        </div>
-
-
-        <div class="form-group">
-
-            <label for="observacao">
-                Observação
-            </label>
-
+            <label for="observacao">Observações (opcional)</label>
             <textarea
                 id="observacao"
                 name="observacao"
-                rows="4"
-                placeholder="Observações opcionais..."
+                rows="3"
+                placeholder="Ex.: Número da nota fiscal, detalhes do parcelamento ou lembretes..."
             >{{ lancamento.observacao if lancamento else '' }}</textarea>
-
         </div>
 
-
-        <div class="actions">
-
-            <button
-                type="submit"
-                class="btn btn-primary"
-            >
-                {% if lancamento %}
-                    Salvar alterações
-                {% else %}
-                    Salvar lançamento
-                {% endif %}
+        <div class="form-actions">
+            <button type="submit" class="btn btn-primary">
+                {% if lancamento %}Salvar Alterações{% else %}Cadastrar Lançamento{% endif %}
             </button>
-
-            <a
-                href="{{ url_for('lancamentos.listar') }}"
-                class="btn btn-secondary"
-            >
+            <a href="{{ url_for('lancamentos.listar') }}" class="btn btn-secondary">
                 Cancelar
             </a>
-
         </div>
-
     </form>
-
 </div>
 
 <script>
 document.addEventListener("DOMContentLoaded", () => {
     const tipo = document.getElementById("tipo");
     const categoria = document.getElementById("categoria_id");
+    const dataInput = document.getElementById("data");
+
+    if (!dataInput.value) {
+        dataInput.value = new Date().toISOString().split('T')[0];
+    }
 
     function atualizarCategorias() {
         const tipoSelecionado = tipo.value;
         const categoriaAtual = categoria.value;
-
         let categoriaAtualVisivel = false;
 
         Array.from(categoria.options).forEach((option) => {
@@ -289,11 +171,8 @@ document.addEventListener("DOMContentLoaded", () => {
                 option.hidden = false;
                 return;
             }
-
             const corresponde = option.dataset.tipo === tipoSelecionado;
-
             option.hidden = !corresponde;
-
             if (corresponde && option.value === categoriaAtual) {
                 categoriaAtualVisivel = true;
             }
@@ -305,7 +184,6 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     tipo.addEventListener("change", atualizarCategorias);
-
     atualizarCategorias();
 });
 </script>

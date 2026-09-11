@@ -96,34 +96,31 @@ class Meta(db.Model):
     )
 
     # =====================================================
-    # FERIADOS NACIONAIS
+    # FERIADOS NACIONAIS COM CACHE
     # =====================================================
 
-    @staticmethod
-    def feriados_ano(ano):
+    _cache_feriados = {}
 
-        feriados = {
-            date(ano, 1, 1),    # Confraternização Universal
-            date(ano, 4, 21),   # Tiradentes
-            date(ano, 5, 1),    # Dia do Trabalho
-            date(ano, 9, 7),    # Independência
-            date(ano, 10, 12),  # Nossa Senhora Aparecida
-            date(ano, 11, 2),  # Finados
-            date(ano, 11, 15), # Proclamação da República
-            date(ano, 11, 20), # Consciência Negra
-            date(ano, 12, 25), # Natal
-        }
+    @classmethod
+    def feriados_ano(cls, ano):
+        if ano not in cls._cache_feriados:
+            feriados = {
+                date(ano, 1, 1),    # Confraternização Universal
+                date(ano, 4, 21),   # Tiradentes
+                date(ano, 5, 1),    # Dia do Trabalho
+                date(ano, 9, 7),    # Independência
+                date(ano, 10, 12),  # Nossa Senhora Aparecida
+                date(ano, 11, 2),   # Finados
+                date(ano, 11, 15),  # Proclamação da República
+                date(ano, 11, 20),  # Consciência Negra
+                date(ano, 12, 25),  # Natal
+            }
+            pascoa = cls.calcular_pascoa(ano)
+            # Sexta-feira Santa
+            feriados.add(pascoa - timedelta(days=2))
+            cls._cache_feriados[ano] = feriados
 
-        pascoa = Meta.calcular_pascoa(
-            ano
-        )
-
-        # Sexta-feira Santa
-        feriados.add(
-            pascoa - timedelta(days=2)
-        )
-
-        return feriados
+        return cls._cache_feriados[ano]
 
     # =====================================================
     # CÁLCULO DA PÁSCOA

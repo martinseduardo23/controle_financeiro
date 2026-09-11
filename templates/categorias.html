@@ -1,282 +1,136 @@
 {% extends "base.html" %}
 
 {% block title %}
-Categorias - Financeiro
+Categorias - Controle Financeiro
 {% endblock %}
 
 {% block content %}
 
 <div class="page-header">
-
-    <div>
+    <div class="page-header-content">
         <h1>Categorias</h1>
-
-        <p>
-            Organize receitas e despesas do seu jeito.
-        </p>
+        <p>Classifique e organize suas receitas e despesas para relatórios precisos.</p>
     </div>
-
-    <a
-        href="{{ url_for('categorias.nova') }}"
-        class="btn btn-primary"
-    >
-        + Nova categoria
-    </a>
-
+    <div class="page-header-actions">
+        <a href="{{ url_for('categorias.nova') }}" class="btn btn-primary">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
+            </svg>
+            Nova Categoria
+        </a>
+    </div>
 </div>
 
-
-<div class="category-groups">
-
+<div class="relatorios-grid">
+    <!-- RECEITAS -->
     <div class="panel">
-
         <div class="panel-header">
-
             <div>
-                <h2>Receitas</h2>
-
-                <span class="panel-subtitle">
-                    Categorias usadas para entradas de dinheiro.
-                </span>
+                <h2 class="panel-title" style="color: #34d399; display: flex; align-items: center; gap: 8px;">
+                    <span>↗</span> Categorias de Receitas
+                </h2>
+                <span class="panel-subtitle">Fontes de entrada e rendimentos</span>
             </div>
-
         </div>
 
-
-        <div class="category-list">
-
+        <div style="display: flex; flex-direction: column; gap: 12px;">
             {% for categoria in categorias if categoria.tipo == "receita" %}
-
-            <div class="category-item">
-
-                <div class="category-main">
-
-                    <div class="category-icon category-icon-receita">
-                        +
-                    </div>
-
-                    <div>
-
-                        <strong>
-                            {{ categoria.nome }}
-                        </strong>
-
-                        <span>
-                            {{ categoria.quantidade_lancamentos() }}
-                            lançamento(s)
-                            ·
-                            R$ {{ categoria.total_movimentado()|moeda }}
-                        </span>
-
-                    </div>
-
+            <div style="background: rgba(255, 255, 255, 0.02); border: 1px solid var(--border); border-radius: var(--radius-md); padding: 14px 18px; display: flex; align-items: center; justify-content: space-between; gap: 16px;">
+                <div>
+                    <strong style="font-size: 14px; color: var(--text-primary); display: block;">{{ categoria.nome }}</strong>
+                    <span style="font-size: 12px; color: var(--text-muted);">
+                        {{ categoria.quantidade_lancamentos() }} lançamento(s) · R$ {{ categoria.total_movimentado()|moeda }}
+                    </span>
                 </div>
 
-
-                <div class="category-actions">
-
+                <div style="display: flex; align-items: center; gap: 8px;">
                     {% if categoria.ativa %}
-
-                        <span class="badge badge-success">
-                            Ativa
-                        </span>
-
+                        <span class="badge badge-success">Ativa</span>
                     {% else %}
-
-                        <span class="badge badge-danger">
-                            Inativa
-                        </span>
-
+                        <span class="badge badge-danger">Inativa</span>
                     {% endif %}
 
-
-                    <a
-                        href="{{ url_for('categorias.editar', id=categoria.id) }}"
-                        class="btn btn-secondary"
-                    >
+                    <a href="{{ url_for('categorias.editar', id=categoria.id) }}" class="btn btn-secondary btn-sm">
                         Editar
                     </a>
 
-
-                    <form
-                        method="POST"
-                        action="{{ url_for('categorias.alternar', id=categoria.id) }}"
-                    >
-
-                        <button
-                            type="submit"
-                            class="btn btn-secondary"
-                        >
-                            {% if categoria.ativa %}
-                                Desativar
-                            {% else %}
-                                Ativar
-                            {% endif %}
+                    <form method="POST" action="{{ url_for('categorias.alternar', id=categoria.id) }}">
+                        <button type="submit" class="btn btn-secondary btn-sm">
+                            {% if categoria.ativa %}Desativar{% else %}Ativar{% endif %}
                         </button>
-
                     </form>
 
-
-                    {% if not categoria.lancamentos %}
-
-                    <form
-                        method="POST"
-                        action="{{ url_for('categorias.excluir', id=categoria.id) }}"
-                        onsubmit="return confirm('Deseja realmente excluir esta categoria?');"
-                    >
-
-                        <button
-                            type="submit"
-                            class="btn btn-danger"
-                        >
-                            Excluir
-                        </button>
-
-                    </form>
-
+                    {% if not categoria.lancamentos and not categoria.compras_cartao %}
+                        <form method="POST" action="{{ url_for('categorias.excluir', id=categoria.id) }}" onsubmit="return confirm('Deseja realmente excluir esta categoria?');">
+                            <button type="submit" class="btn btn-danger btn-sm">
+                                Excluir
+                            </button>
+                        </form>
                     {% endif %}
-
                 </div>
-
             </div>
-
             {% else %}
-
             <div class="empty-state">
-                Nenhuma categoria de receita cadastrada.
+                <span>Nenhuma categoria de receita cadastrada.</span>
             </div>
-
             {% endfor %}
-
         </div>
-
     </div>
 
-
+    <!-- DESPESAS -->
     <div class="panel">
-
         <div class="panel-header">
-
             <div>
-                <h2>Despesas</h2>
-
-                <span class="panel-subtitle">
-                    Categorias usadas para saídas de dinheiro.
-                </span>
+                <h2 class="panel-title" style="color: #fb7185; display: flex; align-items: center; gap: 8px;">
+                    <span>↘</span> Categorias de Despesas
+                </h2>
+                <span class="panel-subtitle">Contas, custos fixos e variáveis</span>
             </div>
-
         </div>
 
-
-        <div class="category-list">
-
+        <div style="display: flex; flex-direction: column; gap: 12px;">
             {% for categoria in categorias if categoria.tipo == "despesa" %}
-
-            <div class="category-item">
-
-                <div class="category-main">
-
-                    <div class="category-icon category-icon-despesa">
-                        −
-                    </div>
-
-                    <div>
-
-                        <strong>
-                            {{ categoria.nome }}
-                        </strong>
-
-                        <span>
-                            {{ categoria.quantidade_lancamentos() }}
-                            lançamento(s)
-                            ·
-                            R$ {{ categoria.total_movimentado()|moeda }}
-                        </span>
-
-                    </div>
-
+            <div style="background: rgba(255, 255, 255, 0.02); border: 1px solid var(--border); border-radius: var(--radius-md); padding: 14px 18px; display: flex; align-items: center; justify-content: space-between; gap: 16px;">
+                <div>
+                    <strong style="font-size: 14px; color: var(--text-primary); display: block;">{{ categoria.nome }}</strong>
+                    <span style="font-size: 12px; color: var(--text-muted);">
+                        {{ categoria.quantidade_lancamentos() }} lançamento(s) · R$ {{ categoria.total_movimentado()|moeda }}
+                    </span>
                 </div>
 
-
-                <div class="category-actions">
-
+                <div style="display: flex; align-items: center; gap: 8px;">
                     {% if categoria.ativa %}
-
-                        <span class="badge badge-success">
-                            Ativa
-                        </span>
-
+                        <span class="badge badge-success">Ativa</span>
                     {% else %}
-
-                        <span class="badge badge-danger">
-                            Inativa
-                        </span>
-
+                        <span class="badge badge-danger">Inativa</span>
                     {% endif %}
 
-
-                    <a
-                        href="{{ url_for('categorias.editar', id=categoria.id) }}"
-                        class="btn btn-secondary"
-                    >
+                    <a href="{{ url_for('categorias.editar', id=categoria.id) }}" class="btn btn-secondary btn-sm">
                         Editar
                     </a>
 
-
-                    <form
-                        method="POST"
-                        action="{{ url_for('categorias.alternar', id=categoria.id) }}"
-                    >
-
-                        <button
-                            type="submit"
-                            class="btn btn-secondary"
-                        >
-                            {% if categoria.ativa %}
-                                Desativar
-                            {% else %}
-                                Ativar
-                            {% endif %}
+                    <form method="POST" action="{{ url_for('categorias.alternar', id=categoria.id) }}">
+                        <button type="submit" class="btn btn-secondary btn-sm">
+                            {% if categoria.ativa %}Desativar{% else %}Ativar{% endif %}
                         </button>
-
                     </form>
 
-
-                    {% if not categoria.lancamentos %}
-
-                    <form
-                        method="POST"
-                        action="{{ url_for('categorias.excluir', id=categoria.id) }}"
-                        onsubmit="return confirm('Deseja realmente excluir esta categoria?');"
-                    >
-
-                        <button
-                            type="submit"
-                            class="btn btn-danger"
-                        >
-                            Excluir
-                        </button>
-
-                    </form>
-
+                    {% if not categoria.lancamentos and not categoria.compras_cartao %}
+                        <form method="POST" action="{{ url_for('categorias.excluir', id=categoria.id) }}" onsubmit="return confirm('Deseja realmente excluir esta categoria?');">
+                            <button type="submit" class="btn btn-danger btn-sm">
+                                Excluir
+                            </button>
+                        </form>
                     {% endif %}
-
                 </div>
-
             </div>
-
             {% else %}
-
             <div class="empty-state">
-                Nenhuma categoria de despesa cadastrada.
+                <span>Nenhuma categoria de despesa cadastrada.</span>
             </div>
-
             {% endfor %}
-
         </div>
-
     </div>
-
 </div>
 
 {% endblock %}

@@ -1,445 +1,154 @@
-{% extends "base.html" %}
-
+﻿{% extends "base.html" %}
 
 {% block title %}
-Compras no cartão - Financeiro
+Compras no Cartão - Controle Financeiro
 {% endblock %}
-
 
 {% block content %}
 
-
 <div class="page-header">
-
-    <div>
-
-        <h1>
-            Compras no cartão
-        </h1>
-
-        <p>
-            Controle das compras realizadas nos cartões.
-        </p>
-
+    <div class="page-header-content">
+        <h1>Compras no Cartão de Crédito</h1>
+        <p>Acompanhe compras parceladas e valores vinculados a cada fatura.</p>
     </div>
-
-
-    <a
-        href="{{ url_for('compras_cartao.nova') }}"
-        class="btn btn-primary"
-    >
-        + Nova compra
-    </a>
-
+    <div class="page-header-actions">
+        <a href="{{ url_for('compras_cartao.nova') }}" class="btn btn-primary">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
+            </svg>
+            Nova Compra
+        </a>
+    </div>
 </div>
 
-
-<!-- =====================================================
-     RESUMO
-===================================================== -->
-
-<div class="cards">
-
-
+<div class="cards" style="grid-template-columns: repeat(3, 1fr);">
     <div class="card">
-
-        <span class="card-title">
-            Compras
-        </span>
-
-        <strong>
-            {{ compras|length }}
-        </strong>
-
+        <div class="card-header-line">
+            <span class="card-title">Compras Cadastradas</span>
+            <div class="card-icon primary">🛒</div>
+        </div>
+        <strong class="card-value valor-destaque">{{ compras|length }}</strong>
     </div>
 
-
     <div class="card">
-
-        <span class="card-title">
-            Valor total
-        </span>
-
-        <strong>
-            R$ {{ total_geral|moeda }}
-        </strong>
-
+        <div class="card-header-line">
+            <span class="card-title">Total em Compras</span>
+            <div class="card-icon danger">💳</div>
+        </div>
+        <strong class="card-value valor-negativo">R$ {{ total_geral|moeda }}</strong>
     </div>
 
-
     <div class="card">
-
-        <span class="card-title">
-            Maior categoria
-        </span>
-
-
+        <div class="card-header-line">
+            <span class="card-title">Maior Categoria</span>
+            <div class="card-icon warning">🏷️</div>
+        </div>
         {% if maior_categoria %}
-
-            <strong class="summary-category">
-                {{ maior_categoria.nome }}
-            </strong>
-
-            <span class="summary-category-value">
-                R$ {{ maior_categoria.valor|moeda }}
-            </span>
-
+            <strong class="card-value" style="font-size: 20px;">{{ maior_categoria.nome }}</strong>
+            <span class="card-subtext">R$ {{ maior_categoria.valor|moeda }}</span>
         {% else %}
-
-            <strong>
-                —
-            </strong>
-
+            <strong class="card-value">—</strong>
         {% endif %}
-
     </div>
-
-
 </div>
 
-
-<!-- =====================================================
-     CUSTOS POR CATEGORIA
-===================================================== -->
-
-<div class="panel category-chart-panel">
-
-
+{% if categorias_grafico %}
+<div class="panel">
     <div class="panel-header">
-
         <div>
-
-            <h2>
-                Custos por categoria
-            </h2>
-
-            <span class="panel-subtitle">
-                Distribuição das compras realizadas no cartão.
-            </span>
-
+            <h2 class="panel-title">Gastos por Categoria no Cartão</h2>
+            <span class="panel-subtitle">Distribuição do valor total de compras</span>
         </div>
+    </div>
+    <div class="relatorio-barras">
+        {% for cat in categorias_grafico %}
+        <div class="relatorio-barra-item">
+            <div class="relatorio-barra-header">
+                <strong>{{ cat.nome }}</strong>
+                <span>R$ {{ cat.valor|moeda }} · {{ "%.1f"|format(cat.percentual) }}%</span>
+            </div>
+            <div class="relatorio-barra-bg">
+                <div class="relatorio-barra cartao" style="width: {{ cat.percentual }}%;"></div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+{% endif %}
 
+<div class="panel" style="padding: 0; overflow: hidden;">
+    <div class="panel-header" style="padding: 20px 24px 16px; margin-bottom: 0;">
+        <h2 class="panel-title">Lista de Compras</h2>
     </div>
 
-
-    {% if categorias_grafico %}
-
-
-        <div class="category-chart">
-
-
-            {% for categoria in categorias_grafico %}
-
-
-                <div class="category-chart-row">
-
-
-                    <div class="category-chart-info">
-
-                        <strong>
-                            {{ categoria.nome }}
-                        </strong>
-
-                        <span>
-                            R$ {{ categoria.valor|moeda }}
-                        </span>
-
-                    </div>
-
-
-                    <div class="category-chart-bar-container">
-
-                        <div
-                            class="category-chart-bar"
-                            style="width: {{ categoria.percentual }}%;"
-                        ></div>
-
-                    </div>
-
-
-                    <div class="category-chart-percent">
-
-                        {{ "%.1f"|format(categoria.percentual) }}%
-
-                    </div>
-
-
-                </div>
-
-
-            {% endfor %}
-
-
-        </div>
-
-
-    {% else %}
-
-
-        <div class="empty-state">
-
-            Nenhuma compra cadastrada para gerar o gráfico.
-
-        </div>
-
-
-    {% endif %}
-
-
-</div>
-
-
-<!-- =====================================================
-     LISTAGEM
-===================================================== -->
-
-<div class="table-container">
-
-
-    <table>
-
-
-        <thead>
-
-            <tr>
-
-                <th>
-                    Data
-                </th>
-
-                <th>
-                    Compra
-                </th>
-
-                <th>
-                    Cartão
-                </th>
-
-                <th>
-                    Categoria
-                </th>
-
-                <th>
-                    Valor
-                </th>
-
-                <th>
-                    Parcelamento
-                </th>
-
-                <th>
-                    Ações
-                </th>
-
-            </tr>
-
-        </thead>
-
-
-        <tbody>
-
-
-            {% for compra in compras %}
-
-
+    <div class="table-container" style="border: none; border-radius: 0; margin-bottom: 0;">
+        <table>
+            <thead>
                 <tr>
-
-
-                    <!-- DATA -->
-
-                    <td>
-
-                        {{ compra.data_compra.strftime(
-                            "%d/%m/%Y"
-                        ) }}
-
+                    <th>Data</th>
+                    <th>Descrição</th>
+                    <th>Cartão</th>
+                    <th>Categoria</th>
+                    <th style="text-align: center;">Parcelas</th>
+                    <th style="text-align: right;">Valor Parcela</th>
+                    <th style="text-align: right;">Total</th>
+                    <th style="text-align: right;">Ações</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for compra in compras %}
+                <tr>
+                    <td style="white-space: nowrap; font-weight: 500; color: var(--text-secondary);">
+                        {{ compra.data_compra.strftime("%d/%m/%Y") }}
                     </td>
-
-
-                    <!-- COMPRA -->
-
                     <td>
-
-                        <a
-                            href="{{ url_for(
-                                'compras_cartao.detalhes',
-                                id=compra.id
-                            ) }}"
-                            class="purchase-link"
-                        >
-
-                            <strong>
-                                {{ compra.descricao }}
-                            </strong>
-
-                        </a>
-
-
-                        {% if compra.observacao %}
-
-                            <span class="table-note">
-
-                                {{ compra.observacao }}
-
-                            </span>
-
-                        {% endif %}
-
+                        <strong style="color: var(--text-primary);">{{ compra.descricao }}</strong>
                     </td>
-
-
-                    <!-- CARTÃO -->
-
-                    <td>
-
-                        {{ compra.cartao.nome }}
-
-
-                        {% if compra.cartao.ultimos_digitos %}
-
-                            <span class="table-note">
-
-                                •••• {{ compra.cartao.ultimos_digitos }}
-
-                            </span>
-
-                        {% endif %}
-
+                    <td style="color: var(--text-secondary);">
+                        💳 {{ compra.cartao.nome }}
                     </td>
-
-
-                    <!-- CATEGORIA -->
-
-                    <td>
-
+                    <td style="color: var(--text-secondary);">
                         {{ compra.categoria.nome }}
-
                     </td>
-
-
-                    <!-- VALOR -->
-
-                    <td>
-
-                        <strong class="valor-negativo">
-
-                            R$ {{ compra.valor_total|moeda }}
-
-                        </strong>
-
+                    <td style="text-align: center;">
+                        <span class="badge badge-info">{{ compra.parcelas }}x</span>
                     </td>
-
-
-                    <!-- PARCELAMENTO -->
-
-                    <td>
-
-                        <strong>
-                            {{ compra.parcelas }}x
-                        </strong>
-
-
-                        <span class="table-note">
-
-                            R$
-                            {{ compra.valor_parcela()|moeda }}
-                            / parcela
-
-                        </span>
-
+                    <td style="text-align: right; color: var(--text-secondary); font-variant-numeric: tabular-nums;">
+                        R$ {{ compra.valor_parcela()|moeda }}
                     </td>
-
-
-                    <!-- AÇÕES -->
-
+                    <td style="text-align: right; font-weight: 600; font-variant-numeric: tabular-nums;" class="valor-negativo">
+                        R$ {{ compra.valor_total|moeda }}
+                    </td>
                     <td>
-
-                        <div class="actions">
-
-
-                            <a
-                                href="{{ url_for(
-                                    'compras_cartao.editar',
-                                    id=compra.id
-                                ) }}"
-                                class="btn btn-secondary"
-                            >
+                        <div style="display: flex; align-items: center; justify-content: flex-end; gap: 8px;">
+                            <a href="{{ url_for('compras_cartao.detalhes', id=compra.id) }}" class="btn btn-secondary btn-sm">
+                                Parcelas
+                            </a>
+                            <a href="{{ url_for('compras_cartao.editar', id=compra.id) }}" class="btn btn-secondary btn-sm">
                                 Editar
                             </a>
-
-
-                            <form
-                                method="POST"
-                                action="{{ url_for(
-                                    'compras_cartao.excluir',
-                                    id=compra.id
-                                ) }}"
-                                onsubmit="return confirm(
-                                    'Deseja realmente excluir esta compra?'
-                                );"
-                            >
-
-                                <button
-                                    type="submit"
-                                    class="btn btn-danger"
-                                >
+                            <form method="POST" action="{{ url_for('compras_cartao.excluir', id=compra.id) }}" onsubmit="return confirm('Deseja realmente excluir esta compra e suas parcelas?');">
+                                <button type="submit" class="btn btn-danger btn-sm">
                                     Excluir
                                 </button>
-
                             </form>
-
-
                         </div>
-
                     </td>
-
-
                 </tr>
-
-
-            {% else %}
-
-
+                {% else %}
                 <tr>
-
-                    <td colspan="7">
-
-
-                        <div class="empty-table">
-
-                            Nenhuma compra cadastrada.
-
-
-                            <br><br>
-
-
-                            <a
-                                href="{{ url_for(
-                                    'compras_cartao.nova'
-                                ) }}"
-                                class="btn btn-primary"
-                            >
-                                + Cadastrar primeira compra
-                            </a>
-
+                    <td colspan="8">
+                        <div class="empty-state">
+                            <div class="empty-state-icon">🛒</div>
+                            <strong>Nenhuma compra cadastrada</strong>
+                            <span>Adicione compras à vista ou parceladas nos seus cartões.</span>
                         </div>
-
-
                     </td>
-
                 </tr>
-
-
-            {% endfor %}
-
-
-        </tbody>
-
-
-    </table>
-
-
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
 </div>
-
 
 {% endblock %}

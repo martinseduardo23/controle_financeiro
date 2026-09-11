@@ -1,420 +1,169 @@
 {% extends "base.html" %}
 
-
 {% block title %}
-Faturas dos cartões - Financeiro
+Faturas dos Cartões - Controle Financeiro
 {% endblock %}
-
 
 {% block content %}
 
-
 {% if cartoes is not none %}
-
-<!-- =====================================================
-     ESCOLHA DO CARTÃO
-===================================================== -->
-
+<!-- ESCOLHA DO CARTÃO -->
 <div class="page-header">
-
-    <div>
-
-        <h1>
-            Faturas dos cartões
-        </h1>
-
-        <p>
-            Selecione um cartão para visualizar suas faturas.
-        </p>
-
+    <div class="page-header-content">
+        <h1>Faturas dos Cartões</h1>
+        <p>Selecione um cartão para visualizar o histórico de faturas e pagamentos.</p>
     </div>
-
 </div>
 
-
-<div class="cards-grid">
-
+<div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 20px;">
     {% for cartao in cartoes %}
-
-        <div class="credit-card">
-
-            <div class="credit-card-top">
-
-                <div class="credit-card-chip">
-                    💳
-                </div>
-
-                <div>
-                    <span class="credit-card-bank">
-                        {{ cartao.banco }}
-                    </span>
-                </div>
-
+    <div style="background: linear-gradient(135deg, #18181f 0%, #0a0a0d 100%); border: 1px solid var(--border); border-radius: var(--radius-xl); padding: 24px; box-shadow: var(--shadow-md);">
+        <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 20px;">
+            <div>
+                <span style="font-size: 11px; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-muted); display: block;">{{ cartao.banco }}</span>
+                <strong style="font-size: 18px; color: var(--text-primary);">{{ cartao.nome }}</strong>
             </div>
-
-
-            <div class="credit-card-name">
-                {{ cartao.nome }}
-            </div>
-
-
-            {% if cartao.ultimos_digitos %}
-
-                <div class="credit-card-number">
-                    •••• •••• •••• {{ cartao.ultimos_digitos }}
-                </div>
-
-            {% else %}
-
-                <div class="credit-card-number">
-                    Cartão
-                </div>
-
-            {% endif %}
-
-
-            <div class="credit-card-limit">
-
-                <span>
-                    Limite
-                </span>
-
-                <strong>
-                    R$ {{ cartao.limite|moeda }}
-                </strong>
-
-            </div>
-
-
-            <div class="credit-card-dates">
-
-                <div>
-
-                    <span>
-                        Fechamento
-                    </span>
-
-                    <strong>
-                        Dia {{ cartao.dia_fechamento }}
-                    </strong>
-
-                </div>
-
-
-                <div>
-
-                    <span>
-                        Vencimento
-                    </span>
-
-                    <strong>
-                        Dia {{ cartao.dia_vencimento }}
-                    </strong>
-
-                </div>
-
-            </div>
-
-
-            <div class="credit-card-actions">
-
-                <a
-                    href="{{ url_for(
-                        'faturas_cartao.faturas_cartao',
-                        cartao_id=cartao.id
-                    ) }}"
-                    class="btn btn-primary"
-                >
-                    Ver faturas
-                </a>
-
-            </div>
-
+            <span class="badge badge-info">Dia {{ cartao.dia_vencimento }}</span>
         </div>
 
+        <div style="font-family: monospace; font-size: 15px; letter-spacing: 2px; color: var(--text-secondary); margin-bottom: 20px;">
+            •••• •••• •••• {{ cartao.ultimos_digitos if cartao.ultimos_digitos else '----' }}
+        </div>
+
+        <div style="background: rgba(0, 0, 0, 0.25); border-radius: var(--radius-md); padding: 12px 14px; margin-bottom: 20px; display: flex; justify-content: space-between;">
+            <div>
+                <span style="font-size: 11px; color: var(--text-muted); display: block;">Limite</span>
+                <strong style="color: var(--text-primary);">R$ {{ cartao.limite|moeda }}</strong>
+            </div>
+            <div>
+                <span style="font-size: 11px; color: var(--text-muted); display: block;">Fechamento</span>
+                <strong style="color: var(--text-primary);">Dia {{ cartao.dia_fechamento }}</strong>
+            </div>
+        </div>
+
+        <a href="{{ url_for('faturas_cartao.faturas_cartao', cartao_id=cartao.id) }}" class="btn btn-primary" style="width: 100%;">
+            Ver Faturas deste Cartão →
+        </a>
+    </div>
     {% else %}
-
-        <div class="empty-table">
-            Nenhum cartão ativo cadastrado.
-        </div>
-
+    <div class="empty-state" style="grid-column: 1 / -1;">
+        <div class="empty-state-icon">💳</div>
+        <strong>Nenhum cartão ativo encontrado</strong>
+        <span>Cadastre um cartão para começar a controlar as faturas.</span>
+    </div>
     {% endfor %}
-
 </div>
-
 
 {% else %}
-
-<!-- =====================================================
-     FATURAS DO CARTÃO SELECIONADO
-===================================================== -->
-
-<div class="page-header faturas-page-header">
-
-    <div>
-
-        <span class="details-label">
-            FATURAS DO CARTÃO
-        </span>
-
-        <h1>
-            {{ cartao.nome }}
-        </h1>
-
-        {% if cartao.ultimos_digitos %}
-
-            <p>
-                •••• {{ cartao.ultimos_digitos }}
-            </p>
-
-        {% endif %}
-
+<!-- FATURAS DO CARTÃO ESPECÍFICO -->
+<div class="page-header">
+    <div class="page-header-content">
+        <h1>Faturas: {{ cartao.nome }}</h1>
+        <p>{{ cartao.banco }} · Vencimento todo dia {{ cartao.dia_vencimento }}</p>
     </div>
-
-
-    <div class="faturas-header-actions">
-
-        <a
-            href="{{ url_for('faturas_cartao.listar') }}"
-            class="btn btn-secondary"
-        >
+    <div class="page-header-actions">
+        <a href="{{ url_for('faturas_cartao.listar') }}" class="btn btn-secondary">
             ← Escolher outro cartão
         </a>
-
     </div>
-
 </div>
 
-
-<!-- =====================================================
-     RESUMO
-===================================================== -->
-
-<div class="cards faturas-summary">
-
+<div class="cards" style="grid-template-columns: repeat(3, 1fr);">
     <div class="card">
-
-        <span class="card-title">
-            Faturas
-        </span>
-
-        <strong>
-            {{ faturas|length }}
-        </strong>
-
+        <div class="card-header-line">
+            <span class="card-title">Faturas Cadastradas</span>
+            <div class="card-icon primary">🧾</div>
+        </div>
+        <strong class="card-value valor-destaque">{{ faturas|length }}</strong>
     </div>
 
-
     <div class="card">
-
-        <span class="card-title">
-            Em aberto
-        </span>
-
-        <strong>
-            R$ {{ total_aberto|moeda }}
-        </strong>
-
+        <div class="card-header-line">
+            <span class="card-title">Total em Aberto</span>
+            <div class="card-icon danger">⏳</div>
+        </div>
+        <strong class="card-value valor-negativo">R$ {{ total_aberto|moeda }}</strong>
     </div>
 
-
     <div class="card">
-
-        <span class="card-title">
-            Pagas
-        </span>
-
-        <strong>
-            R$ {{ total_pago|moeda }}
-        </strong>
-
+        <div class="card-header-line">
+            <span class="card-title">Total Quitado</span>
+            <div class="card-icon success">✓</div>
+        </div>
+        <strong class="card-value valor-positivo">R$ {{ total_pago|moeda }}</strong>
     </div>
-
 </div>
 
+<div class="panel" style="padding: 0; overflow: hidden;">
+    <div class="panel-header" style="padding: 20px 24px 16px; margin-bottom: 0;">
+        <h2 class="panel-title">Histórico de Faturas</h2>
+    </div>
 
-<!-- =====================================================
-     LISTA DE FATURAS
-===================================================== -->
-
-{% if faturas %}
-
-    <div class="faturas-list">
-
-        {% for fatura in faturas %}
-
-            <div class="fatura-card">
-
-
-                <!-- =====================================
-                     CABEÇALHO
-                ====================================== -->
-
-                <div class="fatura-card-header">
-
-                    <div>
-
-                        <span class="fatura-label">
-                            FATURA
-                        </span>
-
-                        <h2>
-                            {{ "%02d"|format(
-                                fatura.mes_referencia
-                            ) }}/{{ fatura.ano_referencia }}
-                        </h2>
-
-                    </div>
-
-
-                    <div class="fatura-status">
-
+    <div class="table-container" style="border: none; border-radius: 0; margin-bottom: 0;">
+        <table>
+            <thead>
+                <tr>
+                    <th>Mês de Referência</th>
+                    <th>Fechamento</th>
+                    <th>Vencimento</th>
+                    <th style="text-align: right;">Valor Total</th>
+                    <th style="text-align: center;">Status</th>
+                    <th>Pagamento</th>
+                    <th style="text-align: right;">Ação</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for fatura in faturas %}
+                <tr>
+                    <td>
+                        <strong style="color: var(--text-primary); font-size: 14px;">
+                            {{ "%02d"|format(fatura.mes_referencia) }}/{{ fatura.ano_referencia }}
+                        </strong>
+                    </td>
+                    <td style="color: var(--text-secondary);">
+                        {{ fatura.data_fechamento.strftime("%d/%m/%Y") }}
+                    </td>
+                    <td style="color: var(--text-secondary);">
+                        {{ fatura.data_vencimento.strftime("%d/%m/%Y") }}
+                    </td>
+                    <td style="text-align: right; font-weight: 700; font-variant-numeric: tabular-nums;" class="{% if fatura.status == 'paga' %}valor-positivo{% else %}valor-negativo{% endif %}">
+                        R$ {{ fatura.valor_total|moeda }}
+                    </td>
+                    <td style="text-align: center;">
                         {% if fatura.status == "paga" %}
-
-                            <span class="status-badge status-paid">
-                                Paga
-                            </span>
-
+                            <span class="badge badge-success">Paga</span>
                         {% else %}
-
-                            <span class="status-badge status-open">
-                                Em aberto
-                            </span>
-
+                            <span class="badge badge-pendente">Aberta</span>
                         {% endif %}
-
-                    </div>
-
-                </div>
-
-
-                <!-- =====================================
-                     INFORMAÇÕES
-                ====================================== -->
-
-                <div class="fatura-card-body">
-
-
-                    <div>
-
-                        <span>
-                            Fechamento
-                        </span>
-
-                        <strong>
-                            {{ fatura.data_fechamento.strftime(
-                                "%d/%m/%Y"
-                            ) }}
-                        </strong>
-
-                    </div>
-
-
-                    <div>
-
-                        <span>
-                            Vencimento
-                        </span>
-
-                        <strong>
-                            {{ fatura.data_vencimento.strftime(
-                                "%d/%m/%Y"
-                            ) }}
-                        </strong>
-
-                    </div>
-
-
-                    <div>
-
-                        <span>
-                            Valor da fatura
-                        </span>
-
-                        <strong class="fatura-valor">
-                            R$ {{ fatura.valor_total|moeda }}
-                        </strong>
-
-                    </div>
-
-
-                    <div>
-
-                        <span>
-                            Parcelas
-                        </span>
-
-                        <strong>
-                            {{ fatura.parcelas|length }}
-                        </strong>
-
-                    </div>
-
-
-                </div>
-
-
-                <!-- =====================================
-                     RODAPÉ
-                ====================================== -->
-
-                <div class="fatura-card-footer">
-
-                    <span>
-
-                        {% if fatura.parcelas|length == 1 %}
-
-                            1 parcela
-
+                    </td>
+                    <td style="color: var(--text-muted); font-size: 12.5px;">
+                        {% if fatura.data_pagamento %}
+                            {{ fatura.data_pagamento.strftime("%d/%m/%Y") }}
                         {% else %}
-
-                            {{ fatura.parcelas|length }} parcelas
-
+                            —
                         {% endif %}
-
-                    </span>
-
-
-                    <a
-                        href="{{ url_for(
-                            'faturas_cartao.detalhes',
-                            id=fatura.id
-                        ) }}"
-                        class="btn btn-secondary"
-                    >
-                        Ver fatura
-                    </a>
-
-                </div>
-
-
-            </div>
-
-        {% endfor %}
-
+                    </td>
+                    <td style="text-align: right;">
+                        <a href="{{ url_for('faturas_cartao.detalhes', id=fatura.id) }}" class="btn btn-secondary btn-sm">
+                            Ver Detalhes
+                        </a>
+                    </td>
+                </tr>
+                {% else %}
+                <tr>
+                    <td colspan="7">
+                        <div class="empty-state">
+                            <div class="empty-state-icon">🧾</div>
+                            <strong>Nenhuma fatura registrada para este cartão</strong>
+                            <span>As faturas são criadas automaticamente conforme você registra compras parceladas.</span>
+                        </div>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
     </div>
-
-
-{% else %}
-
-
-    <div class="empty-table faturas-empty">
-
-        <strong>
-            Nenhuma fatura encontrada.
-        </strong>
-
-        <span>
-            Este cartão ainda não possui faturas cadastradas.
-        </span>
-
-    </div>
-
-
+</div>
 {% endif %}
-
-
-{% endif %}
-
 
 {% endblock %}

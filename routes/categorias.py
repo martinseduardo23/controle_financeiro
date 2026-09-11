@@ -3,7 +3,8 @@ from flask import (
     render_template,
     request,
     redirect,
-    url_for
+    url_for,
+    flash
 )
 
 from database import db
@@ -78,6 +79,7 @@ def nova():
 
             db.session.add(categoria)
             db.session.commit()
+            flash("Categoria criada com sucesso!", "success")
 
             return redirect(
                 url_for("categorias.listar")
@@ -136,6 +138,7 @@ def editar(id):
             categoria.tipo = tipo
 
             db.session.commit()
+            flash("Categoria atualizada com sucesso!", "success")
 
             return redirect(
                 url_for("categorias.listar")
@@ -159,6 +162,8 @@ def alternar(id):
     categoria.ativa = not categoria.ativa
 
     db.session.commit()
+    novo_status = "ativada" if categoria.ativa else "desativada"
+    flash(f"Categoria '{categoria.nome}' foi {novo_status}.", "info")
 
     return redirect(
         url_for("categorias.listar")
@@ -173,13 +178,15 @@ def excluir(id):
 
     categoria = Categoria.query.get_or_404(id)
 
-    if categoria.lancamentos:
+    if categoria.lancamentos or getattr(categoria, "compras_cartao", None):
+        flash("Não é possível excluir esta categoria pois existem lançamentos ou compras no cartão vinculados a ela.", "warning")
         return redirect(
             url_for("categorias.listar")
         )
 
     db.session.delete(categoria)
     db.session.commit()
+    flash(f"Categoria '{categoria.nome}' excluída com sucesso!", "success")
 
     return redirect(
         url_for("categorias.listar")

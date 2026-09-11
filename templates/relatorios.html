@@ -1,404 +1,207 @@
-{% extends "base.html" %}
-
+﻿{% extends "base.html" %}
 
 {% block title %}
-Relatórios - Financeiro
+Relatórios Financeiros - {{ nome_mes }}/{{ ano }} - Controle Financeiro
 {% endblock %}
-
 
 {% block content %}
 
-
 <div class="page-header">
-
-    <div>
-
-        <h1>
-            Relatórios
-        </h1>
-
-        <p>
-            Analise suas receitas, despesas e resultados.
-        </p>
-
+    <div class="page-header-content">
+        <h1>Relatórios e Estatísticas</h1>
+        <p>Visão consolidada de entradas, saídas e faturas de cartão em <strong>{{ nome_mes }} de {{ ano }}</strong>.</p>
     </div>
-
 </div>
 
-
-<!-- =====================================================
-     FILTRO
-===================================================== -->
-
-<div class="panel relatorios-filtro">
-
-    <form
-        method="GET"
-        class="relatorios-filtro-form"
-    >
-
-        <div>
-
-            <label for="mes">
-                Mês de análise
-            </label>
-
+<!-- FILTRO DE MÊS -->
+<div class="filter-bar">
+    <form method="GET" class="filter-form">
+        <div class="filter-item" style="max-width: 260px;">
+            <label for="mes">Mês de Análise</label>
             <input
                 type="month"
                 id="mes"
                 name="mes"
                 value="{{ ano }}-{{ '%02d'|format(mes) }}"
+                onchange="this.form.submit()"
             >
-
         </div>
-
-
-        <button
-            type="submit"
-            class="btn btn-primary"
-        >
-            Aplicar
+        <button type="submit" class="btn btn-primary btn-sm" style="height: 38px;">
+            Atualizar Período
         </button>
-
     </form>
-
 </div>
 
-
-<!-- =====================================================
-     TÍTULO DO PERÍODO
-===================================================== -->
-
-<div class="relatorios-periodo">
-
-    <span>
-        Período analisado
-    </span>
-
-    <strong>
-        {{ nome_mes }} de {{ ano }}
-    </strong>
-
-</div>
-
-
-<!-- =====================================================
-     RESUMO
-===================================================== -->
-
-<div class="cards">
-
-
+<!-- CARDS RESUMO DO MÊS -->
+<div class="cards" style="margin-bottom: 28px;">
     <div class="card">
-
-        <span class="card-title">
-            Receitas pagas
-        </span>
-
-        <strong class="valor-positivo">
-            R$ {{ receitas_pagas|moeda }}
-        </strong>
-
+        <span class="card-title">Receitas Pagas</span>
+        <strong class="valor-positivo" style="font-size: 22px;">R$ {{ receitas_pagas|moeda }}</strong>
+        <span class="card-hint">Entradas confirmadas na conta</span>
     </div>
 
-
     <div class="card">
-
-        <span class="card-title">
-            Despesas pagas
-        </span>
-
-        <strong class="valor-negativo">
-            R$ {{ despesas_pagas|moeda }}
-        </strong>
-
+        <span class="card-title">Despesas Pagas</span>
+        <strong class="valor-negativo" style="font-size: 22px;">R$ {{ despesas_pagas|moeda }}</strong>
+        <span class="card-hint">Saídas de contas correntes</span>
     </div>
 
-
     <div class="card">
-
-        <span class="card-title">
-            Resultado
-        </span>
-
-        <strong
-            class="{% if resultado >= 0 %}
-                valor-positivo
-            {% else %}
-                valor-negativo
-            {% endif %}"
-        >
+        <span class="card-title">Resultado Líquido</span>
+        <strong class="{% if resultado >= 0 %}valor-positivo{% else %}valor-negativo{% endif %}" style="font-size: 22px;">
             R$ {{ resultado|moeda }}
         </strong>
-
+        <span class="card-hint">Receitas pagas - Despesas pagas</span>
     </div>
-
 
     <div class="card">
-
-        <span class="card-title">
-            Despesas pendentes
-        </span>
-
-        <strong class="valor-negativo">
-            R$ {{ despesas_pendentes|moeda }}
-        </strong>
-
+        <span class="card-title">Compras no Cartão</span>
+        <strong style="color: #a855f7; font-size: 22px;">R$ {{ total_compras_cartao|moeda }}</strong>
+        <span class="card-hint">Gastos efetuados no mês de {{ nome_mes }}</span>
     </div>
-
-
 </div>
 
-
-<!-- =====================================================
-     GRÁFICOS / CATEGORIAS
-===================================================== -->
-
+<!-- GRIDS DE CATEGORIAS -->
 <div class="relatorios-grid">
-
-
-    <!-- =================================================
-         DESPESAS POR CATEGORIA
-    ================================================== -->
-
+    <!-- DESPESAS POR CATEGORIA -->
     <div class="panel">
-
         <div class="panel-header">
-
             <div>
-
-                <h2>
-                    Despesas por categoria
-                </h2>
-
-                <span class="panel-subtitle">
-                    Distribuição das despesas pagas.
-                </span>
-
+                <h2>Despesas por Categoria</h2>
+                <span class="panel-subtitle">Distribuição das despesas pagas em conta</span>
             </div>
-
+            <span class="badge badge-despesa">R$ {{ despesas_pagas|moeda }}</span>
         </div>
-
 
         {% if despesas_categorias %}
-
-
-            <div class="relatorio-barras">
-
-
-                {% for categoria in despesas_categorias %}
-
-
-                    <div class="relatorio-barra-item">
-
-
-                        <div class="relatorio-barra-header">
-
-                            <strong>
-                                {{ categoria.nome }}
-                            </strong>
-
-                            <span>
-                                R$ {{ categoria.valor|moeda }}
-                                ·
-                                {{ "%.1f"|format(
-                                    categoria.percentual
-                                ) }}%
-                            </span>
-
-                        </div>
-
-
-                        <div class="relatorio-barra-bg">
-
-                            <div
-                                class="relatorio-barra"
-                                style="width: {{ categoria.percentual }}%;"
-                            ></div>
-
-                        </div>
-
-
-                    </div>
-
-
-                {% endfor %}
-
-
+        <div class="relatorio-barras">
+            {% for cat in despesas_categorias %}
+            <div class="relatorio-barra-item">
+                <div class="relatorio-barra-header">
+                    <strong>{{ cat.nome }}</strong>
+                    <span>R$ {{ cat.valor|moeda }} · {{ "%.1f"|format(cat.percentual) }}%</span>
+                </div>
+                <div class="relatorio-barra-bg">
+                    <div class="relatorio-barra" style="width: {{ cat.percentual }}%;"></div>
+                </div>
             </div>
-
-
+            {% endfor %}
+        </div>
         {% else %}
-
-
-            <div class="empty-state">
-
-                <strong>
-                    Nenhuma despesa paga
-                </strong>
-
-                <span>
-                    Não existem despesas registradas neste período.
-                </span>
-
-            </div>
-
-
+        <div class="empty-state">
+            <span class="empty-state-icon">💸</span>
+            <strong>Nenhuma despesa paga</strong>
+            <span>Não foram registradas despesas pagas neste mês.</span>
+        </div>
         {% endif %}
-
     </div>
 
-
-    <!-- =================================================
-         RECEITAS POR CATEGORIA
-    ================================================== -->
-
+    <!-- RECEITAS POR CATEGORIA -->
     <div class="panel">
-
         <div class="panel-header">
-
             <div>
-
-                <h2>
-                    Receitas por categoria
-                </h2>
-
-                <span class="panel-subtitle">
-                    Distribuição das receitas pagas.
-                </span>
-
+                <h2>Receitas por Categoria</h2>
+                <span class="panel-subtitle">Distribuição das receitas recebidas em conta</span>
             </div>
-
+            <span class="badge badge-receita">R$ {{ receitas_pagas|moeda }}</span>
         </div>
-
 
         {% if receitas_categorias %}
-
-
-            <div class="relatorio-barras">
-
-
-                {% for categoria in receitas_categorias %}
-
-
-                    <div class="relatorio-barra-item">
-
-
-                        <div class="relatorio-barra-header">
-
-                            <strong>
-                                {{ categoria.nome }}
-                            </strong>
-
-                            <span>
-                                R$ {{ categoria.valor|moeda }}
-                                ·
-                                {{ "%.1f"|format(
-                                    categoria.percentual
-                                ) }}%
-                            </span>
-
-                        </div>
-
-
-                        <div class="relatorio-barra-bg">
-
-                            <div
-                                class="relatorio-barra receita"
-                                style="width: {{ categoria.percentual }}%;"
-                            ></div>
-
-                        </div>
-
-
-                    </div>
-
-
-                {% endfor %}
-
-
+        <div class="relatorio-barras">
+            {% for cat in receitas_categorias %}
+            <div class="relatorio-barra-item">
+                <div class="relatorio-barra-header">
+                    <strong>{{ cat.nome }}</strong>
+                    <span>R$ {{ cat.valor|moeda }} · {{ "%.1f"|format(cat.percentual) }}%</span>
+                </div>
+                <div class="relatorio-barra-bg">
+                    <div class="relatorio-barra receita" style="width: {{ cat.percentual }}%;"></div>
+                </div>
             </div>
-
-
+            {% endfor %}
+        </div>
         {% else %}
+        <div class="empty-state">
+            <span class="empty-state-icon">💰</span>
+            <strong>Nenhuma receita paga</strong>
+            <span>Não foram registradas receitas recebidas neste mês.</span>
+        </div>
+        {% endif %}
+    </div>
+</div>
 
+<!-- SEGUNDA LINHA: CARTÃO DE CRÉDITO E PENDÊNCIAS -->
+<div class="relatorios-grid">
+    <!-- GASTOS NO CARTÃO POR CATEGORIA -->
+    <div class="panel">
+        <div class="panel-header">
+            <div>
+                <h2>Gastos no Cartão por Categoria</h2>
+                <span class="panel-subtitle">Total de compras efetuadas nos cartões de crédito</span>
+            </div>
+            <span class="badge" style="background: rgba(168, 85, 247, 0.15); color: #c084fc; border: 1px solid rgba(168, 85, 247, 0.3);">
+                R$ {{ total_compras_cartao|moeda }}
+            </span>
+        </div>
 
-            <div class="empty-state">
+        {% if cartao_categorias %}
+        <div class="relatorio-barras">
+            {% for cat in cartao_categorias %}
+            <div class="relatorio-barra-item">
+                <div class="relatorio-barra-header">
+                    <strong>{{ cat.nome }}</strong>
+                    <span>R$ {{ cat.valor|moeda }} · {{ "%.1f"|format(cat.percentual) }}%</span>
+                </div>
+                <div class="relatorio-barra-bg">
+                    <div class="relatorio-barra cartao" style="width: {{ cat.percentual }}%;"></div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        {% else %}
+        <div class="empty-state">
+            <span class="empty-state-icon">💳</span>
+            <strong>Nenhuma compra no cartão</strong>
+            <span>Nenhuma compra no cartão registrada para a competência deste mês.</span>
+        </div>
+        {% endif %}
+    </div>
 
-                <strong>
-                    Nenhuma receita paga
-                </strong>
+    <!-- PENDÊNCIAS E COMPROMISSOS EM ABERTO -->
+    <div class="panel">
+        <div class="panel-header">
+            <div>
+                <h2>Pendências do Mês</h2>
+                <span class="panel-subtitle">Movimentações ainda não quitadas em {{ nome_mes }}</span>
+            </div>
+            <span class="badge badge-pendente">Acompanhamento</span>
+        </div>
 
-                <span>
-                    Não existem receitas registradas neste período.
-                </span>
-
+        <div style="display: flex; flex-direction: column; gap: 16px; padding: 12px 0;">
+            <div style="background: rgba(16, 185, 129, 0.08); border: 1px solid rgba(16, 185, 129, 0.2); border-radius: var(--radius-lg); padding: 18px 20px; display: flex; justify-content: space-between; align-items: center;">
+                <div>
+                    <span style="font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.04em; color: #34d399; display: block;">Receitas a Receber</span>
+                    <span style="font-size: 13px; color: var(--text-secondary);">Previsão de entradas pendentes</span>
+                </div>
+                <strong style="color: #34d399; font-size: 18px;">R$ {{ receitas_pendentes|moeda }}</strong>
             </div>
 
+            <div style="background: rgba(244, 63, 94, 0.08); border: 1px solid rgba(244, 63, 94, 0.2); border-radius: var(--radius-lg); padding: 18px 20px; display: flex; justify-content: space-between; align-items: center;">
+                <div>
+                    <span style="font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.04em; color: #fb7185; display: block;">Despesas a Pagar</span>
+                    <span style="font-size: 13px; color: var(--text-secondary);">Contas aguardando quitação</span>
+                </div>
+                <strong style="color: #fb7185; font-size: 18px;">R$ {{ despesas_pendentes|moeda }}</strong>
+            </div>
 
-        {% endif %}
-
+            <div style="background: rgba(255, 255, 255, 0.02); border: 1px solid var(--border); border-radius: var(--radius-lg); padding: 16px 20px; display: flex; justify-content: space-between; align-items: center;">
+                <span style="font-size: 13px; color: var(--text-secondary);">Saldo projetado do mês com pendências:</span>
+                <strong style="color: var(--text-primary); font-size: 16px;">
+                    R$ {{ (resultado + receitas_pendentes - despesas_pendentes)|moeda }}
+                </strong>
+            </div>
+        </div>
     </div>
-
-
 </div>
-
-
-<!-- =====================================================
-     PENDÊNCIAS
-===================================================== -->
-
-<div class="panel">
-
-    <div class="panel-header">
-
-        <div>
-
-            <h2>
-                Valores pendentes
-            </h2>
-
-            <span class="panel-subtitle">
-                Movimentações ainda não pagas.
-            </span>
-
-        </div>
-
-    </div>
-
-
-    <div class="relatorio-pendentes">
-
-
-        <div>
-
-            <span>
-                Receitas pendentes
-            </span>
-
-            <strong class="valor-positivo">
-                R$ {{ receitas_pendentes|moeda }}
-            </strong>
-
-        </div>
-
-
-        <div>
-
-            <span>
-                Despesas pendentes
-            </span>
-
-            <strong class="valor-negativo">
-                R$ {{ despesas_pendentes|moeda }}
-            </strong>
-
-        </div>
-
-
-    </div>
-
-</div>
-
 
 {% endblock %}

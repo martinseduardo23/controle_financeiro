@@ -3,11 +3,12 @@ from flask import (
     render_template,
     request,
     redirect,
-    url_for
+    url_for,
+    flash
 )
 
 from database import db
-from models import Cartao
+from models import Cartao, CompraCartao
 
 
 cartoes_bp = Blueprint(
@@ -177,6 +178,7 @@ def novo():
 
             db.session.add(cartao)
             db.session.commit()
+            flash("Cartão cadastrado com sucesso!", "success")
 
             return redirect(
                 url_for("cartoes.listar")
@@ -319,6 +321,7 @@ def editar(id):
             )
 
             db.session.commit()
+            flash("Cartão atualizado com sucesso!", "success")
 
             return redirect(
                 url_for("cartoes.listar")
@@ -342,6 +345,8 @@ def alternar(id):
     cartao.ativo = not cartao.ativo
 
     db.session.commit()
+    novo_status = "ativado" if cartao.ativo else "desativado"
+    flash(f"Cartão '{cartao.nome}' foi {novo_status}.", "info")
 
     return redirect(
         url_for("cartoes.listar")
@@ -356,8 +361,16 @@ def excluir(id):
 
     cartao = Cartao.query.get_or_404(id)
 
+    compras_vinculadas = CompraCartao.query.filter_by(cartao_id=cartao.id).first()
+    if compras_vinculadas or cartao.faturas:
+        flash("Não é possível excluir o cartão pois existem compras ou faturas registradas. Você pode desativá-lo para não usá-lo mais.", "warning")
+        return redirect(
+            url_for("cartoes.listar")
+        )
+
     db.session.delete(cartao)
     db.session.commit()
+    flash(f"Cartão '{cartao.nome}' excluído com sucesso!", "success")
 
     return redirect(
         url_for("cartoes.listar")

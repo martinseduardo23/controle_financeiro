@@ -1,379 +1,119 @@
-{% extends "base.html" %}
-
+﻿{% extends "base.html" %}
 
 {% block title %}
-Metas - Financeiro
+Metas Financeiras - Controle Financeiro
 {% endblock %}
-
 
 {% block content %}
 
-
 <div class="page-header">
-
-    <div>
-
-        <h1>
-            Metas
-        </h1>
-
-        <p>
-            Acompanhe seus objetivos financeiros e o rendimento estimado.
-        </p>
-
+    <div class="page-header-content">
+        <h1>Metas e Objetivos Financeiros</h1>
+        <p>Acompanhe a evolução das suas reservas, objetivos e rendimentos diários estimados.</p>
     </div>
-
-
-    <a
-        href="{{ url_for('metas.nova') }}"
-        class="btn btn-primary"
-    >
-        + Nova meta
-    </a>
-
+    <div class="page-header-actions">
+        <a href="{{ url_for('metas.nova') }}" class="btn btn-primary">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
+            </svg>
+            Nova Meta
+        </a>
+    </div>
 </div>
-
 
 {% if metas %}
-
-
-<div class="metas-grid">
-
-
+<div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(350px, 1fr)); gap: 24px;">
     {% for meta in metas %}
-
-
-        <div class="meta-card">
-
-
-            <!-- =================================================
-                 CABEÇALHO
-            ================================================== -->
-
-            <div class="meta-card-header">
-
-
+    <div style="background: var(--bg-surface); border: 1px solid var(--border); border-radius: var(--radius-xl); padding: 24px; box-shadow: var(--shadow-sm); display: flex; flex-direction: column; justify-content: space-between;">
+        <div>
+            <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 12px; gap: 12px;">
                 <div>
-
-                    <span class="meta-label">
-                        META
-                    </span>
-
-                    <h2>
-                        {{ meta.nome }}
-                    </h2>
-
+                    <span style="font-size: 11px; text-transform: uppercase; letter-spacing: 0.05em; color: var(--primary); font-weight: 700; display: block; margin-bottom: 2px;">Meta</span>
+                    <h2 style="font-size: 19px; font-weight: 700; color: var(--text-primary);">{{ meta.nome }}</h2>
                 </div>
-
-
-                {% if meta.concluida %}
-
-                    <span class="status-badge status-paid">
-                        Concluída
-                    </span>
-
-                {% else %}
-
-                    <span class="status-badge status-open">
-                        Em andamento
-                    </span>
-
-                {% endif %}
-
-
+                <div>
+                    {% if meta.concluida %}
+                        <span class="badge badge-success">Concluída</span>
+                    {% else %}
+                        <span class="badge badge-pendente">Em andamento</span>
+                    {% endif %}
+                </div>
             </div>
-
-
-            <!-- =================================================
-                 DESCRIÇÃO
-            ================================================== -->
 
             {% if meta.descricao %}
-
-                <p class="meta-description">
-                    {{ meta.descricao }}
-                </p>
-
+            <p style="font-size: 13px; color: var(--text-secondary); margin-bottom: 16px; line-height: 1.4;">
+                {{ meta.descricao }}
+            </p>
             {% endif %}
 
-
-            <!-- =================================================
-                 VALORES
-            ================================================== -->
-
-            <div class="meta-values">
-
-
-                <div>
-
-                    <span>
-                        Aportes
-                    </span>
-
-                    <strong>
-                        R$ {{ meta.valor_atual|moeda }}
-                    </strong>
-
+            <!-- PROGRESSO -->
+            <div style="margin-bottom: 20px;">
+                <div style="display: flex; justify-content: space-between; font-size: 13px; margin-bottom: 6px;">
+                    <span style="color: var(--text-secondary);">Progresso atual</span>
+                    <strong style="color: var(--text-primary);">{{ "%.1f"|format(meta.percentual) }}%</strong>
                 </div>
-
-
-                <div>
-
-                    <span>
-                        Rendimentos
-                    </span>
-
-                    <strong class="valor-positivo">
-                        R$ {{ meta.rendimento_acumulado|moeda }}
-                    </strong>
-
+                <div class="progress-container" style="height: 10px;">
+                    <div class="progress-bar {% if meta.concluida %}success{% endif %}" style="width: {{ meta.percentual }}%;"></div>
                 </div>
-
-
-                <div>
-
-                    <span>
-                        Valor estimado
-                    </span>
-
-                    <strong class="meta-total-valor">
-                        R$ {{ meta.valor_estimado|moeda }}
-                    </strong>
-
-                </div>
-
-
-                <div>
-
-                    <span>
-                        Objetivo
-                    </span>
-
-                    <strong>
-                        R$ {{ meta.valor_meta|moeda }}
-                    </strong>
-
-                </div>
-
-
             </div>
 
-
-            <!-- =================================================
-                 RENDIMENTO
-            ================================================== -->
-
-            <div class="meta-rendimento-info">
-
-
-                <span>
-                    Rendimento médio
-                </span>
-
-
-                <strong>
-                    R$
-                    {{ meta.rendimento_diario|moeda }}
-                    / dia útil
-                </strong>
-
-
-            </div>
-
-
-            <div class="meta-rendimento-dias">
-
-
-                {% if meta.data_inicio_rendimento %}
-
-                    {{ meta.dias_rendimento() }}
-
-                    {% if meta.dias_rendimento() == 1 %}
-
-                        dia útil de rendimento
-
-                    {% else %}
-
-                        dias úteis de rendimento
-
-                    {% endif %}
-
-                {% else %}
-
-                    Rendimento ainda não iniciado
-
+            <!-- VALORES -->
+            <div style="background: rgba(0, 0, 0, 0.25); border-radius: var(--radius-md); padding: 14px; margin-bottom: 20px; display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+                <div>
+                    <span style="font-size: 11px; color: var(--text-muted); display: block;">Valor Atual Aportado</span>
+                    <strong style="color: var(--text-primary); font-size: 15px;">R$ {{ meta.valor_atual|moeda }}</strong>
+                </div>
+                <div>
+                    <span style="font-size: 11px; color: var(--text-muted); display: block;">Objetivo Alvo</span>
+                    <strong style="color: var(--text-primary); font-size: 15px;">R$ {{ meta.valor_meta|moeda }}</strong>
+                </div>
+                {% if meta.rendimento_diario and meta.data_inicio_rendimento %}
+                <div>
+                    <span style="font-size: 11px; color: #34d399; display: block;">+ Rendimento Estimado</span>
+                    <strong style="color: #34d399; font-size: 14px;">R$ {{ meta.rendimento_acumulado|moeda }}</strong>
+                </div>
+                <div>
+                    <span style="font-size: 11px; color: var(--text-muted); display: block;">Total com Rendimento</span>
+                    <strong style="color: var(--primary); font-size: 14px;">R$ {{ meta.valor_estimado|moeda }}</strong>
+                </div>
                 {% endif %}
-
-
             </div>
 
-
-            <!-- =================================================
-                 PROGRESSO
-            ================================================== -->
-
-            <div class="meta-progress">
-
-
-                <div class="meta-progress-header">
-
-
-                    <span>
-                        Progresso
-                    </span>
-
-
-                    <strong>
-                        {{ "%.1f"|format(
-                            meta.percentual
-                        ) }}%
-                    </strong>
-
-
-                </div>
-
-
-                <div class="meta-progress-bg">
-
-
-                    <div
-                        class="meta-progress-bar"
-                        style="width: {{ meta.percentual }}%;"
-                    ></div>
-
-
-                </div>
-
-
+            {% if meta.prazo %}
+            <div style="font-size: 12px; color: var(--text-muted); margin-bottom: 16px;">
+                📅 Prazo limite: <strong style="color: var(--text-secondary);">{{ meta.prazo.strftime("%d/%m/%Y") }}</strong>
             </div>
-
-
-            <!-- =================================================
-                 RODAPÉ
-            ================================================== -->
-
-            <div class="meta-footer">
-
-
-                {% if meta.prazo %}
-
-                    <span>
-
-                        Prazo:
-
-                        {{ meta.prazo.strftime(
-                            "%d/%m/%Y"
-                        ) }}
-
-                    </span>
-
-                {% else %}
-
-                    <span>
-                        Sem prazo definido
-                    </span>
-
-                {% endif %}
-
-
-                <div class="meta-actions">
-
-
-                    {% if not meta.concluida %}
-
-                        <a
-                            href="{{ url_for(
-                                'metas.aportar',
-                                id=meta.id
-                            ) }}"
-                            class="btn btn-primary"
-                        >
-                            + Aportar
-                        </a>
-
-                    {% endif %}
-
-
-                    <a
-                        href="{{ url_for(
-                            'metas.editar',
-                            id=meta.id
-                        ) }}"
-                        class="btn btn-secondary"
-                    >
-                        Editar
-                    </a>
-
-
-                    <form
-                        method="POST"
-                        action="{{ url_for(
-                            'metas.excluir',
-                            id=meta.id
-                        ) }}"
-                        onsubmit="return confirm(
-                            'Deseja excluir esta meta?'
-                        );"
-                    >
-
-                        <button
-                            type="submit"
-                            class="btn btn-danger"
-                        >
-                            Excluir
-                        </button>
-
-                    </form>
-
-
-                </div>
-
-
-            </div>
-
-
+            {% endif %}
         </div>
 
-
+        <div style="display: flex; align-items: center; justify-content: space-between; gap: 8px; border-top: 1px solid var(--border); padding-top: 16px;">
+            <a href="{{ url_for('metas.aportar', id=meta.id) }}" class="btn btn-primary btn-sm" style="flex: 1;">
+                + Aportar
+            </a>
+            <a href="{{ url_for('metas.editar', id=meta.id) }}" class="btn btn-secondary btn-sm">
+                Editar
+            </a>
+            <form method="POST" action="{{ url_for('metas.excluir', id=meta.id) }}" onsubmit="return confirm('Deseja realmente arquivar esta meta?');">
+                <button type="submit" class="btn btn-secondary btn-sm">
+                    Arquivar
+                </button>
+            </form>
+        </div>
+    </div>
     {% endfor %}
-
-
 </div>
-
-
 {% else %}
-
-
-<div class="empty-state">
-
-
-    <span class="empty-icon">
-        🎯
-    </span>
-
-
-    <strong>
-        Nenhuma meta cadastrada
-    </strong>
-
-
-    <span>
-        Crie sua primeira meta financeira para começar.
-    </span>
-
-
-    <a
-        href="{{ url_for('metas.nova') }}"
-        class="btn btn-primary"
-    >
-        + Criar primeira meta
-    </a>
-
-
+<div class="panel">
+    <div class="empty-state">
+        <div class="empty-state-icon">🎯</div>
+        <strong>Nenhuma meta cadastrada</strong>
+        <span>Defina objetivos de reserva de emergência, viagens, compras ou investimentos.</span>
+        <br>
+        <a href="{{ url_for('metas.nova') }}" class="btn btn-primary">
+            + Cadastrar Primeira Meta
+        </a>
+    </div>
 </div>
-
-
 {% endif %}
-
 
 {% endblock %}

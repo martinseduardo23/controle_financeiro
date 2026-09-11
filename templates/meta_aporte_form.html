@@ -1,244 +1,101 @@
-{% extends "base.html" %}
-
+﻿{% extends "base.html" %}
 
 {% block title %}
-Aporte - {{ meta.nome }} - Financeiro
+Aporte - {{ meta.nome }} - Controle Financeiro
 {% endblock %}
-
 
 {% block content %}
 
-
 <div class="page-header">
-
-    <div>
-
-        <span class="details-label">
-            META FINANCEIRA
+    <div class="page-header-content">
+        <span style="font-size: 11.5px; text-transform: uppercase; letter-spacing: 0.05em; color: var(--primary); font-weight: 700; display: block; margin-bottom: 2px;">
+            Aporte Financeiro
         </span>
-
-        <h1>
-            Aportar na meta
-        </h1>
-
-        <p>
-            {{ meta.nome }}
-        </p>
-
+        <h1>Aportar em: {{ meta.nome }}</h1>
+        <p>Transfira recursos de uma de suas contas para acelerar a realização desta meta.</p>
     </div>
-
-
-    <div>
-
-        <a
-            href="{{ url_for('metas.listar') }}"
-            class="btn btn-secondary"
-        >
-            ← Voltar para metas
+    <div class="page-header-actions">
+        <a href="{{ url_for('metas.listar') }}" class="btn btn-secondary">
+            ← Voltar para Metas
         </a>
-
     </div>
-
 </div>
 
-
-<!-- =====================================================
-     RESUMO DA META
-===================================================== -->
-
-<div class="meta-aporte-summary">
-
-
-    <div>
-
-        <span>
-            Objetivo
-        </span>
-
-        <strong>
-            R$ {{ meta.valor_meta|moeda }}
-        </strong>
-
+<!-- RESUMO RÁPIDO DA META -->
+<div class="cards" style="margin-bottom: 28px;">
+    <div class="card">
+        <span class="card-title">Objetivo Alvo</span>
+        <strong style="color: var(--text-primary); font-size: 20px;">R$ {{ meta.valor_meta|moeda }}</strong>
+        <span class="card-hint">Meta final estipulada</span>
     </div>
 
-
-    <div>
-
-        <span>
-            Já acumulado
-        </span>
-
-        <strong>
-            R$ {{ meta.valor_atual|moeda }}
-        </strong>
-
+    <div class="card">
+        <span class="card-title">Já Acumulado</span>
+        <strong class="valor-positivo" style="font-size: 20px;">R$ {{ meta.valor_atual|moeda }}</strong>
+        <span class="card-hint">{{ "%.1f"|format(meta.percentual) }}% concluído</span>
     </div>
 
-
-    <div>
-
-        <span>
-            Valor estimado
-        </span>
-
-        <strong class="valor-positivo">
-            R$ {{ meta.valor_estimado|moeda }}
-        </strong>
-
+    <div class="card">
+        <span class="card-title">Estimado com Rendimento</span>
+        <strong style="color: var(--primary); font-size: 20px;">R$ {{ meta.valor_estimado|moeda }}</strong>
+        <span class="card-hint">+ R$ {{ meta.rendimento_acumulado|moeda }} acumulados</span>
     </div>
 
-
+    <div class="card">
+        <span class="card-title">Rendimento Médio</span>
+        <strong style="color: #34d399; font-size: 20px;">R$ {{ meta.rendimento_diario|moeda }}</strong>
+        <span class="card-hint">Por dia útil (~{{ meta.dias_rendimento() if meta.data_inicio_rendimento else 0 }} dias úteis)</span>
+    </div>
 </div>
-
-
-<!-- =====================================================
-     INFORMAÇÕES DO RENDIMENTO
-===================================================== -->
-
-<div class="meta-aporte-info">
-
-
-    <div>
-
-        <span>
-            Rendimento médio
-        </span>
-
-        <strong>
-            R$ {{ meta.rendimento_diario|moeda }} / dia útil
-        </strong>
-
-    </div>
-
-
-    <div>
-
-        <span>
-            Rendimentos acumulados
-        </span>
-
-        <strong class="valor-positivo">
-            R$ {{ meta.rendimento_acumulado|moeda }}
-        </strong>
-
-    </div>
-
-
-    <div>
-
-        <span>
-            Dias úteis
-        </span>
-
-        <strong>
-
-            {% if meta.data_inicio_rendimento %}
-
-                {{ meta.dias_rendimento() }}
-
-            {% else %}
-
-                0
-
-            {% endif %}
-
-        </strong>
-
-    </div>
-
-
-</div>
-
 
 {% if erro %}
-
-<div class="alert alert-error">
-    {{ erro }}
+<div class="alert alert-danger">
+    <div class="alert-content">
+        <span>{{ erro }}</span>
+    </div>
 </div>
-
 {% endif %}
 
-
-<!-- =====================================================
-     FORMULÁRIO
-===================================================== -->
-
 <div class="form-card">
-
-
     <form method="POST">
-
-
         <div class="form-group">
-
-            <label for="valor">
-                Valor do aporte
-            </label>
-
-            <input
-                type="text"
-                id="valor"
-                name="valor"
-                class="money-input"
-                required
-                inputmode="numeric"
-                autocomplete="off"
-                placeholder="R$ 0,00"
-            >
-
-            <small class="field-help">
-                O valor será retirado da conta selecionada e adicionado à meta.
-            </small>
-
+            <label for="valor">Valor do Aporte *</label>
+            <div class="currency-input">
+                <span class="currency-prefix">R$</span>
+                <input
+                    type="text"
+                    id="valor"
+                    name="valor"
+                    class="currency-field"
+                    required
+                    inputmode="decimal"
+                    autocomplete="off"
+                    placeholder="0,00"
+                    autofocus
+                >
+            </div>
+            <span style="font-size: 12px; color: var(--text-muted); margin-top: 6px; display: block;">
+                O valor será debitado do saldo da conta de origem e somado à meta.
+            </span>
         </div>
 
-
         <div class="form-group">
-
-            <label for="conta_id">
-                Conta de origem
-            </label>
-
-            <select
-                id="conta_id"
-                name="conta_id"
-                required
-            >
-
-                <option value="">
-                    Selecione uma conta
-                </option>
-
-
+            <label for="conta_id">Conta de Origem *</label>
+            <select id="conta_id" name="conta_id" required>
+                <option value="">Selecione uma conta bancária</option>
                 {% for conta in contas %}
-
-                    <option value="{{ conta.id }}">
-
-                        {{ conta.nome }}
-
-                        —
-                        R$ {{ conta.saldo_atual()|moeda }}
-
-                    </option>
-
+                <option value="{{ conta.id }}">
+                    {{ conta.nome }} (Saldo disponível: R$ {{ conta.saldo_atual()|moeda }})
+                </option>
                 {% endfor %}
-
             </select>
-
-
-            <small class="field-help">
-                O aporte será registrado como uma despesa paga nessa conta.
-            </small>
-
+            <span style="font-size: 12px; color: var(--text-muted); margin-top: 6px; display: block;">
+                Será gerada uma despesa paga na conta escolhida com categoria de Investimento/Meta.
+            </span>
         </div>
 
-
         <div class="form-group">
-
-            <label for="data">
-                Data do aporte
-            </label>
-
+            <label for="data">Data do Aporte *</label>
             <input
                 type="date"
                 id="data"
@@ -246,129 +103,32 @@ Aporte - {{ meta.nome }} - Financeiro
                 required
                 value="{% if today %}{{ today.strftime('%Y-%m-%d') }}{% endif %}"
             >
-
         </div>
 
-
         <div class="form-group">
-
-            <label for="observacao">
-                Observação
-            </label>
-
+            <label for="observacao">Observação ou Anotação</label>
             <textarea
                 id="observacao"
                 name="observacao"
-                rows="4"
-                placeholder="Observação opcional..."
+                rows="3"
+                placeholder="Ex.: Sobra do salário, rendimento de freela..."
             ></textarea>
-
         </div>
 
-
-        <div class="meta-aporte-warning">
-
-            <strong>
-                Importante
-            </strong>
-
-            <p>
-                O rendimento da meta é calculado separadamente.
-                Ele não altera o saldo bancário.
-            </p>
-
+        <div style="background: rgba(99, 102, 241, 0.08); border: 1px solid rgba(99, 102, 241, 0.25); border-radius: var(--radius-md); padding: 14px 16px; margin-bottom: 20px; font-size: 13px; color: var(--text-secondary); line-height: 1.5;">
+            <strong style="color: var(--text-primary); display: block; margin-bottom: 2px;">💡 Informação</strong>
+            O rendimento diário estimado é calculado em dias úteis a partir da data de início configurada na meta. Os valores aportados passam a fazer parte do saldo guardado.
         </div>
-
 
         <div class="form-actions">
-
-            <a
-                href="{{ url_for('metas.listar') }}"
-                class="btn btn-secondary"
-            >
+            <button type="submit" class="btn btn-primary" onclick="return confirm('Confirma a realização deste aporte na meta?');">
+                Confirmar Aporte
+            </button>
+            <a href="{{ url_for('metas.listar') }}" class="btn btn-secondary">
                 Cancelar
             </a>
-
-
-            <button
-                type="submit"
-                class="btn btn-primary"
-                onclick="return confirm(
-                    'Confirma este aporte na meta?'
-                );"
-            >
-                Confirmar aporte
-            </button>
-
         </div>
-
-
     </form>
-
 </div>
-
-
-<script>
-
-function formatarMoedaInput(input) {
-
-    let valor = input.value || "";
-
-    let numeros = valor.replace(/\D/g, "");
-
-    if (!numeros) {
-        input.value = "";
-        return;
-    }
-
-    numeros = numeros.replace(/^0+(?=\d)/, "");
-
-    if (numeros.length === 1) {
-        numeros = "0" + numeros;
-    }
-
-    let inteiro = numeros.slice(0, -2);
-    let centavos = numeros.slice(-2);
-
-    inteiro = inteiro.replace(
-        /\B(?=(\d{3})+(?!\d))/g,
-        "."
-    );
-
-    input.value =
-        "R$ " +
-        inteiro +
-        "," +
-        centavos;
-}
-
-
-document
-    .querySelectorAll(".money-input")
-    .forEach(function(input) {
-
-        input.addEventListener(
-            "input",
-            function() {
-
-                formatarMoedaInput(
-                    this
-                );
-
-            }
-        );
-
-        if (input.value) {
-
-            formatarMoedaInput(
-                input
-            );
-
-        }
-
-    });
-
-</script>
-
 
 {% endblock %}

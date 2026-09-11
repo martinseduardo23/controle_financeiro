@@ -6,7 +6,7 @@ from flask import (
     request
 )
 
-from models import Lancamento
+from models import Lancamento, CompraCartao
 
 
 relatorios_bp = Blueprint(
@@ -297,59 +297,64 @@ def listar():
 
 
     # =====================================================
+    # COMPRAS NO CARTÃO POR CATEGORIA NO MÊS
+    # =====================================================
+
+    compras_cartao_mes = (
+        CompraCartao.query
+        .filter(
+            CompraCartao.data_compra >= inicio,
+            CompraCartao.data_compra < fim
+        )
+        .all()
+    )
+
+    cartao_categorias = {}
+    total_compras_cartao = 0.0
+
+    for compra in compras_cartao_mes:
+        cat_nome = compra.categoria.nome if compra.categoria else "Sem categoria"
+        val = float(compra.valor_total or 0)
+        cartao_categorias[cat_nome] = cartao_categorias.get(cat_nome, 0.0) + val
+        total_compras_cartao += val
+
+    cartao_categorias_lista = []
+    for nome, valor in sorted(
+        cartao_categorias.items(),
+        key=lambda item: item[1],
+        reverse=True
+    ):
+        pct = (valor / total_compras_cartao * 100) if total_compras_cartao > 0 else 0
+        cartao_categorias_lista.append({
+            "nome": nome,
+            "valor": valor,
+            "percentual": pct
+        })
+
+    # =====================================================
     # NOME DO MÊS
     # =====================================================
 
     nomes_meses = [
-
-        "Janeiro",
-        "Fevereiro",
-        "Março",
-        "Abril",
-        "Maio",
-        "Junho",
-        "Julho",
-        "Agosto",
-        "Setembro",
-        "Outubro",
-        "Novembro",
-        "Dezembro"
-
+        "Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho",
+        "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro"
     ]
 
-    nome_mes = nomes_meses[
-        mes - 1
-    ]
-
+    nome_mes = nomes_meses[mes - 1]
 
     return render_template(
-
         "relatorios.html",
-
         ano=ano,
-
         mes=mes,
-
         nome_mes=nome_mes,
-
         receitas_pagas=receitas_pagas,
-
         despesas_pagas=despesas_pagas,
-
         receitas_pendentes=receitas_pendentes,
-
         despesas_pendentes=despesas_pendentes,
-
         resultado=resultado,
-
-        despesas_categorias=(
-            despesas_categorias_lista
-        ),
-
-        receitas_categorias=(
-            receitas_categorias_lista
-        ),
-
+        despesas_categorias=despesas_categorias_lista,
+        receitas_categorias=receitas_categorias_lista,
+        cartao_categorias=cartao_categorias_lista,
+        total_compras_cartao=total_compras_cartao,
         lancamentos=lancamentos
-
     )

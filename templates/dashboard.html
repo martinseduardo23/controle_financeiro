@@ -1,643 +1,260 @@
-{% extends "base.html" %}
-
+﻿{% extends "base.html" %}
 
 {% block title %}
-Dashboard - Financeiro
+Dashboard - Controle Financeiro
 {% endblock %}
-
 
 {% block content %}
 
-
-<!-- =====================================================
-     CABEÇALHO
-===================================================== -->
-
+<!-- CABEÇALHO -->
 <div class="page-header">
-
-    <div>
-
-        <h1>
-            Dashboard
-        </h1>
-
-        <p>
-            Visão geral das suas finanças
-        </p>
-
+    <div class="page-header-content">
+        <h1>Dashboard</h1>
+        <p>Visão geral consolidada do seu patrimônio e fluxo de caixa.</p>
     </div>
-
+    <div class="page-header-actions">
+        <a href="{{ url_for('lancamentos.novo') }}" class="btn btn-primary">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
+            </svg>
+            Novo Lançamento
+        </a>
+        <a href="{{ url_for('compras_cartao.nova') }}" class="btn btn-secondary">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"/>
+            </svg>
+            Compra no Cartão
+        </a>
+    </div>
 </div>
 
+<!-- ALERTA DE CONTAS EM ATRASO -->
+{% if atrasados and total_despesas_atrasadas > 0 %}
+<div class="alert-banner-atraso">
+    <div class="alert-banner-atraso-content">
+        <div class="alert-banner-icon">⚠️</div>
+        <div>
+            <h3>Você possui {{ atrasados|length }} pendência(s) em atraso!</h3>
+            <p>Total vencido não pago: <strong>R$ {{ total_despesas_atrasadas|moeda }}</strong></p>
+        </div>
+    </div>
+    <a href="{{ url_for('lancamentos.listar', status='pendente') }}" class="btn btn-danger btn-sm">
+        Ver Pendências
+    </a>
+</div>
+{% endif %}
 
-<!-- =====================================================
-     RESUMO PRINCIPAL
-===================================================== -->
-
+<!-- CARDS PRINCIPAIS -->
 <div class="cards">
-
-
-    <!-- =================================================
-         SALDO ATUAL
-    ================================================== -->
-
+    <!-- SALDO ATUAL -->
     <div class="card">
-
-        <span class="card-title">
-            Saldo atual
-        </span>
-
-        <strong class="valor-destaque">
+        <div class="card-header-line">
+            <span class="card-title">Saldo em Contas</span>
+            <div class="card-icon success">
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                </svg>
+            </div>
+        </div>
+        <strong class="card-value {% if saldo_atual >= 0 %}valor-positivo{% else %}valor-negativo{% endif %}">
             R$ {{ saldo_atual|moeda }}
         </strong>
-
+        <span class="card-subtext">Disponível em contas ativas</span>
     </div>
 
-
-    <!-- =================================================
-         COMPROMETIDO NOS CARTÕES
-    ================================================== -->
-
-    <div class="card dashboard-card-cartao">
-
-        <span class="card-title">
-            Comprometido nos cartões
-        </span>
-
-        <strong class="valor-negativo">
+    <!-- COMPROMETIDO NOS CARTÕES -->
+    <div class="card">
+        <div class="card-header-line">
+            <span class="card-title">Faturas em Aberto</span>
+            <div class="card-icon danger">
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"/>
+                </svg>
+            </div>
+        </div>
+        <strong class="card-value valor-negativo">
             R$ {{ comprometido_cartoes|moeda }}
         </strong>
-
+        <span class="card-subtext">Total a pagar nos cartões</span>
     </div>
 
-
-    <!-- =================================================
-         DISPONÍVEL APÓS CARTÕES
-    ================================================== -->
-
-    <div class="card dashboard-card-disponivel">
-
-        <span class="card-title">
-            Disponível após cartões
-        </span>
-
-        <strong
-            class="{% if disponivel_apos_cartoes >= 0 %}
-                valor-positivo
-            {% else %}
-                valor-negativo
-            {% endif %}"
-        >
-
-            R$ {{ disponivel_apos_cartoes|moeda }}
-
-        </strong>
-
-    </div>
-
-
-    <!-- =================================================
-         SALDO PROJETADO
-    ================================================== -->
-
+    <!-- DISPONÍVEL APÓS CARTÕES -->
     <div class="card">
+        <div class="card-header-line">
+            <span class="card-title">Livre após Cartões</span>
+            <div class="card-icon primary">
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                </svg>
+            </div>
+        </div>
+        <strong class="card-value {% if disponivel_apos_cartoes >= 0 %}valor-positivo{% else %}valor-negativo{% endif %}">
+            R$ {{ disponivel_apos_cartoes|moeda }}
+        </strong>
+        <span class="card-subtext">Saldo líquido real</span>
+    </div>
 
-        <span class="card-title">
-            Saldo projetado
-        </span>
-
-        <strong>
+    <!-- SALDO PROJETADO -->
+    <div class="card">
+        <div class="card-header-line">
+            <span class="card-title">Saldo Projetado</span>
+            <div class="card-icon warning">
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"/>
+                </svg>
+            </div>
+        </div>
+        <strong class="card-value {% if saldo_projetado >= 0 %}valor-destaque{% else %}valor-negativo{% endif %}">
             R$ {{ saldo_projetado|moeda }}
         </strong>
-
+        <span class="card-subtext">Inclui receitas e despesas futuras</span>
     </div>
-
-
 </div>
 
-
-<!-- =====================================================
-     COMPROMETIMENTO POR CARTÃO
-===================================================== -->
-
-<div class="panel dashboard-cartoes-panel">
-
-    <div class="panel-header">
-
-        <div>
-
-            <h2>
-                Comprometimento dos cartões
-            </h2>
-
-            <span class="panel-subtitle">
-                Faturas ainda não pagas, agrupadas por cartão.
-            </span>
-
-        </div>
-
-
-        <a
-            href="{{ url_for('faturas_cartao.listar') }}"
-            class="btn btn-secondary"
-        >
-            Ver faturas
-        </a>
-
-    </div>
-
-
-    {% if cartoes_comprometidos %}
-
-        {% set maior_valor = cartoes_comprometidos[0].valor %}
-
-
-        <div class="dashboard-cartoes-list">
-
-
-            {% for cartao in cartoes_comprometidos %}
-
-
-                {% if maior_valor > 0 %}
-
-                    {% set percentual = (
-                        cartao.valor / maior_valor * 100
-                    ) %}
-
-                {% else %}
-
-                    {% set percentual = 0 %}
-
-                {% endif %}
-
-
-                <div class="dashboard-cartao-item">
-
-
-                    <div class="dashboard-cartao-header">
-
-                        <strong>
-                            {{ cartao.nome }}
-                        </strong>
-
-
-                        <strong>
-                            R$ {{ cartao.valor|moeda }}
-                        </strong>
-
-                    </div>
-
-
-                    <div class="dashboard-cartao-bar-bg">
-
-                        <div
-                            class="dashboard-cartao-bar"
-                            style="width: {{ percentual }}%;"
-                        ></div>
-
-                    </div>
-
-
-                </div>
-
-
-            {% endfor %}
-
-
-        </div>
-
-
-    {% else %}
-
-
-        <div class="empty-state">
-
-            <span class="empty-icon">
-                ✓
-            </span>
-
-            <strong>
-                Nenhum cartão comprometido
-            </strong>
-
-            <span>
-                Não existem faturas em aberto.
-            </span>
-
-        </div>
-
-
-    {% endif %}
-
-
-</div>
-
-
-<!-- =====================================================
-     RESUMO DO MÊS / PRÓXIMOS LANÇAMENTOS
-===================================================== -->
-
-<div class="dashboard-grid">
-
-
-    <!-- =================================================
-         RESULTADO DO MÊS
-    ================================================== -->
-
+<!-- SEÇÃO EM DUAS COLUNAS: CARTÕES & FLUXO DO MÊS -->
+<div class="relatorios-grid">
+    <!-- COMPROMETIMENTO POR CARTÃO -->
     <div class="panel">
-
         <div class="panel-header">
-
             <div>
-
-                <h2>
-                    Resultado do mês
-                </h2>
-
-                <span class="panel-subtitle">
-                    Receitas pagas menos despesas pagas
-                </span>
-
+                <h2 class="panel-title">Faturas por Cartão</h2>
+                <span class="panel-subtitle">Distribuição das faturas abertas</span>
             </div>
-
-        </div>
-
-
-        <div class="result-box">
-
-            <span>
-                Resultado
-            </span>
-
-
-            <strong
-                class="{% if resultado_mes >= 0 %}
-                    valor-positivo
-                {% else %}
-                    valor-negativo
-                {% endif %}"
-            >
-
-                R$ {{ resultado_mes|moeda }}
-
-            </strong>
-
-        </div>
-
-
-        <div class="mini-stats">
-
-
-            <div>
-
-                <span>
-                    Receitas pendentes
-                </span>
-
-                <strong class="valor-positivo">
-                    R$ {{ receitas_pendentes|moeda }}
-                </strong>
-
-            </div>
-
-
-            <div>
-
-                <span>
-                    Despesas pendentes
-                </span>
-
-                <strong class="valor-negativo">
-                    R$ {{ despesas_pendentes|moeda }}
-                </strong>
-
-            </div>
-
-
-        </div>
-
-    </div>
-
-
-    <!-- =================================================
-         PRÓXIMOS LANÇAMENTOS
-    ================================================== -->
-
-    <div class="panel">
-
-        <div class="panel-header">
-
-            <div>
-
-                <h2>
-                    Próximos lançamentos
-                </h2>
-
-                <span class="panel-subtitle">
-                    Contas e receitas ainda não pagas
-                </span>
-
-            </div>
-
-
-            <a
-                href="{{ url_for('lancamentos.novo') }}"
-                class="btn btn-primary"
-            >
-                + Lançamento
+            <a href="{{ url_for('faturas_cartao.listar') }}" class="btn btn-secondary btn-sm">
+                Ver Faturas
             </a>
-
         </div>
 
-
-        {% if proximos %}
-
-
-            <div class="upcoming-list">
-
-
-                {% for lancamento in proximos %}
-
-
-                    <div class="upcoming-item">
-
-
-                        <div class="upcoming-date">
-
-                            <strong>
-                                {{ lancamento.data.strftime("%d") }}
-                            </strong>
-
-                            <span>
-                                {{ lancamento.data.strftime("%m/%Y") }}
-                            </span>
-
+        {% if cartoes_comprometidos %}
+            {% set maior_valor = cartoes_comprometidos[0].valor %}
+            <div class="relatorio-barras">
+                {% for cartao in cartoes_comprometidos %}
+                    {% set percentual = (cartao.valor / maior_valor * 100) if maior_valor > 0 else 0 %}
+                    <div class="relatorio-barra-item">
+                        <div class="relatorio-barra-header">
+                            <strong>💳 {{ cartao.nome }}</strong>
+                            <span>R$ {{ cartao.valor|moeda }}</span>
                         </div>
-
-
-                        <div class="upcoming-info">
-
-                            <strong>
-                                {{ lancamento.descricao }}
-                            </strong>
-
-                            <span>
-
-                                {{ lancamento.conta.nome }}
-
-                                ·
-
-                                {{ lancamento.categoria.nome }}
-
-                            </span>
-
+                        <div class="relatorio-barra-bg">
+                            <div class="relatorio-barra cartao" style="width: {{ percentual }}%;"></div>
                         </div>
-
-
-                        <div
-                            class="{% if lancamento.tipo == 'receita' %}
-                                valor-positivo
-                            {% else %}
-                                valor-negativo
-                            {% endif %}"
-                        >
-
-                            <strong>
-
-                                {% if lancamento.tipo == "receita" %}
-                                    +
-                                {% else %}
-                                    -
-                                {% endif %}
-
-                                R$ {{ lancamento.valor|moeda }}
-
-                            </strong>
-
-                        </div>
-
-
                     </div>
-
-
                 {% endfor %}
-
-
             </div>
-
-
         {% else %}
-
-
             <div class="empty-state">
+                <div class="empty-state-icon">💳</div>
+                <strong>Nenhum cartão comprometido</strong>
+                <span>Todas as faturas estão quitadas ou sem lançamentos.</span>
+            </div>
+        {% endif %}
+    </div>
 
-                <span class="empty-icon">
-                    ✓
-                </span>
+    <!-- RESULTADO DO MÊS ATUAL -->
+    <div class="panel">
+        <div class="panel-header">
+            <div>
+                <h2 class="panel-title">Fluxo do Mês Atual</h2>
+                <span class="panel-subtitle">Receitas vs. Despesas pagas</span>
+            </div>
+            <a href="{{ url_for('relatorios.listar') }}" class="btn btn-secondary btn-sm">
+                Relatório Completo
+            </a>
+        </div>
 
-                <strong>
-                    Nenhum lançamento pendente
-                </strong>
+        <div style="background: rgba(255, 255, 255, 0.03); border: 1px solid var(--border); border-radius: var(--radius-md); padding: 20px; text-align: center; margin-bottom: 20px;">
+            <span style="color: var(--text-secondary); font-size: 13px;">Resultado do Mês</span>
+            <div style="font-size: 28px; font-weight: 700; margin-top: 4px;" class="{% if resultado_mes >= 0 %}valor-positivo{% else %}valor-negativo{% endif %}">
+                R$ {{ resultado_mes|moeda }}
+            </div>
+        </div>
 
-                <span>
-                    Suas próximas movimentações aparecerão aqui.
-                </span>
-
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 14px;">
+            <div style="background: rgba(16, 185, 129, 0.08); border: 1px solid rgba(16, 185, 129, 0.2); border-radius: var(--radius-md); padding: 14px;">
+                <span style="font-size: 12px; color: #34d399; display: block; margin-bottom: 4px;">Receitas Pagas</span>
+                <strong style="font-size: 17px; color: #34d399;">R$ {{ receitas_mes|moeda }}</strong>
+                {% if receitas_pendentes > 0 %}
+                    <span style="display: block; font-size: 11px; color: var(--text-muted); margin-top: 4px;">+ R$ {{ receitas_pendentes|moeda }} pendentes</span>
+                {% endif %}
             </div>
 
-
-        {% endif %}
-
-
+            <div style="background: rgba(244, 63, 94, 0.08); border: 1px solid rgba(244, 63, 94, 0.2); border-radius: var(--radius-md); padding: 14px;">
+                <span style="font-size: 12px; color: #fb7185; display: block; margin-bottom: 4px;">Despesas Pagas</span>
+                <strong style="font-size: 17px; color: #fb7185;">R$ {{ despesas_mes|moeda }}</strong>
+                {% if despesas_pendentes > 0 %}
+                    <span style="display: block; font-size: 11px; color: var(--text-muted); margin-top: 4px;">+ R$ {{ despesas_pendentes|moeda }} pendentes</span>
+                {% endif %}
+            </div>
+        </div>
     </div>
-
-
 </div>
 
-
-<!-- =====================================================
-     RESUMO DETALHADO DOS CARTÕES
-===================================================== -->
-
-<div class="panel dashboard-cartoes-resumo-panel">
-
-    <div class="panel-header">
-
-        <div>
-
-            <h2>
-                Visão financeira dos cartões
-            </h2>
-
-            <span class="panel-subtitle">
-                Relação entre o dinheiro disponível e as faturas em aberto.
-            </span>
-
-        </div>
-
-    </div>
-
-
-    <div class="dashboard-cartao-resumo">
-
-
-        <!-- SALDO -->
-
-        <div>
-
-            <span>
-                Saldo disponível
-            </span>
-
-            <strong>
-                R$ {{ saldo_atual|moeda }}
-            </strong>
-
-        </div>
-
-
-        <!-- COMPROMETIDO -->
-
-        <div>
-
-            <span>
-                Comprometido em cartões
-            </span>
-
-            <strong class="valor-negativo">
-                R$ {{ comprometido_cartoes|moeda }}
-            </strong>
-
-        </div>
-
-
-        <!-- DISPONÍVEL -->
-
-        <div>
-
-            <span>
-                Disponível após cartões
-            </span>
-
-            <strong
-                class="{% if disponivel_apos_cartoes >= 0 %}
-                    valor-positivo
-                {% else %}
-                    valor-negativo
-                {% endif %}"
-            >
-                R$ {{ disponivel_apos_cartoes|moeda }}
-            </strong>
-
-        </div>
-
-
-    </div>
-
-</div>
-
-
-<!-- =====================================================
-     COMO INTERPRETAR
-===================================================== -->
-
+<!-- PRÓXIMOS LANÇAMENTOS -->
 <div class="panel">
-
     <div class="panel-header">
-
         <div>
-
-            <h2>
-                Como interpretar os saldos
-            </h2>
-
+            <h2 class="panel-title">Próximos Lançamentos</h2>
+            <span class="panel-subtitle">Movimentações pendentes a vencer</span>
         </div>
-
+        <a href="{{ url_for('lancamentos.listar') }}" class="btn btn-secondary btn-sm">
+            Ver Todos
+        </a>
     </div>
 
-
-    <div class="info-grid">
-
-
-        <!-- SALDO ATUAL -->
-
-        <div>
-
-            <strong>
-                Saldo atual
-            </strong>
-
-            <p>
-
-                Considera o saldo inicial das contas
-                e somente receitas e despesas
-                com status "Pago".
-
-            </p>
-
+    {% if proximos %}
+        <div class="table-container" style="margin-bottom: 0;">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Data</th>
+                        <th>Descrição</th>
+                        <th>Conta</th>
+                        <th>Categoria</th>
+                        <th>Tipo</th>
+                        <th style="text-align: right;">Valor</th>
+                        <th style="text-align: center;">Status</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for lancamento in proximos %}
+                    <tr>
+                        <td style="white-space: nowrap; font-weight: 500;">
+                            {{ lancamento.data.strftime("%d/%m/%Y") }}
+                        </td>
+                        <td>
+                            <strong>{{ lancamento.descricao }}</strong>
+                        </td>
+                        <td style="color: var(--text-secondary);">
+                            {{ lancamento.conta.nome }}
+                        </td>
+                        <td style="color: var(--text-secondary);">
+                            {{ lancamento.categoria.nome if lancamento.categoria else "-" }}
+                        </td>
+                        <td>
+                            <span class="badge badge-{{ lancamento.tipo }}">
+                                {{ lancamento.tipo }}
+                            </span>
+                        </td>
+                        <td style="text-align: right; font-weight: 600;" class="{% if lancamento.tipo == 'receita' %}valor-positivo{% else %}valor-negativo{% endif %}">
+                            {{ '+' if lancamento.tipo == 'receita' else '-' }} R$ {{ lancamento.valor|moeda }}
+                        </td>
+                        <td style="text-align: center;">
+                            <span class="badge badge-pendente">
+                                {{ lancamento.status }}
+                            </span>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
         </div>
-
-
-        <!-- COMPROMETIDO -->
-
-        <div>
-
-            <strong>
-                Comprometido nos cartões
-            </strong>
-
-            <p>
-
-                Soma todas as faturas dos cartões
-                que ainda não foram pagas.
-
-            </p>
-
+    {% else %}
+        <div class="empty-state">
+            <div class="empty-state-icon">📅</div>
+            <strong>Nenhum lançamento pendente futuro</strong>
+            <span>Você não possui contas agendadas nos próximos dias.</span>
         </div>
-
-
-        <!-- DISPONÍVEL -->
-
-        <div>
-
-            <strong>
-                Disponível após cartões
-            </strong>
-
-            <p>
-
-                Mostra quanto sobraria do dinheiro
-                atual depois de considerar todas
-                as faturas de cartão em aberto.
-
-            </p>
-
-        </div>
-
-
-        <!-- PROJETADO -->
-
-        <div>
-
-            <strong>
-                Saldo projetado
-            </strong>
-
-            <p>
-
-                Considera o saldo inicial e todos
-                os lançamentos, incluindo aqueles
-                que ainda estão pendentes ou
-                agendados.
-
-            </p>
-
-        </div>
-
-
-    </div>
-
+    {% endif %}
 </div>
-
 
 {% endblock %}
