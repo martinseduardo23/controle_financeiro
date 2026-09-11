@@ -1,0 +1,404 @@
+{% extends "base.html" %}
+
+
+{% block title %}
+Relatórios - Financeiro
+{% endblock %}
+
+
+{% block content %}
+
+
+<div class="page-header">
+
+    <div>
+
+        <h1>
+            Relatórios
+        </h1>
+
+        <p>
+            Analise suas receitas, despesas e resultados.
+        </p>
+
+    </div>
+
+</div>
+
+
+<!-- =====================================================
+     FILTRO
+===================================================== -->
+
+<div class="panel relatorios-filtro">
+
+    <form
+        method="GET"
+        class="relatorios-filtro-form"
+    >
+
+        <div>
+
+            <label for="mes">
+                Mês de análise
+            </label>
+
+            <input
+                type="month"
+                id="mes"
+                name="mes"
+                value="{{ ano }}-{{ '%02d'|format(mes) }}"
+            >
+
+        </div>
+
+
+        <button
+            type="submit"
+            class="btn btn-primary"
+        >
+            Aplicar
+        </button>
+
+    </form>
+
+</div>
+
+
+<!-- =====================================================
+     TÍTULO DO PERÍODO
+===================================================== -->
+
+<div class="relatorios-periodo">
+
+    <span>
+        Período analisado
+    </span>
+
+    <strong>
+        {{ nome_mes }} de {{ ano }}
+    </strong>
+
+</div>
+
+
+<!-- =====================================================
+     RESUMO
+===================================================== -->
+
+<div class="cards">
+
+
+    <div class="card">
+
+        <span class="card-title">
+            Receitas pagas
+        </span>
+
+        <strong class="valor-positivo">
+            R$ {{ receitas_pagas|moeda }}
+        </strong>
+
+    </div>
+
+
+    <div class="card">
+
+        <span class="card-title">
+            Despesas pagas
+        </span>
+
+        <strong class="valor-negativo">
+            R$ {{ despesas_pagas|moeda }}
+        </strong>
+
+    </div>
+
+
+    <div class="card">
+
+        <span class="card-title">
+            Resultado
+        </span>
+
+        <strong
+            class="{% if resultado >= 0 %}
+                valor-positivo
+            {% else %}
+                valor-negativo
+            {% endif %}"
+        >
+            R$ {{ resultado|moeda }}
+        </strong>
+
+    </div>
+
+
+    <div class="card">
+
+        <span class="card-title">
+            Despesas pendentes
+        </span>
+
+        <strong class="valor-negativo">
+            R$ {{ despesas_pendentes|moeda }}
+        </strong>
+
+    </div>
+
+
+</div>
+
+
+<!-- =====================================================
+     GRÁFICOS / CATEGORIAS
+===================================================== -->
+
+<div class="relatorios-grid">
+
+
+    <!-- =================================================
+         DESPESAS POR CATEGORIA
+    ================================================== -->
+
+    <div class="panel">
+
+        <div class="panel-header">
+
+            <div>
+
+                <h2>
+                    Despesas por categoria
+                </h2>
+
+                <span class="panel-subtitle">
+                    Distribuição das despesas pagas.
+                </span>
+
+            </div>
+
+        </div>
+
+
+        {% if despesas_categorias %}
+
+
+            <div class="relatorio-barras">
+
+
+                {% for categoria in despesas_categorias %}
+
+
+                    <div class="relatorio-barra-item">
+
+
+                        <div class="relatorio-barra-header">
+
+                            <strong>
+                                {{ categoria.nome }}
+                            </strong>
+
+                            <span>
+                                R$ {{ categoria.valor|moeda }}
+                                ·
+                                {{ "%.1f"|format(
+                                    categoria.percentual
+                                ) }}%
+                            </span>
+
+                        </div>
+
+
+                        <div class="relatorio-barra-bg">
+
+                            <div
+                                class="relatorio-barra"
+                                style="width: {{ categoria.percentual }}%;"
+                            ></div>
+
+                        </div>
+
+
+                    </div>
+
+
+                {% endfor %}
+
+
+            </div>
+
+
+        {% else %}
+
+
+            <div class="empty-state">
+
+                <strong>
+                    Nenhuma despesa paga
+                </strong>
+
+                <span>
+                    Não existem despesas registradas neste período.
+                </span>
+
+            </div>
+
+
+        {% endif %}
+
+    </div>
+
+
+    <!-- =================================================
+         RECEITAS POR CATEGORIA
+    ================================================== -->
+
+    <div class="panel">
+
+        <div class="panel-header">
+
+            <div>
+
+                <h2>
+                    Receitas por categoria
+                </h2>
+
+                <span class="panel-subtitle">
+                    Distribuição das receitas pagas.
+                </span>
+
+            </div>
+
+        </div>
+
+
+        {% if receitas_categorias %}
+
+
+            <div class="relatorio-barras">
+
+
+                {% for categoria in receitas_categorias %}
+
+
+                    <div class="relatorio-barra-item">
+
+
+                        <div class="relatorio-barra-header">
+
+                            <strong>
+                                {{ categoria.nome }}
+                            </strong>
+
+                            <span>
+                                R$ {{ categoria.valor|moeda }}
+                                ·
+                                {{ "%.1f"|format(
+                                    categoria.percentual
+                                ) }}%
+                            </span>
+
+                        </div>
+
+
+                        <div class="relatorio-barra-bg">
+
+                            <div
+                                class="relatorio-barra receita"
+                                style="width: {{ categoria.percentual }}%;"
+                            ></div>
+
+                        </div>
+
+
+                    </div>
+
+
+                {% endfor %}
+
+
+            </div>
+
+
+        {% else %}
+
+
+            <div class="empty-state">
+
+                <strong>
+                    Nenhuma receita paga
+                </strong>
+
+                <span>
+                    Não existem receitas registradas neste período.
+                </span>
+
+            </div>
+
+
+        {% endif %}
+
+    </div>
+
+
+</div>
+
+
+<!-- =====================================================
+     PENDÊNCIAS
+===================================================== -->
+
+<div class="panel">
+
+    <div class="panel-header">
+
+        <div>
+
+            <h2>
+                Valores pendentes
+            </h2>
+
+            <span class="panel-subtitle">
+                Movimentações ainda não pagas.
+            </span>
+
+        </div>
+
+    </div>
+
+
+    <div class="relatorio-pendentes">
+
+
+        <div>
+
+            <span>
+                Receitas pendentes
+            </span>
+
+            <strong class="valor-positivo">
+                R$ {{ receitas_pendentes|moeda }}
+            </strong>
+
+        </div>
+
+
+        <div>
+
+            <span>
+                Despesas pendentes
+            </span>
+
+            <strong class="valor-negativo">
+                R$ {{ despesas_pendentes|moeda }}
+            </strong>
+
+        </div>
+
+
+    </div>
+
+</div>
+
+
+{% endblock %}
