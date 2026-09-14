@@ -1,0 +1,270 @@
+﻿{% extends "base.html" %}
+
+{% block title %}
+Integração Mercado Pago - Controle Financeiro
+{% endblock %}
+
+{% block content %}
+
+<div class="page-header">
+    <div class="page-header-content">
+        <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 4px;">
+            <div style="width: 28px; height: 28px; border-radius: 6px; background: #009ee3; display: flex; align-items: center; justify-content: center; font-weight: 800; color: #fff; font-size: 14px;">
+                MP
+            </div>
+            <h1>Integração Mercado Pago</h1>
+        </div>
+        <p>Receba compras, pagamentos e transferências Pix em tempo real via Webhook oficial.</p>
+    </div>
+</div>
+
+<!-- STATUS DA CONEXÃO -->
+<div class="cards" style="margin-bottom: 28px;">
+    <div class="card">
+        <span class="card-title">Status da API</span>
+        <div style="display: flex; align-items: center; gap: 10px; margin-top: 4px;">
+            {% if tem_token %}
+                <span class="badge badge-success" style="font-size: 13px; padding: 6px 12px;">
+                    ● Token Ativo ({{ token_preview }})
+                </span>
+            {% else %}
+                <span class="badge badge-warning" style="font-size: 13px; padding: 6px 12px;">
+                    ● Aguardando Access Token
+                </span>
+            {% endif %}
+        </div>
+        <span class="card-hint">
+            {% if tem_token %}
+                Pronto para consultar detalhes completos de pagamentos.
+            {% else %}
+                Configure seu token abaixo para habilitar consultas completas.
+            {% endif %}
+        </span>
+    </div>
+
+    <div class="card">
+        <span class="card-title">Conta no Sistema</span>
+        <strong style="color: var(--text-primary); font-size: 20px;">Mercado Pago</strong>
+        <span class="card-hint">
+            {% if conta_mp %}
+                Saldo atual: <strong style="color: var(--primary);">R$ {{ conta_mp.saldo_atual()|moeda }}</strong>
+            {% else %}
+                Será criada automaticamente na 1ª transação.
+            {% endif %}
+        </span>
+    </div>
+
+    <div class="card">
+        <span class="card-title">Modo de Operação</span>
+        <strong style="color: #009ee3; font-size: 20px;">Webhooks Push</strong>
+        <span class="card-hint">Tempo real e sem sobrecarga</span>
+    </div>
+</div>
+
+<!-- URL DO WEBHOOK -->
+<div class="panel" style="margin-bottom: 28px; border-color: rgba(0, 158, 227, 0.3);">
+    <div class="panel-header">
+        <div>
+            <h2>URL do Webhook</h2>
+            <span class="panel-subtitle">Endereço que deve ser cadastrado no painel do Mercado Pago Developers</span>
+        </div>
+        <span class="badge" style="background: rgba(0, 158, 227, 0.15); color: #38bdf8; border: 1px solid rgba(0, 158, 227, 0.3);">
+            POST & GET
+        </span>
+    </div>
+
+    <div style="display: flex; gap: 12px; align-items: center; flex-wrap: wrap;">
+        <input 
+            type="text" 
+            id="webhook-url-input" 
+            readonly 
+            value="{{ webhook_url }}" 
+            style="flex: 1; min-width: 280px; background: #050507; border: 1px solid #272730; color: #38bdf8; padding: 12px 14px; border-radius: var(--radius-md); font-family: monospace; font-size: 13.5px;"
+        >
+        <button type="button" class="btn btn-primary" onclick="copiarWebhookUrl()" style="background: #009ee3; border-color: #009ee3;">
+            📋 Copiar URL
+        </button>
+    </div>
+
+    <div style="margin-top: 14px; font-size: 12.5px; color: var(--text-secondary); line-height: 1.6;">
+        💡 <strong>Dica para ambiente local:</strong> Se você estiver rodando em <code>localhost</code>, o Mercado Pago precisa de uma URL pública para enviar as notificações. Você pode usar o <a href="https://ngrok.com/" target="_blank" style="color: #38bdf8; text-decoration: underline;">ngrok</a> (ex.: <code>ngrok http 5000</code>) para gerar um endereço público gratuito e colar no Mercado Pago.
+    </div>
+</div>
+
+<!-- GRID: CONFIGURAÇÃO E SIMULADOR -->
+<div class="relatorios-grid" style="margin-bottom: 28px;">
+
+    <!-- COLUNA 1: CONFIGURAÇÃO DO TOKEN -->
+    <div class="panel">
+        <div class="panel-header">
+            <div>
+                <h2>Configurar Access Token</h2>
+                <span class="panel-subtitle">Insira sua credencial de produção ou teste</span>
+            </div>
+        </div>
+
+        <form method="POST" action="{{ url_for('integracoes.mercadopago_configurar') }}">
+            <div class="form-group">
+                <label for="access_token">Access Token do Mercado Pago</label>
+                <input 
+                    type="password" 
+                    id="access_token" 
+                    name="access_token" 
+                    placeholder="APP_USR-xxxxxx-xxxxxx... ou TEST-xxxxxx..." 
+                    required
+                    style="background: #050507;"
+                >
+                <span style="font-size: 12px; color: var(--text-muted); margin-top: 6px; display: block;">
+                    O token fica guardado em segurança no arquivo local <code>data/mp_token.txt</code> (nunca vai para o GitHub).
+                </span>
+            </div>
+
+            <div style="background: rgba(255, 255, 255, 0.02); border: 1px solid var(--border); border-radius: var(--radius-md); padding: 14px; margin-bottom: 20px; font-size: 12.5px; color: var(--text-secondary); line-height: 1.5;">
+                <strong style="color: var(--text-primary); display: block; margin-bottom: 4px;">Como obter seu token:</strong>
+                1. Acesse o <a href="https://www.mercadopago.com.br/developers/panel/app" target="_blank" style="color: #38bdf8;">Painel de Desenvolvedores do Mercado Pago</a>.<br>
+                2. Crie uma aplicação ou selecione uma existente.<br>
+                3. Vá em <strong>Credenciais de Produção</strong> ou <strong>Credenciais de Teste</strong>.<br>
+                4. Copie o <strong>Access Token</strong> e cole no campo acima.
+            </div>
+
+            <button type="submit" class="btn btn-primary" style="width: 100%;">
+                Salvar Token
+            </button>
+        </form>
+    </div>
+
+    <!-- COLUNA 2: SIMULADOR DE TRANSAÇÃO -->
+    <div class="panel">
+        <div class="panel-header">
+            <div>
+                <h2>🧪 Simulador de Transações</h2>
+                <span class="panel-subtitle">Teste a criação automática de lançamentos na prática</span>
+            </div>
+            <span class="badge badge-info">Ambiente de Testes</span>
+        </div>
+
+        <form method="POST" action="{{ url_for('integracoes.mercadopago_simular') }}">
+            <div class="form-group">
+                <label for="descricao">Descrição da Compra / Pagamento</label>
+                <input 
+                    type="text" 
+                    id="descricao" 
+                    name="descricao" 
+                    value="Compra Mercado Livre - Eletrônicos" 
+                    required
+                    style="background: #050507;"
+                >
+            </div>
+
+            <div class="form-grid">
+                <div class="form-group">
+                    <label for="valor">Valor (R$)</label>
+                    <input 
+                        type="text" 
+                        id="valor" 
+                        name="valor" 
+                        value="89,90" 
+                        required
+                        style="background: #050507;"
+                    >
+                </div>
+
+                <div class="form-group">
+                    <label for="tipo">Tipo</label>
+                    <select id="tipo" name="tipo" style="background: #050507;">
+                        <option value="despesa">Despesa (Compra / Pagamento)</option>
+                        <option value="receita">Receita (Pix / Venda recebida)</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label for="metodo">Método de Pagamento</label>
+                <select id="metodo" name="metodo" style="background: #050507;">
+                    <option value="pix">Pix</option>
+                    <option value="credit_card">Cartão de Crédito</option>
+                    <option value="account_money">Saldo em Conta Mercado Pago</option>
+                </select>
+            </div>
+
+            <button type="submit" class="btn btn-primary" style="width: 100%; background: linear-gradient(135deg, #10b981, #059669); border-color: #059669;">
+                🚀 Simular Notificação de Pagamento
+            </button>
+        </form>
+    </div>
+
+</div>
+
+<!-- HISTÓRICO RECENTE DE NOTIFICAÇÕES MERCADO PAGO -->
+<div class="panel">
+    <div class="panel-header">
+        <div>
+            <h2>Lançamentos Recentes via Mercado Pago</h2>
+            <span class="panel-subtitle">Últimas transações sincronizadas através da integração</span>
+        </div>
+        <span class="badge badge-info">{{ ultimos_lancamentos|length }} registradas</span>
+    </div>
+
+    {% if ultimos_lancamentos %}
+    <div class="table-container">
+        <table>
+            <thead>
+                <tr>
+                    <th>Data</th>
+                    <th>Descrição</th>
+                    <th>Tipo</th>
+                    <th>Valor</th>
+                    <th>Conta</th>
+                    <th>Identificador / Obs</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for lanc in ultimos_lancamentos %}
+                <tr>
+                    <td>{{ lanc.data.strftime("%d/%m/%Y") }}</td>
+                    <td><strong style="color: var(--text-primary);">{{ lanc.descricao }}</strong></td>
+                    <td>
+                        {% if lanc.tipo == 'receita' %}
+                            <span class="badge badge-receita">Receita</span>
+                        {% else %}
+                            <span class="badge badge-despesa">Despesa</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        <strong class="{% if lanc.tipo == 'receita' %}valor-positivo{% else %}valor-negativo{% endif %}">
+                            R$ {{ lanc.valor|moeda }}
+                        </strong>
+                    </td>
+                    <td>{{ lanc.conta.nome if lanc.conta else 'Mercado Pago' }}</td>
+                    <td style="font-family: monospace; font-size: 12px; color: var(--text-muted);">
+                        {{ lanc.observacao }}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+    <div class="empty-state">
+        <span class="empty-state-icon">📡</span>
+        <strong>Nenhuma notificação recebida ainda</strong>
+        <span>Use o simulador acima ou conecte o Webhook para registrar suas primeiras compras.</span>
+    </div>
+    {% endif %}
+</div>
+
+<script>
+function copiarWebhookUrl() {
+    const input = document.getElementById("webhook-url-input");
+    input.select();
+    input.setSelectionRange(0, 99999);
+    navigator.clipboard.writeText(input.value).then(() => {
+        alert("URL do Webhook copiada para a área de transferência!");
+    }).catch(() => {
+        document.execCommand("copy");
+        alert("URL copiada!");
+    });
+}
+</script>
+
+{% endblock %}

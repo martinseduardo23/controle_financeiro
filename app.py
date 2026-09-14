@@ -18,6 +18,7 @@ from routes.compras_cartao import compras_cartao_bp
 from routes.faturas_cartao import faturas_cartao_bp
 from routes.metas import metas_bp
 from routes.relatorios import relatorios_bp
+from routes.integracoes import integracoes_bp
 
 
 # =========================================================
@@ -156,6 +157,11 @@ def criar_app():
     # Relatórios
     app.register_blueprint(
         relatorios_bp
+    )
+
+    # Integrações (Mercado Pago, etc.)
+    app.register_blueprint(
+        integracoes_bp
     )
 
 

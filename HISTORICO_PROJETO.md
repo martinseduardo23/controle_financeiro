@@ -1,4 +1,4 @@
-﻿# Histórico do Projeto e Próximos Passos - Controle Financeiro
+# Histórico do Projeto e Próximos Passos - Controle Financeiro
 
 Documento de transição e contexto para continuidade do desenvolvimento do projeto no Antigravity / IDE em outro computador.
 
@@ -20,6 +20,10 @@ Documento de transição e contexto para continuidade do desenvolvimento do proj
   - Incluídos os gastos no cartão de crédito por categoria na competência do mês selecionado (`cartao_categorias`).
 - **Otimização de Metas (`models/meta.py`)**:
   - Adicionado cache de feriados móveis (`_cache_feriados`) no cálculo de dias úteis com feriados nacionais.
+- **Integração em Tempo Real Mercado Pago (`services/mercadopago_service.py` e `routes/integracoes.py`)**:
+  - Implementado Webhook oficial (`/webhooks/mercadopago`) com consulta à API oficial para capturar pagamentos e Pix em tempo real.
+  - Tela de gerenciamento e simulador interativo em `/integracoes/mercadopago`.
+  - Mecanismo de idempotência contra duplicação de transações.
 
 ### 2. Interface Visual (UI/UX)
 - **Tema**: Dark Mode Absoluto (Preto verdadeiro `#000000` / `#0a0a0d`), estilo fintech moderna com tipografia Inter, cards com bordas suaves e badges de alto contraste.
