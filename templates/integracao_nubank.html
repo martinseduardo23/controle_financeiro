@@ -1,0 +1,306 @@
+﻿{% extends "base.html" %}
+
+{% block title %}
+Integração Nubank & Apple Pay - Controle Financeiro
+{% endblock %}
+
+{% block content %}
+
+<div class="page-header">
+    <div class="page-header-content">
+        <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 4px;">
+            <div style="width: 28px; height: 28px; border-radius: 6px; background: #820ad1; display: flex; align-items: center; justify-content: center; font-weight: 800; color: #fff; font-size: 14px;">
+                Nu
+            </div>
+            <h1>Integração Nubank & Apple Pay (iOS)</h1>
+        </div>
+        <p>Receba compras em tempo real ao aproximar o iPhone e importe faturas completas (CSV / OFX) sem duplicidades.</p>
+    </div>
+</div>
+
+<!-- CARDS RESUMO NUBANK -->
+<div class="cards" style="margin-bottom: 28px;">
+    <div class="card">
+        <span class="card-title">Cartão de Crédito</span>
+        <strong style="color: #c084fc; font-size: 20px;">
+            {{ cartao_nu.nome if cartao_nu else 'Nubank Roxinho' }}
+        </strong>
+        <span class="card-hint">
+            {% if cartao_nu %}
+                Limite: R$ {{ cartao_nu.limite|moeda }} · Vencimento dia {{ cartao_nu.dia_vencimento }}
+            {% else %}
+                Será criado automaticamente na 1ª transação.
+            {% endif %}
+        </span>
+    </div>
+
+    <div class="card">
+        <span class="card-title">NuConta</span>
+        <strong style="color: var(--text-primary); font-size: 20px;">
+            {{ conta_nu.nome if conta_nu else 'Nubank (NuConta)' }}
+        </strong>
+        <span class="card-hint">
+            {% if conta_nu %}
+                Saldo atual: <strong style="color: var(--success);">R$ {{ conta_nu.saldo_atual()|moeda }}</strong>
+            {% else %}
+                Pronta para receber extratos da conta.
+            {% endif %}
+        </span>
+    </div>
+
+    <div class="card">
+        <span class="card-title">Modo Integrado</span>
+        <strong style="color: #38bdf8; font-size: 20px;">Apple Pay + Arquivos</strong>
+        <span class="card-hint">Aproximação diária + fatura mensal</span>
+    </div>
+</div>
+
+<!-- URL DO WEBHOOK PARA O IPHONE -->
+<div class="panel" style="margin-bottom: 28px; border-color: rgba(130, 10, 209, 0.4);">
+    <div class="panel-header">
+        <div>
+            <h2>URL do Webhook para Apple Pay (iOS)</h2>
+            <span class="panel-subtitle">Endereço para cadastrar no app Atalhos (Shortcuts) do seu iPhone</span>
+        </div>
+        <span class="badge" style="background: rgba(130, 10, 209, 0.2); color: #d8b4fe; border: 1px solid rgba(130, 10, 209, 0.4);">
+            iOS Shortcuts POST
+        </span>
+    </div>
+
+    <div style="display: flex; gap: 12px; align-items: center; flex-wrap: wrap;">
+        <input 
+            type="text" 
+            id="webhook-url-nu" 
+            readonly 
+            value="{{ webhook_url }}" 
+            style="flex: 1; min-width: 280px; background: #050507; border: 1px solid #272730; color: #d8b4fe; padding: 12px 14px; border-radius: var(--radius-md); font-family: monospace; font-size: 13.5px;"
+        >
+        <button type="button" class="btn btn-primary" onclick="copiarWebhookNu()" style="background: #820ad1; border-color: #820ad1;">
+            📋 Copiar URL
+        </button>
+    </div>
+</div>
+
+<!-- GRID: GUIA IPHONE E IMPORTADOR DE ARQUIVO -->
+<div class="relatorios-grid" style="margin-bottom: 28px;">
+
+    <!-- COLUNA 1: IMPORTADOR DE ARQUIVOS (CSV / OFX) -->
+    <div class="panel">
+        <div class="panel-header">
+            <div>
+                <h2>📥 Importar Fatura ou Extrato</h2>
+                <span class="panel-subtitle">Faça upload de arquivos .csv ou .ofx exportados do Nubank</span>
+            </div>
+            <span class="badge badge-info">Faturas & Extratos</span>
+        </div>
+
+        <form method="POST" action="{{ url_for('integracoes.nubank_importar_arquivo') }}" enctype="multipart/form-data">
+            <div class="form-group">
+                <label for="arquivo">Selecione o arquivo exportado do Nubank (.csv ou .ofx)</label>
+                <input 
+                    type="file" 
+                    id="arquivo" 
+                    name="arquivo" 
+                    accept=".csv, .ofx" 
+                    required
+                    style="background: #050507; padding: 12px; border: 1px dashed rgba(255, 255, 255, 0.2); border-radius: var(--radius-md);"
+                >
+            </div>
+
+            <div class="form-group">
+                <label for="destino">Destino das transações:</label>
+                <select id="destino" name="destino" style="background: #050507;">
+                    <option value="cartao">Cartão de Crédito Nubank (Fatura de Compras)</option>
+                    <option value="conta">Conta Corrente Nubank (Extrato da NuConta)</option>
+                </select>
+                <span style="font-size: 12px; color: var(--text-muted); margin-top: 6px; display: block;">
+                    O sistema detecta automaticamente se você enviar a fatura do cartão ou extrato da conta.
+                </span>
+            </div>
+
+            <div style="background: rgba(16, 185, 129, 0.06); border: 1px solid rgba(16, 185, 129, 0.2); border-radius: var(--radius-md); padding: 12px 14px; margin-bottom: 20px; font-size: 12.5px; color: #a7f3d0; line-height: 1.5;">
+                🛡️ <strong>Proteção contra duplicatas:</strong> Se você já registrou compras pelo Apple Pay neste mês, o importador reconhece e <strong>não duplica</strong>!
+            </div>
+
+            <button type="submit" class="btn btn-primary" style="width: 100%; background: #820ad1; border-color: #820ad1;">
+                Processar e Importar Arquivo
+            </button>
+        </form>
+    </div>
+
+    <!-- COLUNA 2: GUIA IPHONE APPLE PAY -->
+    <div class="panel">
+        <div class="panel-header">
+            <div>
+                <h2>🍏 Como Configurar no iPhone (App Atalhos)</h2>
+                <span class="panel-subtitle">Passo a passo rápido para registrar compras ao aproximar o celular</span>
+            </div>
+            <span class="badge" style="background: rgba(255,255,255,0.1); color: #fff;">1 Minuto</span>
+        </div>
+
+        <div style="display: flex; flex-direction: column; gap: 14px; font-size: 13px; color: var(--text-secondary); line-height: 1.5;">
+            <div style="display: flex; gap: 12px; align-items: flex-start;">
+                <span style="width: 22px; height: 22px; border-radius: 50%; background: #820ad1; color: #fff; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 12px; flex-shrink: 0;">1</span>
+                <div>Abra o aplicativo nativo <strong>Atalhos (Shortcuts)</strong> no seu iPhone e toque na aba <strong>Automação</strong>.</div>
+            </div>
+
+            <div style="display: flex; gap: 12px; align-items: flex-start;">
+                <span style="width: 22px; height: 22px; border-radius: 50%; background: #820ad1; color: #fff; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 12px; flex-shrink: 0;">2</span>
+                <div>Toque no <strong>+</strong> e escolha <strong>"Transação"</strong> (abaixo de Carteira / Apple Pay).</div>
+            </div>
+
+            <div style="display: flex; gap: 12px; align-items: flex-start;">
+                <span style="width: 22px; height: 22px; border-radius: 50%; background: #820ad1; color: #fff; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 12px; flex-shrink: 0;">3</span>
+                <div>Selecione o seu cartão <strong>Nubank</strong> e marque <strong>"Executar Imediatamente"</strong> (para rodar sem pedir confirmação).</div>
+            </div>
+
+            <div style="display: flex; gap: 12px; align-items: flex-start;">
+                <span style="width: 22px; height: 22px; border-radius: 50%; background: #820ad1; color: #fff; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 12px; flex-shrink: 0;">4</span>
+                <div>
+                    Adicione a ação <strong>"Obter Conteúdo do URL"</strong>:
+                    <ul style="margin: 6px 0 0 16px; color: var(--text-muted); font-size: 12px;">
+                        <li>Método: <strong>POST</strong></li>
+                        <li>URL: Cole a URL do webhook acima</li>
+                        <li>Corpo da requisição: JSON com <code>estabelecimento</code>, <code>valor</code> e <code>categoria</code></li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <div style="margin-top: 20px; padding-top: 16px; border-top: 1px solid var(--border);">
+            <details style="font-size: 12px; color: var(--text-muted); cursor: pointer;">
+                <summary style="font-weight: 600; color: #d8b4fe;">Ver modelo exato do JSON do iPhone</summary>
+                <pre style="background: #050507; border: 1px solid #272730; padding: 10px; border-radius: 6px; margin-top: 8px; font-family: monospace; color: #38bdf8;">{
+  "estabelecimento": "Entrada de Atalho (Estabelecimento)",
+  "valor": "Entrada de Atalho (Valor)",
+  "categoria": "Entrada de Atalho (Categoria)"
+}</pre>
+            </details>
+        </div>
+    </div>
+
+</div>
+
+<!-- SIMULADOR APPLE PAY -->
+<div class="panel" style="margin-bottom: 28px;">
+    <div class="panel-header">
+        <div>
+            <h2>🧪 Simulador Apple Pay (iOS)</h2>
+            <span class="panel-subtitle">Teste como uma compra por aproximação no iPhone é registrada no Cartão Nubank</span>
+        </div>
+        <span class="badge badge-info">Teste Instantâneo</span>
+    </div>
+
+    <form method="POST" action="{{ url_for('integracoes.nubank_simular_ios') }}">
+        <div class="form-grid">
+            <div class="form-group">
+                <label for="estabelecimento">Estabelecimento</label>
+                <input 
+                    type="text" 
+                    id="estabelecimento" 
+                    name="estabelecimento" 
+                    value="Pão de Açúcar - Supermercado" 
+                    required
+                    style="background: #050507;"
+                >
+            </div>
+
+            <div class="form-group">
+                <label for="valor">Valor da Compra (R$)</label>
+                <input 
+                    type="text" 
+                    id="valor" 
+                    name="valor" 
+                    value="42,50" 
+                    required
+                    style="background: #050507;"
+                >
+            </div>
+        </div>
+
+        <div class="form-grid">
+            <div class="form-group">
+                <label for="categoria">Categoria Estimada</label>
+                <select id="categoria" name="categoria" style="background: #050507;">
+                    <option value="Alimentação">Alimentação</option>
+                    <option value="Transporte">Transporte</option>
+                    <option value="Farmácia">Saúde</option>
+                    <option value="Lazer">Lazer</option>
+                    <option value="Outros">Outros</option>
+                </select>
+            </div>
+
+            <div class="form-group" style="display: flex; align-items: flex-end;">
+                <button type="submit" class="btn btn-primary" style="width: 100%; height: 42px; background: linear-gradient(135deg, #820ad1, #6b21a8); border-color: #820ad1;">
+                    📲 Simular Toque Apple Pay
+                </button>
+            </div>
+        </div>
+    </form>
+</div>
+
+<!-- ÚLTIMAS COMPRAS NO CARTÃO NUBANK -->
+<div class="panel">
+    <div class="panel-header">
+        <div>
+            <h2>Compras Recentes no Cartão Nubank</h2>
+            <span class="panel-subtitle">Lançamentos via Apple Pay ou importação de fatura</span>
+        </div>
+        <span class="badge" style="background: rgba(130, 10, 209, 0.2); color: #d8b4fe;">{{ ultimas_compras|length }} registradas</span>
+    </div>
+
+    {% if ultimas_compras %}
+    <div class="table-container">
+        <table>
+            <thead>
+                <tr>
+                    <th>Data</th>
+                    <th>Estabelecimento</th>
+                    <th>Valor</th>
+                    <th>Parcelas</th>
+                    <th>Origem / Obs</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for compra in ultimas_compras %}
+                <tr>
+                    <td>{{ compra.data_compra.strftime("%d/%m/%Y") }}</td>
+                    <td><strong style="color: var(--text-primary);">{{ compra.descricao }}</strong></td>
+                    <td>
+                        <strong class="valor-negativo">
+                            R$ {{ compra.valor_total|moeda }}
+                        </strong>
+                    </td>
+                    <td><span class="badge">{{ compra.parcelas }}x</span></td>
+                    <td style="font-family: monospace; font-size: 12px; color: var(--text-muted);">
+                        {{ compra.observacao or 'Cartão Nubank' }}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+    <div class="empty-state">
+        <span class="empty-state-icon">💳</span>
+        <strong>Nenhuma compra registrada no Cartão Nubank ainda</strong>
+        <span>Use o simulador acima, configure o Apple Pay ou importe uma fatura CSV/OFX.</span>
+    </div>
+    {% endif %}
+</div>
+
+<script>
+function copiarWebhookNu() {
+    const input = document.getElementById("webhook-url-nu");
+    input.select();
+    input.setSelectionRange(0, 99999);
+    navigator.clipboard.writeText(input.value).then(() => {
+        alert("URL do Webhook Nubank copiada para a área de transferência!");
+    }).catch(() => {
+        document.execCommand("copy");
+        alert("URL copiada!");
+    });
+}
+</script>
+
+{% endblock %}

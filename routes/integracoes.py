@@ -4,13 +4,21 @@ from decimal import Decimal
 from flask import Blueprint, render_template, request, redirect, url_for, flash, jsonify
 
 from database import db
-from models import Lancamento, Conta
+from models import Lancamento, Conta, CompraCartao, Cartao
 from config import Config, obter_token_mercadopago
 from services.mercadopago_service import (
     salvar_token_mercadopago,
     consultar_pagamento_mp,
     processar_pagamento_mp,
     obter_ou_criar_conta_mp
+)
+from services.nubank_service import (
+    processar_transacao_apple_pay,
+    parsear_csv_nubank,
+    parsear_ofx_nubank,
+    importar_lote_nubank,
+    obter_ou_criar_cartao_nubank,
+    obter_ou_criar_conta_nubank
 )
 
 integracoes_bp = Blueprint("integracoes", __name__)
@@ -175,3 +183,147 @@ def webhook_mercadopago():
         "payment_id": payment_id,
         "message": "Notificação recebida com sucesso."
     }), 200
+
+
+# =========================================================
+# PAINEL NUBANK & APPLE PAY
+# =========================================================
+
+@integracoes_bp.route("/integracoes/nubank", methods=["GET"])
+def nubank_painel():
+    host = request.host_url.rstrip("/")
+    webhook_url = f"{host}{url_for('integracoes.webhook_nubank')}"
+
+    cartao_nu = Cartao.query.filter(Cartao.nome.ilike("%Nubank%")).first()
+    conta_nu = Conta.query.filter(Conta.nome.ilike("%Nubank%") | Conta.nome.ilike("%NuConta%")).first()
+
+    # Últimas compras no cartão Nubank
+    ultimas_compras = []
+    if cartao_nu:
+        ultimas_compras = (
+            CompraCartao.query
+            .filter_by(cartao_id=cartao_nu.id)
+            .order_by(CompraCartao.data_compra.desc(), CompraCartao.id.desc())
+            .limit(10)
+            .all()
+        )
+
+    # Últimos lançamentos na NuConta
+    ultimos_lancamentos_conta = []
+    if conta_nu:
+        ultimos_lancamentos_conta = (
+            Lancamento.query
+            .filter_by(conta_id=conta_nu.id)
+            .order_by(Lancamento.data.desc(), Lancamento.id.desc())
+            .limit(10)
+            .all()
+        )
+
+    return render_template(
+        "integracao_nubank.html",
+        webhook_url=webhook_url,
+        cartao_nu=cartao_nu,
+        conta_nu=conta_nu,
+        ultimas_compras=ultimas_compras,
+        ultimos_lancamentos_conta=ultimos_lancamentos_conta
+    )
+
+
+# =========================================================
+# WEBHOOK APPLE PAY / IOS SHORTCUTS
+# =========================================================
+
+@integracoes_bp.route("/webhooks/nubank", methods=["GET", "POST", "OPTIONS"])
+@integracoes_bp.route("/webhooks/nubank/", methods=["GET", "POST", "OPTIONS"])
+def webhook_nubank():
+    """
+    Endpoint chamado pelo app Atalhos (Shortcuts) do iPhone via Apple Pay.
+    Sempre responde HTTP 200 com JSON.
+    """
+    if request.method in ("GET", "OPTIONS"):
+        return jsonify({
+            "status": "online",
+            "service": "Controle Financeiro - Webhook Nubank / Apple Pay (iOS)",
+            "timestamp": datetime.now().isoformat()
+        }), 200
+
+    dados = request.get_json(silent=True) or request.form.to_dict() or {}
+    compra, criado, msg = processar_transacao_apple_pay(dados)
+
+    return jsonify({
+        "status": "success" if criado else "ignored",
+        "message": msg,
+        "compra_id": compra.id if compra else None
+    }), 200
+
+
+# =========================================================
+# SIMULADOR APPLE PAY (IOS)
+# =========================================================
+
+@integracoes_bp.route("/integracoes/nubank/simular-ios", methods=["POST"])
+def nubank_simular_ios():
+    estabelecimento = (request.form.get("estabelecimento") or request.form.get("comerciante") or "Padaria Central").strip()
+    valor_raw = request.form.get("valor", "15.90").replace(",", ".").strip()
+    categoria = request.form.get("categoria", "Alimentação").strip()
+
+    try:
+        valor = float(valor_raw)
+    except ValueError:
+        flash("Valor inválido para simulação.", "danger")
+        return redirect(url_for("integracoes.nubank_painel"))
+
+    payload = {
+        "estabelecimento": estabelecimento,
+        "valor": valor,
+        "categoria": categoria,
+        "data": datetime.now().isoformat(),
+        "transacao_id": f"IOS-{int(datetime.now().timestamp())}"
+    }
+
+    compra, criado, msg = processar_transacao_apple_pay(payload)
+    if criado:
+        flash(f"Sucesso! {msg}", "success")
+    else:
+        flash(f"Aviso: {msg}", "warning")
+
+    return redirect(url_for("integracoes.nubank_painel"))
+
+
+# =========================================================
+# IMPORTADOR DE ARQUIVO NUBANK (CSV / OFX)
+# =========================================================
+
+@integracoes_bp.route("/integracoes/nubank/importar", methods=["POST"])
+def nubank_importar_arquivo():
+    arquivo = request.files.get("arquivo")
+    if not arquivo or not arquivo.filename:
+        flash("Selecione um arquivo CSV ou OFX para importar.", "danger")
+        return redirect(url_for("integracoes.nubank_painel"))
+
+    nome_arquivo = arquivo.filename.lower()
+    conteudo = arquivo.read().decode("utf-8", errors="ignore")
+
+    transacoes = []
+    tipo_detectado = "cartao"
+
+    if nome_arquivo.endswith(".csv"):
+        tipo_detectado, transacoes = parsear_csv_nubank(conteudo)
+    elif nome_arquivo.endswith(".ofx"):
+        tipo_detectado, transacoes = parsear_ofx_nubank(conteudo)
+    else:
+        flash("Formato não suportado. Por favor envie um arquivo com extensão .csv ou .ofx.", "danger")
+        return redirect(url_for("integracoes.nubank_painel"))
+
+    if not transacoes:
+        flash("Nenhuma transação válida foi encontrada no arquivo enviado.", "warning")
+        return redirect(url_for("integracoes.nubank_painel"))
+
+    destino = request.form.get("destino", tipo_detectado)
+    resultado = importar_lote_nubank(transacoes, destino=destino)
+
+    flash(
+        f"Importação concluída com sucesso! {resultado['importados']} transações adicionadas ({resultado['duplicados']} já existentes foram ignoradas).",
+        "success"
+    )
+    return redirect(url_for("integracoes.nubank_painel"))

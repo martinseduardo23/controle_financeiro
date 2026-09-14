@@ -24,11 +24,17 @@ Documento de transição e contexto para continuidade do desenvolvimento do proj
   - Implementado Webhook oficial (`/webhooks/mercadopago`) com consulta à API oficial para capturar pagamentos e Pix em tempo real.
   - Tela de gerenciamento e simulador interativo em `/integracoes/mercadopago`.
   - Mecanismo de idempotência contra duplicação de transações.
+- **Integração Nubank & Apple Pay iOS + Importador OFX/CSV (`services/nubank_service.py`, `routes/integracoes.py`, `templates/integracao_nubank.html`)**:
+  - Webhook `/webhooks/nubank` integrado ao app Atalhos (Shortcuts) do iPhone para capturar compras por aproximação (Apple Pay) em tempo real.
+  - Importador inteligente de faturas de cartão de crédito e extrato da NuConta nos formatos `.csv` e `.ofx`.
+  - Proteção contra duplicatas (idempotência): não duplica compras do cartão já registradas via Apple Pay ou importações anteriores.
+  - Criação automática de contas e cartões Nubank, geração de parcelas e vinculação automática com as faturas correspondentes.
+  - Simulador interativo do Apple Pay e guia passo a passo ilustrado na tela `/integracoes/nubank`.
 
 ### 2. Interface Visual (UI/UX)
 - **Tema**: Dark Mode Absoluto (Preto verdadeiro `#000000` / `#0a0a0d`), estilo fintech moderna com tipografia Inter, cards com bordas suaves e badges de alto contraste.
 - **Identidade**: Nome atualizado para **Controle Financeiro** (removido "Financeiro Pro"), novo ícone financeiro em SVG no logo.
-- **Templates**: Todos os 20 templates foram modernizados e padronizados.
+- **Templates**: Todos os 21 templates foram modernizados e padronizados com suporte a mobile responsivo.
 - **Facilidade**: Criado `iniciar.bat` para rodar o projeto com 2 cliques na porta 5000.
 
 ---
@@ -41,11 +47,9 @@ Documento de transição e contexto para continuidade do desenvolvimento do proj
    - Salário, aluguel, condomínio, internet, streamings com repetição mensal automática.
 3. **Teto de Gastos / Orçamento por Categoria (Budgeting)**:
    - Limite estipulado de gastos por categoria no mês com barra de acompanhamento no Dashboard.
-4. **Importação de Extrato Bancário (OFX / CSV)**:
-   - Upload de extratos bancários para conciliação e criação de lançamentos em lote.
-5. **Gráficos Interativos (Chart.js)**:
+4. **Gráficos Interativos (Chart.js)**:
    - Gráfico de evolução do patrimônio (linha/área) e rosca (donut) de despesas no Dashboard e Relatórios.
-6. **Backup em 1 Clique**:
+5. **Backup em 1 Clique**:
    - Botão para exportar e restaurar o arquivo `data/financeiro.db`.
 
 ---
