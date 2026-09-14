@@ -1,4 +1,4 @@
-﻿import json
+import json
 from datetime import datetime
 from decimal import Decimal
 from flask import Blueprint, render_template, request, redirect, url_for, flash, jsonify
@@ -111,13 +111,16 @@ def mercadopago_simular():
 # ENDPOINT DO WEBHOOK OFICIAL MERCADO PAGO
 # =========================================================
 
-@integracoes_bp.route("/webhooks/mercadopago", methods=["GET", "POST"])
+@integracoes_bp.route("/webhooks/mercadopago", methods=["GET", "POST", "OPTIONS"])
+@integracoes_bp.route("/webhooks/mercadopago/", methods=["GET", "POST", "OPTIONS"])
+@integracoes_bp.route("/webhook/mercadopago", methods=["GET", "POST", "OPTIONS"])
+@integracoes_bp.route("/webhook/mercadopago/", methods=["GET", "POST", "OPTIONS"])
 def webhook_mercadopago():
     """
     Endpoint chamado pelos servidores do Mercado Pago em tempo real.
     Sempre retorna HTTP 200 para confirmar recebimento.
     """
-    if request.method == "GET":
+    if request.method in ("GET", "OPTIONS"):
         return jsonify({
             "status": "online",
             "service": "Controle Financeiro - Webhook Mercado Pago",
@@ -130,6 +133,12 @@ def webhook_mercadopago():
     payment_id = None
     if isinstance(dados.get("data"), dict) and "id" in dados["data"]:
         payment_id = str(dados["data"]["id"])
+        # Verifica se dentro de data há transactions/payments
+        transactions = dados["data"].get("transactions")
+        if isinstance(transactions, dict) and "payments" in transactions and isinstance(transactions["payments"], list) and len(transactions["payments"]) > 0:
+            first_pay = transactions["payments"][0]
+            if isinstance(first_pay, dict) and "id" in first_pay:
+                payment_id = str(first_pay["id"])
     elif "id" in dados:
         payment_id = str(dados["id"])
     elif request.args.get("data.id"):
@@ -137,8 +146,8 @@ def webhook_mercadopago():
     elif request.args.get("id"):
         payment_id = str(request.args.get("id"))
 
-    # Verifica o tipo de evento (queremos 'payment' ou 'payment.created'/'payment.updated')
-    topic = dados.get("type") or dados.get("topic") or request.args.get("topic") or request.args.get("type")
+    # Verifica o tipo de evento
+    topic = dados.get("type") or dados.get("topic") or request.args.get("topic") or request.args.get("type") or dados.get("action")
 
     # Se recebeu um ID de pagamento e temos o token configurado, consulta na API oficial
     token = Config.MERCADO_PAGO_ACCESS_TOKEN or obter_token_mercadopago()

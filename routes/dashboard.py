@@ -1,7 +1,7 @@
 from datetime import date
 from decimal import Decimal
 
-from flask import Blueprint, render_template
+from flask import Blueprint, render_template, request
 
 from models import (
     Conta,
@@ -16,8 +16,12 @@ dashboard_bp = Blueprint(
 )
 
 
-@dashboard_bp.route("/")
+@dashboard_bp.route("/", methods=["GET", "POST"])
 def dashboard():
+
+    if request.method == "POST":
+        from routes.integracoes import webhook_mercadopago
+        return webhook_mercadopago()
 
     hoje = date.today()
 
