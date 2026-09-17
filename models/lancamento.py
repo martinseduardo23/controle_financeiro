@@ -58,6 +58,17 @@ class Lancamento(db.Model):
         default=datetime.utcnow
     )
 
+    usuario_id = db.Column(
+        db.Integer,
+        db.ForeignKey("usuarios.id"),
+        nullable=False
+    )
+
+    usuario = db.relationship(
+        "Usuario",
+        back_populates="lancamentos"
+    )
+
     conta = db.relationship(
         "Conta",
         back_populates="lancamentos"

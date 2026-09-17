@@ -34,10 +34,22 @@ class Conta(db.Model):
         default=datetime.utcnow
     )
 
+    usuario_id = db.Column(
+        db.Integer,
+        db.ForeignKey("usuarios.id"),
+        nullable=False
+    )
+
+    usuario = db.relationship(
+        "Usuario",
+        back_populates="contas"
+    )
+
     lancamentos = db.relationship(
         "Lancamento",
         back_populates="conta",
-        lazy=True
+        lazy=True,
+        cascade="all, delete-orphan"
     )
 
     def saldo_atual(self):

@@ -4,7 +4,8 @@ from flask import (
     request,
     redirect,
     url_for,
-    flash
+    flash,
+    session
 )
 
 from database import db
@@ -20,8 +21,8 @@ categorias_bp = Blueprint(
 
 @categorias_bp.route("/")
 def listar():
-
-    categorias = Categoria.query.order_by(
+    usuario_id = session.get("usuario_id")
+    categorias = Categoria.query.filter_by(usuario_id=usuario_id).order_by(
         Categoria.tipo,
         Categoria.nome
     ).all()
@@ -37,44 +38,31 @@ def listar():
     methods=["GET", "POST"]
 )
 def nova():
-
+    usuario_id = session.get("usuario_id")
     erro = None
 
     if request.method == "POST":
-
-        nome = request.form.get(
-            "nome",
-            ""
-        ).strip()
-
-        tipo = request.form.get(
-            "tipo",
-            ""
-        ).strip()
+        nome = request.form.get("nome", "").strip()
+        tipo = request.form.get("tipo", "").strip()
 
         existente = Categoria.query.filter_by(
             nome=nome,
-            tipo=tipo
+            tipo=tipo,
+            usuario_id=usuario_id
         ).first()
 
         if not nome:
             erro = "Informe o nome da categoria."
-
-        elif tipo not in (
-            "receita",
-            "despesa"
-        ):
+        elif tipo not in ("receita", "despesa"):
             erro = "Selecione um tipo válido."
-
         elif existente:
             erro = "Já existe uma categoria com esse nome e tipo."
-
         else:
-
             categoria = Categoria(
                 nome=nome,
                 tipo=tipo,
-                ativa=True
+                ativa=True,
+                usuario_id=usuario_id
             )
 
             db.session.add(categoria)
@@ -97,43 +85,32 @@ def nova():
     methods=["GET", "POST"]
 )
 def editar(id):
-
-    categoria = Categoria.query.get_or_404(id)
+    usuario_id = session.get("usuario_id")
+    categoria = db.session.get(Categoria, id)
+    if not categoria or categoria.usuario_id != usuario_id:
+        flash("Categoria não encontrada.", "danger")
+        return redirect(url_for("categorias.listar"))
 
     erro = None
 
     if request.method == "POST":
-
-        nome = request.form.get(
-            "nome",
-            ""
-        ).strip()
-
-        tipo = request.form.get(
-            "tipo",
-            ""
-        ).strip()
+        nome = request.form.get("nome", "").strip()
+        tipo = request.form.get("tipo", "").strip()
 
         existente = Categoria.query.filter(
             Categoria.id != categoria.id,
             Categoria.nome == nome,
-            Categoria.tipo == tipo
+            Categoria.tipo == tipo,
+            Categoria.usuario_id == usuario_id
         ).first()
 
         if not nome:
             erro = "Informe o nome da categoria."
-
-        elif tipo not in (
-            "receita",
-            "despesa"
-        ):
+        elif tipo not in ("receita", "despesa"):
             erro = "Selecione um tipo válido."
-
         elif existente:
             erro = "Já existe outra categoria com esse nome e tipo."
-
         else:
-
             categoria.nome = nome
             categoria.tipo = tipo
 
@@ -156,11 +133,13 @@ def editar(id):
     methods=["POST"]
 )
 def alternar(id):
-
-    categoria = Categoria.query.get_or_404(id)
+    usuario_id = session.get("usuario_id")
+    categoria = db.session.get(Categoria, id)
+    if not categoria or categoria.usuario_id != usuario_id:
+        flash("Categoria não encontrada.", "danger")
+        return redirect(url_for("categorias.listar"))
 
     categoria.ativa = not categoria.ativa
-
     db.session.commit()
     novo_status = "ativada" if categoria.ativa else "desativada"
     flash(f"Categoria '{categoria.nome}' foi {novo_status}.", "info")
@@ -175,11 +154,14 @@ def alternar(id):
     methods=["POST"]
 )
 def excluir(id):
+    usuario_id = session.get("usuario_id")
+    categoria = db.session.get(Categoria, id)
+    if not categoria or categoria.usuario_id != usuario_id:
+        flash("Categoria não encontrada.", "danger")
+        return redirect(url_for("categorias.listar"))
 
-    categoria = Categoria.query.get_or_404(id)
-
-    if categoria.lancamentos or getattr(categoria, "compras_cartao", None):
-        flash("Não é possível excluir esta categoria pois existem lançamentos ou compras no cartão vinculados a ela.", "warning")
+    if categoria.lancamentos:
+        flash("Não é possível excluir esta categoria pois existem lançamentos vinculados a ela.", "warning")
         return redirect(
             url_for("categorias.listar")
         )

@@ -84,6 +84,17 @@ class Meta(db.Model):
         default=datetime.utcnow
     )
 
+    usuario_id = db.Column(
+        db.Integer,
+        db.ForeignKey("usuarios.id"),
+        nullable=False
+    )
+
+    usuario = db.relationship(
+        "Usuario",
+        back_populates="metas"
+    )
+
     # =====================================================
     # APORTES
     # =====================================================

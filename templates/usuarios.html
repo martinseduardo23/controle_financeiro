@@ -1,0 +1,215 @@
+{% extends "base.html" %}
+
+{% block title %}
+Gestão de Usuários - Controle Financeiro
+{% endblock %}
+
+{% block content %}
+
+<div class="page-header">
+    <div class="page-header-content">
+        <div>
+            <h1>Gestão de Usuários</h1>
+            <p>Gerencie quem tem acesso ao sistema e crie contas individuais.</p>
+        </div>
+        <a href="{{ url_for('dashboard.dashboard') }}" class="btn btn-secondary">
+            ← Voltar ao Dashboard
+        </a>
+    </div>
+</div>
+
+<div class="dashboard-grid" style="margin-bottom: 28px;">
+    <!-- CARD: NOVO USUÁRIO -->
+    <div class="panel">
+        <div class="panel-header">
+            <div>
+                <h2 class="panel-title">Criar Novo Usuário</h2>
+                <span class="panel-subtitle">Cada usuário terá seus dados 100% isolados</span>
+            </div>
+            <span class="badge badge-success">+ Novo</span>
+        </div>
+
+        <form method="POST" action="{{ url_for('auth.novo_usuario') }}">
+            <div class="form-group">
+                <label for="username">Nome de Usuário</label>
+                <input 
+                    type="text" 
+                    id="username" 
+                    name="username" 
+                    placeholder="Ex: maria, joao" 
+                    required 
+                    style="background: #050507;"
+                >
+            </div>
+
+            <div class="form-group">
+                <label for="password">Senha Inicial</label>
+                <input 
+                    type="password" 
+                    id="password" 
+                    name="password" 
+                    placeholder="Mínimo 4 caracteres" 
+                    required 
+                    style="background: #050507;"
+                >
+            </div>
+
+            <div class="form-group" style="display: flex; align-items: center; gap: 8px; margin-top: 14px;">
+                <input type="checkbox" id="is_admin" name="is_admin" value="1" style="width: 16px; height: 16px; accent-color: #10b981;">
+                <label for="is_admin" style="font-size: 13px; color: var(--text-secondary); margin: 0; cursor: pointer;">
+                    Conceder privilégios de Administrador
+                </label>
+            </div>
+
+            <button type="submit" class="btn btn-primary" style="width: 100%; margin-top: 18px;">
+                Criar Conta Individual
+            </button>
+        </form>
+    </div>
+
+    <!-- CARD: INFORMAÇÕES DE ISOLAMENTO -->
+    <div class="panel">
+        <div class="panel-header">
+            <div>
+                <h2 class="panel-title">Como funciona o isolamento</h2>
+                <span class="panel-subtitle">Privacidade e individualidade total</span>
+            </div>
+            <span class="badge badge-info">Privacidade</span>
+        </div>
+
+        <div style="font-size: 13px; color: var(--text-secondary); line-height: 1.6; display: flex; flex-direction: column; gap: 12px;">
+            <div style="display: flex; gap: 10px; align-items: flex-start;">
+                <span style="color: #10b981; font-weight: bold;">✓</span>
+                <div><strong>Contas e Saldos Privados:</strong> Nenhum usuário enxerga ou tem acesso às contas bancárias dos outros.</div>
+            </div>
+            <div style="display: flex; gap: 10px; align-items: flex-start;">
+                <span style="color: #10b981; font-weight: bold;">✓</span>
+                <div><strong>Cartões e Faturas Isolados:</strong> As compras no cartão de crédito pertencem somente a quem cadastrou.</div>
+            </div>
+            <div style="display: flex; gap: 10px; align-items: flex-start;">
+                <span style="color: #10b981; font-weight: bold;">✓</span>
+                <div><strong>Webhooks Exclusivos:</strong> Cada usuário possui uma URL única com token pessoal para aproximar o celular no Apple Pay ou receber Pix do Mercado Pago.</div>
+            </div>
+            <div style="display: flex; gap: 10px; align-items: flex-start;">
+                <span style="color: #10b981; font-weight: bold;">✓</span>
+                <div><strong>Setup Imediato:</strong> Ao ser criado, o novo usuário já recebe suas categorias padrão e uma conta inicial zerada.</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- TABELA DE USUÁRIOS -->
+<div class="panel">
+    <div class="panel-header">
+        <div>
+            <h2 class="panel-title">Usuários Cadastrados ({{ usuarios|length }})</h2>
+            <span class="panel-subtitle">Lista de contas ativas no sistema</span>
+        </div>
+    </div>
+
+    <div class="table-container" style="margin-bottom: 0;">
+        <table>
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Usuário</th>
+                    <th>Tipo</th>
+                    <th>Criado em</th>
+                    <th>Token de Webhook</th>
+                    <th style="text-align: right;">Ações</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for u in usuarios %}
+                <tr>
+                    <td style="color: var(--text-muted);">#{{ u.id }}</td>
+                    <td>
+                        <strong style="color: #ffffff;">{{ u.username }}</strong>
+                        {% if u.id == session.get('usuario_id') %}
+                            <span class="badge badge-info" style="font-size: 10px; margin-left: 6px;">Você</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if u.is_admin %}
+                            <span class="badge badge-success">Administrador</span>
+                        {% else %}
+                            <span class="badge badge-secondary">Usuário Padrão</span>
+                        {% endif %}
+                    </td>
+                    <td style="color: var(--text-secondary); font-size: 12px;">
+                        {{ u.criado_em.strftime("%d/%m/%Y %H:%M") if u.criado_em else "-" }}
+                    </td>
+                    <td style="font-family: monospace; font-size: 11px; color: var(--text-muted);">
+                        {{ u.webhook_token[:10] }}...
+                    </td>
+                    <td style="text-align: right;">
+                        <div style="display: flex; gap: 6px; justify-content: flex-end; align-items: center;">
+                            <!-- Botão Resetar Senha -->
+                            <button 
+                                type="button" 
+                                class="btn btn-secondary btn-sm" 
+                                onclick="abrirModalResetarSenha('{{ u.id }}', '{{ u.username }}')"
+                                style="padding: 4px 8px; font-size: 11px;"
+                            >
+                                Redefinir Senha
+                            </button>
+
+                            <!-- Botão Excluir -->
+                            {% if u.id != session.get('usuario_id') %}
+                                <form method="POST" action="{{ url_for('auth.excluir_usuario', id=u.id) }}" onsubmit="return confirm('Tem certeza que deseja excluir o usuário {{ u.username }}? Todas as contas e transações dele serão apagadas definitivamente!');" style="margin: 0;">
+                                    <button type="submit" class="btn btn-danger btn-sm" style="padding: 4px 8px; font-size: 11px;">
+                                        Excluir
+                                    </button>
+                                </form>
+                            {% endif %}
+                        </div>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- MODAL REDEFINIR SENHA -->
+<div id="modalResetarSenha" class="sidebar-overlay" style="display: none; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0,0,0,0.85); backdrop-filter: blur(4px); z-index: 9999; align-items: center; justify-content: center;">
+    <div class="form-card" style="width: 100%; max-width: 420px; margin: 20px;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 18px; padding-bottom: 10px; border-bottom: 1px solid var(--border);">
+            <h2 style="font-size: 17px; margin: 0; color: #fff;">Redefinir Senha de <span id="resetModalUsername" style="color: #10b981;"></span></h2>
+            <button type="button" onclick="fecharModalResetarSenha()" style="background: none; border: none; color: var(--text-muted); font-size: 22px; cursor: pointer;">&times;</button>
+        </div>
+
+        <form id="formResetarSenha" method="POST" action="">
+            <div class="form-group">
+                <label for="nova_senha_admin">Nova Senha</label>
+                <input type="password" id="nova_senha_admin" name="nova_senha" placeholder="Digite a nova senha" required style="background: #050507;">
+            </div>
+
+            <div style="display: flex; gap: 10px; margin-top: 20px;">
+                <button type="submit" class="btn btn-primary" style="flex: 1;">Salvar Senha</button>
+                <button type="button" class="btn btn-secondary" onclick="fecharModalResetarSenha()">Cancelar</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+function abrirModalResetarSenha(id, username) {
+    document.getElementById('resetModalUsername').innerText = username;
+    document.getElementById('formResetarSenha').action = '/usuarios/' + id + '/resetar-senha';
+    document.getElementById('modalResetarSenha').style.display = 'flex';
+}
+
+function fecharModalResetarSenha() {
+    document.getElementById('modalResetarSenha').style.display = 'none';
+}
+
+window.addEventListener('click', function(e) {
+    const modal = document.getElementById('modalResetarSenha');
+    if (e.target === modal) {
+        fecharModalResetarSenha();
+    }
+});
+</script>
+
+{% endblock %}

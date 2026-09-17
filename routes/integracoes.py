@@ -1,10 +1,10 @@
 import json
 from datetime import datetime
 from decimal import Decimal
-from flask import Blueprint, render_template, request, redirect, url_for, flash, jsonify
+from flask import Blueprint, render_template, request, redirect, url_for, flash, jsonify, session
 
 from database import db
-from models import Lancamento, Conta, CompraCartao, Cartao
+from models import Lancamento, Conta, CompraCartao, Cartao, Usuario
 from config import Config, obter_token_mercadopago
 from services.mercadopago_service import (
     salvar_token_mercadopago,
@@ -30,23 +30,33 @@ integracoes_bp = Blueprint("integracoes", __name__)
 
 @integracoes_bp.route("/integracoes/mercadopago", methods=["GET"])
 def mercadopago_painel():
+    usuario_id = session.get("usuario_id")
+    usuario = db.session.get(Usuario, usuario_id) if usuario_id else None
+    token_webhook = usuario.webhook_token if usuario and usuario.webhook_token else ""
+
     token_atual = Config.MERCADO_PAGO_ACCESS_TOKEN or obter_token_mercadopago()
     tem_token = bool(token_atual and len(token_atual) > 10)
 
-    # URL pública recomendada para o webhook
+    # URL pública personalizada para o webhook do usuário
     host = request.host_url.rstrip("/")
-    webhook_url = f"{host}{url_for('integracoes.webhook_mercadopago')}"
+    if token_webhook:
+        webhook_url = f"{host}/webhooks/mercadopago/{token_webhook}"
+    else:
+        webhook_url = f"{host}{url_for('integracoes.webhook_mercadopago')}"
 
-    # Últimas movimentações vindas do Mercado Pago
+    # Últimas movimentações vindas do Mercado Pago para este usuário
     ultimos_lancamentos = (
         Lancamento.query
-        .filter(Lancamento.observacao.like("%[Mercado Pago ID:%"))
+        .filter(
+            Lancamento.usuario_id == usuario_id,
+            Lancamento.observacao.like("%[Mercado Pago ID:%")
+        )
         .order_by(Lancamento.data.desc(), Lancamento.id.desc())
         .limit(10)
         .all()
     )
 
-    conta_mp = Conta.query.filter_by(nome="Mercado Pago").first()
+    conta_mp = Conta.query.filter_by(usuario_id=usuario_id, nome="Mercado Pago").first()
 
     return render_template(
         "integracao_mercadopago.html",
@@ -64,13 +74,14 @@ def mercadopago_painel():
 
 @integracoes_bp.route("/integracoes/mercadopago/configurar", methods=["POST"])
 def mercadopago_configurar():
+    usuario_id = session.get("usuario_id")
     token = request.form.get("access_token", "").strip()
     if not token:
         flash("Informe um Access Token válido.", "danger")
     else:
         salvar_token_mercadopago(token)
-        # Garante que a conta bancária exista
-        obter_ou_criar_conta_mp()
+        # Garante que a conta bancária do usuário exista
+        obter_ou_criar_conta_mp(usuario_id=usuario_id)
         flash("Access Token do Mercado Pago configurado com sucesso!", "success")
 
     return redirect(url_for("integracoes.mercadopago_painel"))
@@ -82,6 +93,7 @@ def mercadopago_configurar():
 
 @integracoes_bp.route("/integracoes/mercadopago/simular", methods=["POST"])
 def mercadopago_simular():
+    usuario_id = session.get("usuario_id")
     descricao = request.form.get("descricao", "Compra no Mercado Livre").strip()
     valor_raw = request.form.get("valor", "49.90").replace(",", ".").strip()
     tipo = request.form.get("tipo", "despesa")
@@ -106,7 +118,7 @@ def mercadopago_simular():
         "date_approved": datetime.now().isoformat()
     }
 
-    lancamento, sucesso, msg = processar_pagamento_mp(payload_simulado)
+    lancamento, sucesso, msg = processar_pagamento_mp(payload_simulado, usuario_id=usuario_id)
     if sucesso:
         flash(f"Simulação concluída! {msg}", "success")
     else:
@@ -121,11 +133,14 @@ def mercadopago_simular():
 
 @integracoes_bp.route("/webhooks/mercadopago", methods=["GET", "POST", "OPTIONS"])
 @integracoes_bp.route("/webhooks/mercadopago/", methods=["GET", "POST", "OPTIONS"])
+@integracoes_bp.route("/webhooks/mercadopago/<token>", methods=["GET", "POST", "OPTIONS"])
 @integracoes_bp.route("/webhook/mercadopago", methods=["GET", "POST", "OPTIONS"])
 @integracoes_bp.route("/webhook/mercadopago/", methods=["GET", "POST", "OPTIONS"])
-def webhook_mercadopago():
+@integracoes_bp.route("/webhook/mercadopago/<token>", methods=["GET", "POST", "OPTIONS"])
+def webhook_mercadopago(token=None):
     """
     Endpoint chamado pelos servidores do Mercado Pago em tempo real.
+    Suporta token específico do usuário na URL para multi-tenancy.
     Sempre retorna HTTP 200 para confirmar recebimento.
     """
     if request.method in ("GET", "OPTIONS"):
@@ -135,13 +150,25 @@ def webhook_mercadopago():
             "timestamp": datetime.now().isoformat()
         }), 200
 
+    usuario_id = None
+    if token:
+        usuario = Usuario.query.filter_by(webhook_token=token).first()
+        if not usuario:
+            return jsonify({
+                "status": "error",
+                "message": "Token de webhook não encontrado."
+            }), 404
+        usuario_id = usuario.id
+    else:
+        admin = Usuario.query.filter_by(is_admin=True).first() or Usuario.query.first()
+        usuario_id = admin.id if admin else None
+
     dados = request.get_json(silent=True) or {}
 
     # Extrai o payment_id do payload JSON ou dos parâmetros de URL
     payment_id = None
     if isinstance(dados.get("data"), dict) and "id" in dados["data"]:
         payment_id = str(dados["data"]["id"])
-        # Verifica se dentro de data há transactions/payments
         transactions = dados["data"].get("transactions")
         if isinstance(transactions, dict) and "payments" in transactions and isinstance(transactions["payments"], list) and len(transactions["payments"]) > 0:
             first_pay = transactions["payments"][0]
@@ -158,11 +185,11 @@ def webhook_mercadopago():
     topic = dados.get("type") or dados.get("topic") or request.args.get("topic") or request.args.get("type") or dados.get("action")
 
     # Se recebeu um ID de pagamento e temos o token configurado, consulta na API oficial
-    token = Config.MERCADO_PAGO_ACCESS_TOKEN or obter_token_mercadopago()
-    if payment_id and token:
-        detalhes = consultar_pagamento_mp(payment_id, token)
+    token_api = Config.MERCADO_PAGO_ACCESS_TOKEN or obter_token_mercadopago()
+    if payment_id and token_api:
+        detalhes = consultar_pagamento_mp(payment_id, token_api)
         if detalhes:
-            lancamento, criado, msg = processar_pagamento_mp(detalhes)
+            lancamento, criado, msg = processar_pagamento_mp(detalhes, usuario_id=usuario_id)
             return jsonify({
                 "status": "success" if criado else "ignored",
                 "payment_id": payment_id,
@@ -171,7 +198,7 @@ def webhook_mercadopago():
 
     # Se não temos token mas recebemos um payload com dados diretos (ex: testes manuais)
     if payment_id and (dados.get("transaction_amount") or dados.get("valor")):
-        lancamento, criado, msg = processar_pagamento_mp(dados)
+        lancamento, criado, msg = processar_pagamento_mp(dados, usuario_id=usuario_id)
         return jsonify({
             "status": "success" if criado else "ignored",
             "message": msg
@@ -191,29 +218,39 @@ def webhook_mercadopago():
 
 @integracoes_bp.route("/integracoes/nubank", methods=["GET"])
 def nubank_painel():
+    usuario_id = session.get("usuario_id")
+    usuario = db.session.get(Usuario, usuario_id) if usuario_id else None
+    token_webhook = usuario.webhook_token if usuario and usuario.webhook_token else ""
+
     host = request.host_url.rstrip("/")
-    webhook_url = f"{host}{url_for('integracoes.webhook_nubank')}"
+    if token_webhook:
+        webhook_url = f"{host}/webhooks/nubank/{token_webhook}"
+    else:
+        webhook_url = f"{host}{url_for('integracoes.webhook_nubank')}"
 
-    cartao_nu = Cartao.query.filter(Cartao.nome.ilike("%Nubank%")).first()
-    conta_nu = Conta.query.filter(Conta.nome.ilike("%Nubank%") | Conta.nome.ilike("%NuConta%")).first()
+    cartao_nu = Cartao.query.filter(Cartao.usuario_id == usuario_id, Cartao.nome.ilike("%Nubank%")).first()
+    conta_nu = Conta.query.filter(
+        Conta.usuario_id == usuario_id,
+        (Conta.nome.ilike("%Nubank%") | Conta.nome.ilike("%NuConta%"))
+    ).first()
 
-    # Últimas compras no cartão Nubank
+    # Últimas compras no cartão Nubank deste usuário
     ultimas_compras = []
     if cartao_nu:
         ultimas_compras = (
             CompraCartao.query
-            .filter_by(cartao_id=cartao_nu.id)
+            .filter_by(cartao_id=cartao_nu.id, usuario_id=usuario_id)
             .order_by(CompraCartao.data_compra.desc(), CompraCartao.id.desc())
             .limit(10)
             .all()
         )
 
-    # Últimos lançamentos na NuConta
+    # Últimos lançamentos na NuConta deste usuário
     ultimos_lancamentos_conta = []
     if conta_nu:
         ultimos_lancamentos_conta = (
             Lancamento.query
-            .filter_by(conta_id=conta_nu.id)
+            .filter_by(conta_id=conta_nu.id, usuario_id=usuario_id)
             .order_by(Lancamento.data.desc(), Lancamento.id.desc())
             .limit(10)
             .all()
@@ -235,9 +272,11 @@ def nubank_painel():
 
 @integracoes_bp.route("/webhooks/nubank", methods=["GET", "POST", "OPTIONS"])
 @integracoes_bp.route("/webhooks/nubank/", methods=["GET", "POST", "OPTIONS"])
-def webhook_nubank():
+@integracoes_bp.route("/webhooks/nubank/<token>", methods=["GET", "POST", "OPTIONS"])
+def webhook_nubank(token=None):
     """
     Endpoint chamado pelo app Atalhos (Shortcuts) do iPhone via Apple Pay.
+    Suporta token específico do usuário na URL (/webhooks/nubank/<token>).
     Sempre responde HTTP 200 com JSON.
     """
     if request.method in ("GET", "OPTIONS"):
@@ -247,8 +286,21 @@ def webhook_nubank():
             "timestamp": datetime.now().isoformat()
         }), 200
 
+    usuario_id = None
+    if token:
+        usuario = Usuario.query.filter_by(webhook_token=token).first()
+        if not usuario:
+            return jsonify({
+                "status": "error",
+                "message": "Token de webhook não encontrado."
+            }), 404
+        usuario_id = usuario.id
+    else:
+        admin = Usuario.query.filter_by(is_admin=True).first() or Usuario.query.first()
+        usuario_id = admin.id if admin else None
+
     dados = request.get_json(silent=True) or request.form.to_dict() or {}
-    compra, criado, msg = processar_transacao_apple_pay(dados)
+    compra, criado, msg = processar_transacao_apple_pay(dados, usuario_id=usuario_id)
 
     return jsonify({
         "status": "success" if criado else "ignored",
@@ -263,6 +315,7 @@ def webhook_nubank():
 
 @integracoes_bp.route("/integracoes/nubank/simular-ios", methods=["POST"])
 def nubank_simular_ios():
+    usuario_id = session.get("usuario_id")
     estabelecimento = (request.form.get("estabelecimento") or request.form.get("comerciante") or "Padaria Central").strip()
     valor_raw = request.form.get("valor", "15.90").replace(",", ".").strip()
     categoria = request.form.get("categoria", "Alimentação").strip()
@@ -281,7 +334,7 @@ def nubank_simular_ios():
         "transacao_id": f"IOS-{int(datetime.now().timestamp())}"
     }
 
-    compra, criado, msg = processar_transacao_apple_pay(payload)
+    compra, criado, msg = processar_transacao_apple_pay(payload, usuario_id=usuario_id)
     if criado:
         flash(f"Sucesso! {msg}", "success")
     else:
@@ -296,6 +349,7 @@ def nubank_simular_ios():
 
 @integracoes_bp.route("/integracoes/nubank/importar", methods=["POST"])
 def nubank_importar_arquivo():
+    usuario_id = session.get("usuario_id")
     arquivo = request.files.get("arquivo")
     if not arquivo or not arquivo.filename:
         flash("Selecione um arquivo CSV ou OFX para importar.", "danger")
@@ -320,7 +374,7 @@ def nubank_importar_arquivo():
         return redirect(url_for("integracoes.nubank_painel"))
 
     destino = request.form.get("destino", tipo_detectado)
-    resultado = importar_lote_nubank(transacoes, destino=destino)
+    resultado = importar_lote_nubank(transacoes, destino=destino, usuario_id=usuario_id)
 
     flash(
         f"Importação concluída com sucesso! {resultado['importados']} transações adicionadas ({resultado['duplicados']} já existentes foram ignoradas).",

@@ -53,6 +53,12 @@ class CompraCartao(db.Model):
         default=datetime.utcnow
     )
 
+    usuario_id = db.Column(
+        db.Integer,
+        db.ForeignKey("usuarios.id"),
+        nullable=False
+    )
+
     cartao = db.relationship(
         "Cartao",
         backref="compras"

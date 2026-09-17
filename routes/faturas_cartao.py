@@ -5,7 +5,9 @@ from flask import (
     render_template,
     request,
     redirect,
-    url_for
+    url_for,
+    flash,
+    session
 )
 
 from database import db
@@ -32,10 +34,11 @@ faturas_cartao_bp = Blueprint(
 
 @faturas_cartao_bp.route("/")
 def listar():
-
+    usuario_id = session.get("usuario_id")
     cartoes = (
         Cartao.query
         .filter_by(
+            usuario_id=usuario_id,
             ativo=True
         )
         .order_by(
@@ -58,44 +61,35 @@ def listar():
     "/cartao/<int:cartao_id>"
 )
 def faturas_cartao(cartao_id):
+    usuario_id = session.get("usuario_id")
+    cartao = db.session.get(Cartao, cartao_id)
+    if not cartao or cartao.usuario_id != usuario_id:
+        flash("Cartão não encontrado.", "danger")
+        return redirect(url_for("faturas_cartao.listar"))
 
-    cartao = Cartao.query.get_or_404(
-        cartao_id
-    )
-
-    faturas = (
-        FaturaCartao.query
-        .filter_by(
-            cartao_id=cartao.id
-        )
-        .order_by(
-            FaturaCartao.ano_referencia.asc(),
-            FaturaCartao.mes_referencia.asc()
-        )
-        .all()
+    faturas = sorted(
+        cartao.faturas,
+        key=lambda fatura: (
+            fatura.ano_referencia,
+            fatura.mes_referencia
+        ),
+        reverse=True
     )
 
     total_aberto = sum(
-        (
-            fatura.valor_total or 0
-            for fatura in faturas
-            if fatura.status != "paga"
-        ),
-        0
+        float(f.valor_total or 0)
+        for f in faturas
+        if f.status != "paga"
     )
 
     total_pago = sum(
-        (
-            fatura.valor_total or 0
-            for fatura in faturas
-            if fatura.status == "paga"
-        ),
-        0
+        float(f.valor_total or 0)
+        for f in faturas
+        if f.status == "paga"
     )
 
     return render_template(
-        "faturas_cartao.html",
-        cartoes=None,
+        "faturas_cartao_lista.html" if False else "faturas_cartao.html", # fallback
         cartao=cartao,
         faturas=faturas,
         total_aberto=total_aberto,
@@ -111,10 +105,11 @@ def faturas_cartao(cartao_id):
     "/fatura/<int:id>"
 )
 def detalhes(id):
-
-    fatura = FaturaCartao.query.get_or_404(
-        id
-    )
+    usuario_id = session.get("usuario_id")
+    fatura = db.session.get(FaturaCartao, id)
+    if not fatura or not fatura.cartao or fatura.cartao.usuario_id != usuario_id:
+        flash("Fatura não encontrada.", "danger")
+        return redirect(url_for("faturas_cartao.listar"))
 
     parcelas = sorted(
         fatura.parcelas,
@@ -127,6 +122,7 @@ def detalhes(id):
     contas = (
         Conta.query
         .filter_by(
+            usuario_id=usuario_id,
             ativa=True
         )
         .order_by(
@@ -152,18 +148,13 @@ def detalhes(id):
     methods=["POST"]
 )
 def pagar(id):
-
-    fatura = FaturaCartao.query.get_or_404(
-        id
-    )
-
-
-    # -----------------------------------------------------
-    # IMPede pagamento duplicado
-    # -----------------------------------------------------
+    usuario_id = session.get("usuario_id")
+    fatura = db.session.get(FaturaCartao, id)
+    if not fatura or not fatura.cartao or fatura.cartao.usuario_id != usuario_id:
+        flash("Fatura não encontrada.", "danger")
+        return redirect(url_for("faturas_cartao.listar"))
 
     if fatura.status == "paga":
-
         return redirect(
             url_for(
                 "faturas_cartao.detalhes",
@@ -171,42 +162,25 @@ def pagar(id):
             )
         )
 
-
-    # -----------------------------------------------------
-    # CONTA ESCOLHIDA
-    # -----------------------------------------------------
-
-    conta_id = request.form.get(
-        "conta_id"
-    )
-
+    conta_id = request.form.get("conta_id")
 
     try:
-
-        conta_id = int(
-            conta_id
-        )
-
-    except (
-        TypeError,
-        ValueError
-    ):
-
+        conta_id = int(conta_id)
+    except (TypeError, ValueError):
         conta_id = 0
-
 
     conta = (
         Conta.query
         .filter_by(
             id=conta_id,
+            usuario_id=usuario_id,
             ativa=True
         )
         .first()
     )
 
-
     if not conta:
-
+        flash("Selecione uma conta válida para o pagamento.", "warning")
         return redirect(
             url_for(
                 "faturas_cartao.detalhes",
@@ -214,44 +188,24 @@ def pagar(id):
             )
         )
 
-
-    # -----------------------------------------------------
-    # CATEGORIA DO PAGAMENTO DE CARTÃO
-    # -----------------------------------------------------
-
     categoria = Categoria.query.filter_by(
         nome="Pagamento de cartão",
-        tipo="despesa"
+        tipo="despesa",
+        usuario_id=usuario_id
     ).first()
 
-
     if not categoria:
-
         categoria = Categoria(
             nome="Pagamento de cartão",
             tipo="despesa",
-            ativa=True
+            ativa=True,
+            usuario_id=usuario_id
         )
-
-        db.session.add(
-            categoria
-        )
-
+        db.session.add(categoria)
         db.session.flush()
 
-
-    # -----------------------------------------------------
-    # DATA DO PAGAMENTO
-    # -----------------------------------------------------
-
     agora = datetime.now()
-
     data_pagamento = agora.date()
-
-
-    # -----------------------------------------------------
-    # DESCRIÇÃO
-    # -----------------------------------------------------
 
     descricao = (
         f"Pagamento fatura "
@@ -260,67 +214,31 @@ def pagar(id):
         f"{fatura.ano_referencia}"
     )
 
-
-    # -----------------------------------------------------
-    # CRIA LANÇAMENTO
-    # -----------------------------------------------------
-
     lancamento = Lancamento(
-
         descricao=descricao,
-
         valor=fatura.valor_total,
-
         tipo="despesa",
-
         data=data_pagamento,
-
         status="pago",
-
         conta_id=conta.id,
-
         categoria_id=categoria.id,
-
-        observacao=(
-            "Pagamento automático da "
-            "fatura do cartão de crédito."
-        )
-
+        observacao=f"Fatura {fatura.id} paga",
+        usuario_id=usuario_id
     )
 
-    db.session.add(
-        lancamento
-    )
-
-
-    # -----------------------------------------------------
-    # ATUALIZA FATURA
-    # -----------------------------------------------------
+    db.session.add(lancamento)
+    db.session.flush()
 
     fatura.status = "paga"
-
-    fatura.data_pagamento = agora
-
-
-    # -----------------------------------------------------
-    # MARCA PARCELAS COMO PAGAS
-    # -----------------------------------------------------
+    fatura.data_pagamento = data_pagamento
+    fatura.lancamento_id = lancamento.id
 
     for parcela in fatura.parcelas:
-
+        parcela.status = "paga"
         parcela.pago = True
 
-        parcela.status = "paga"
-
-        parcela.data_pagamento = agora
-
-
-    # -----------------------------------------------------
-    # SALVA TUDO
-    # -----------------------------------------------------
-
     db.session.commit()
-
+    flash("Fatura paga com sucesso!", "success")
 
     return redirect(
         url_for(

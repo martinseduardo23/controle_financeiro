@@ -1,4 +1,4 @@
-from flask import Blueprint, render_template, request, redirect, url_for, flash
+from flask import Blueprint, render_template, request, redirect, url_for, flash, session, abort
 
 from database import db
 from models import Conta, MetaAporte
@@ -24,8 +24,8 @@ contas_bp = Blueprint(
 
 @contas_bp.route("/")
 def listar():
-
-    contas = Conta.query.order_by(
+    usuario_id = session.get("usuario_id")
+    contas = Conta.query.filter_by(usuario_id=usuario_id).order_by(
         Conta.nome
     ).all()
 
@@ -44,7 +44,7 @@ def listar():
 
 @contas_bp.route("/nova", methods=["GET", "POST"])
 def nova():
-
+    usuario_id = session.get("usuario_id")
     erro = None
     if request.method == "POST":
 
@@ -62,7 +62,8 @@ def nova():
                 nome=nome,
                 tipo=tipo or "Conta corrente",
                 saldo_inicial=moeda_brasileira_para_decimal(saldo),
-                ativa=True
+                ativa=True,
+                usuario_id=usuario_id
             )
 
             db.session.add(conta)
@@ -81,7 +82,12 @@ def nova():
 
 @contas_bp.route("/editar/<int:id>", methods=["GET", "POST"])
 def editar(id):
-    conta = Conta.query.get_or_404(id)
+    usuario_id = session.get("usuario_id")
+    conta = db.session.get(Conta, id)
+    if not conta or conta.usuario_id != usuario_id:
+        flash("Conta não encontrada ou permissão negada.", "danger")
+        return redirect(url_for("contas.listar"))
+
     erro = None
 
     if request.method == "POST":
@@ -111,7 +117,12 @@ def editar(id):
 
 @contas_bp.route("/alternar/<int:id>", methods=["POST"])
 def alternar(id):
-    conta = Conta.query.get_or_404(id)
+    usuario_id = session.get("usuario_id")
+    conta = db.session.get(Conta, id)
+    if not conta or conta.usuario_id != usuario_id:
+        flash("Conta não encontrada.", "danger")
+        return redirect(url_for("contas.listar"))
+
     conta.ativa = not conta.ativa
     db.session.commit()
 
@@ -125,8 +136,11 @@ def alternar(id):
     methods=["POST"]
 )
 def excluir(id):
-
-    conta = Conta.query.get_or_404(id)
+    usuario_id = session.get("usuario_id")
+    conta = db.session.get(Conta, id)
+    if not conta or conta.usuario_id != usuario_id:
+        flash("Conta não encontrada.", "danger")
+        return redirect(url_for("contas.listar"))
 
     tem_aportes = MetaAporte.query.filter_by(conta_id=conta.id).first()
     if conta.lancamentos or tem_aportes:

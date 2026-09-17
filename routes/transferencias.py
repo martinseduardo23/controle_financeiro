@@ -1,16 +1,16 @@
 from datetime import datetime, date
 from decimal import Decimal
-from flask import Blueprint, request, redirect, url_for, flash
+from flask import Blueprint, request, redirect, url_for, flash, session
 from database import db
 from models import Conta, Categoria, Lancamento
 
 transferencias_bp = Blueprint("transferencias", __name__)
 
 
-def obter_ou_criar_categoria_transferencia():
-    cat = Categoria.query.filter_by(nome="Transferência").first()
+def obter_ou_criar_categoria_transferencia(usuario_id=None):
+    cat = Categoria.query.filter_by(nome="Transferência", usuario_id=usuario_id).first()
     if not cat:
-        cat = Categoria(nome="Transferência", tipo="despesa", ativa=True)
+        cat = Categoria(nome="Transferência", tipo="despesa", ativa=True, usuario_id=usuario_id)
         db.session.add(cat)
         db.session.commit()
     return cat
@@ -18,6 +18,7 @@ def obter_ou_criar_categoria_transferencia():
 
 @transferencias_bp.route("/transferencias/nova", methods=["POST"])
 def transferir():
+    usuario_id = session.get("usuario_id")
     conta_origem_id = request.form.get("conta_origem_id")
     conta_destino_id = request.form.get("conta_destino_id")
     valor_raw = request.form.get("valor", "").strip()
@@ -32,11 +33,18 @@ def transferir():
         flash("A conta de origem e destino não podem ser iguais.", "danger")
         return redirect(request.referrer or url_for("dashboard.dashboard"))
 
-    conta_origem = db.session.get(Conta, int(conta_origem_id))
-    conta_destino = db.session.get(Conta, int(conta_destino_id))
+    try:
+        c_origem_id = int(conta_origem_id)
+        c_destino_id = int(conta_destino_id)
+    except (ValueError, TypeError):
+        flash("Contas inválidas.", "danger")
+        return redirect(request.referrer or url_for("dashboard.dashboard"))
+
+    conta_origem = Conta.query.filter_by(id=c_origem_id, usuario_id=usuario_id).first()
+    conta_destino = Conta.query.filter_by(id=c_destino_id, usuario_id=usuario_id).first()
 
     if not conta_origem or not conta_destino:
-        flash("Uma das contas selecionadas não foi encontrada.", "danger")
+        flash("Uma das contas selecionadas não foi encontrada ou não pertence ao seu usuário.", "danger")
         return redirect(request.referrer or url_for("dashboard.dashboard"))
 
     try:
@@ -57,12 +65,13 @@ def transferir():
     except ValueError:
         data_mov = date.today()
 
-    cat_transferencia = obter_ou_criar_categoria_transferencia()
+    cat_transferencia = obter_ou_criar_categoria_transferencia(usuario_id)
     transf_codigo = f"TRF-{int(datetime.utcnow().timestamp())}"
     obs_final = f"[{transf_codigo}] {observacao}".strip()
 
     # Débito na conta origem
     debito = Lancamento(
+        usuario_id=usuario_id,
         descricao=f"Transferência para {conta_destino.nome}",
         valor=valor,
         tipo="despesa",
@@ -75,6 +84,7 @@ def transferir():
 
     # Crédito na conta destino
     credito = Lancamento(
+        usuario_id=usuario_id,
         descricao=f"Transferência de {conta_origem.nome}",
         valor=valor,
         tipo="receita",

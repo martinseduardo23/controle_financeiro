@@ -4,7 +4,8 @@ from flask import (
     request,
     redirect,
     url_for,
-    flash
+    flash,
+    session
 )
 
 from database import db
@@ -20,31 +21,18 @@ cartoes_bp = Blueprint(
 
 def moeda_brasileira_para_decimal(valor):
     valor = (valor or "").strip()
-
-    valor = valor.replace(
-        "R$",
-        ""
-    ).replace(
-        " ",
-        ""
-    )
+    valor = valor.replace("R$", "").replace(" ", "")
 
     if not valor:
         return 0
 
-    return valor.replace(
-        ".",
-        ""
-    ).replace(
-        ",",
-        "."
-    )
+    return valor.replace(".", "").replace(",", ".")
 
 
 @cartoes_bp.route("/")
 def listar():
-
-    cartoes = Cartao.query.order_by(
+    usuario_id = session.get("usuario_id")
+    cartoes = Cartao.query.filter_by(usuario_id=usuario_id).order_by(
         Cartao.nome
     ).all()
 
@@ -59,59 +47,22 @@ def listar():
     methods=["GET", "POST"]
 )
 def novo():
-
+    usuario_id = session.get("usuario_id")
     erro = None
 
     if request.method == "POST":
-
-        nome = request.form.get(
-            "nome",
-            ""
-        ).strip()
-
-        banco = request.form.get(
-            "banco",
-            ""
-        ).strip()
-
-        ultimos_digitos = request.form.get(
-            "ultimos_digitos",
-            ""
-        ).strip()
-
-        limite = request.form.get(
-            "limite",
-            "0"
-        )
-
-        dia_fechamento = request.form.get(
-            "dia_fechamento"
-        )
-
-        dia_vencimento = request.form.get(
-            "dia_vencimento"
-        )
+        nome = request.form.get("nome", "").strip()
+        banco = request.form.get("banco", "").strip()
+        ultimos_digitos = request.form.get("ultimos_digitos", "").strip()
+        limite = request.form.get("limite", "0")
+        dia_fechamento = request.form.get("dia_fechamento")
+        dia_vencimento = request.form.get("dia_vencimento")
 
         try:
-
-            dia_fechamento = int(
-                dia_fechamento
-            )
-
-            dia_vencimento = int(
-                dia_vencimento
-            )
-
-        except (
-            TypeError,
-            ValueError
-        ):
-
-            erro = (
-                "Informe dias de fechamento "
-                "e vencimento válidos."
-            )
-
+            dia_fechamento = int(dia_fechamento)
+            dia_vencimento = int(dia_vencimento)
+        except (TypeError, ValueError):
+            erro = "Informe dias de fechamento e vencimento válidos."
             return render_template(
                 "cartao_form.html",
                 cartao=None,
@@ -119,61 +70,25 @@ def novo():
             )
 
         if not nome:
-
             erro = "Informe o nome do cartão."
-
         elif not banco:
-
             erro = "Informe o banco ou instituição."
-
-        elif not (
-            1 <= dia_fechamento <= 31
-        ):
-
-            erro = (
-                "O dia de fechamento deve "
-                "estar entre 1 e 31."
-            )
-
-        elif not (
-            1 <= dia_vencimento <= 31
-        ):
-
-            erro = (
-                "O dia de vencimento deve "
-                "estar entre 1 e 31."
-            )
-
-        elif (
-            ultimos_digitos
-            and (
-                len(ultimos_digitos) != 4
-                or not ultimos_digitos.isdigit()
-            )
-        ):
-
-            erro = (
-                "Os últimos dígitos devem "
-                "conter 4 números."
-            )
-
+        elif not (1 <= dia_fechamento <= 31):
+            erro = "O dia de fechamento deve estar entre 1 e 31."
+        elif not (1 <= dia_vencimento <= 31):
+            erro = "O dia de vencimento deve estar entre 1 e 31."
+        elif ultimos_digitos and (len(ultimos_digitos) != 4 or not ultimos_digitos.isdigit()):
+            erro = "Os últimos dígitos devem conter 4 números."
         else:
-
             cartao = Cartao(
                 nome=nome,
                 banco=banco,
-                ultimos_digitos=(
-                    ultimos_digitos
-                    or None
-                ),
-                limite=(
-                    moeda_brasileira_para_decimal(
-                        limite
-                    )
-                ),
+                ultimos_digitos=ultimos_digitos or None,
+                limite=moeda_brasileira_para_decimal(limite),
                 dia_fechamento=dia_fechamento,
                 dia_vencimento=dia_vencimento,
-                ativo=True
+                ativo=True,
+                usuario_id=usuario_id
             )
 
             db.session.add(cartao)
@@ -196,61 +111,27 @@ def novo():
     methods=["GET", "POST"]
 )
 def editar(id):
-
-    cartao = Cartao.query.get_or_404(id)
+    usuario_id = session.get("usuario_id")
+    cartao = db.session.get(Cartao, id)
+    if not cartao or cartao.usuario_id != usuario_id:
+        flash("Cartão não encontrado.", "danger")
+        return redirect(url_for("cartoes.listar"))
 
     erro = None
 
     if request.method == "POST":
-
-        nome = request.form.get(
-            "nome",
-            ""
-        ).strip()
-
-        banco = request.form.get(
-            "banco",
-            ""
-        ).strip()
-
-        ultimos_digitos = request.form.get(
-            "ultimos_digitos",
-            ""
-        ).strip()
-
-        limite = request.form.get(
-            "limite",
-            "0"
-        )
-
-        dia_fechamento = request.form.get(
-            "dia_fechamento"
-        )
-
-        dia_vencimento = request.form.get(
-            "dia_vencimento"
-        )
+        nome = request.form.get("nome", "").strip()
+        banco = request.form.get("banco", "").strip()
+        ultimos_digitos = request.form.get("ultimos_digitos", "").strip()
+        limite = request.form.get("limite", "0")
+        dia_fechamento = request.form.get("dia_fechamento")
+        dia_vencimento = request.form.get("dia_vencimento")
 
         try:
-
-            dia_fechamento = int(
-                dia_fechamento
-            )
-
-            dia_vencimento = int(
-                dia_vencimento
-            )
-
-        except (
-            TypeError,
-            ValueError
-        ):
-
-            erro = (
-                "Informe dias de fechamento "
-                "e vencimento válidos."
-            )
-
+            dia_fechamento = int(dia_fechamento)
+            dia_vencimento = int(dia_vencimento)
+        except (TypeError, ValueError):
+            erro = "Informe dias de fechamento e vencimento válidos."
             return render_template(
                 "cartao_form.html",
                 cartao=cartao,
@@ -258,67 +139,22 @@ def editar(id):
             )
 
         if not nome:
-
             erro = "Informe o nome do cartão."
-
         elif not banco:
-
             erro = "Informe o banco ou instituição."
-
-        elif not (
-            1 <= dia_fechamento <= 31
-        ):
-
-            erro = (
-                "O dia de fechamento deve "
-                "estar entre 1 e 31."
-            )
-
-        elif not (
-            1 <= dia_vencimento <= 31
-        ):
-
-            erro = (
-                "O dia de vencimento deve "
-                "estar entre 1 e 31."
-            )
-
-        elif (
-            ultimos_digitos
-            and (
-                len(ultimos_digitos) != 4
-                or not ultimos_digitos.isdigit()
-            )
-        ):
-
-            erro = (
-                "Os últimos dígitos devem "
-                "conter 4 números."
-            )
-
+        elif not (1 <= dia_fechamento <= 31):
+            erro = "O dia de fechamento deve estar entre 1 e 31."
+        elif not (1 <= dia_vencimento <= 31):
+            erro = "O dia de vencimento deve estar entre 1 e 31."
+        elif ultimos_digitos and (len(ultimos_digitos) != 4 or not ultimos_digitos.isdigit()):
+            erro = "Os últimos dígitos devem conter 4 números."
         else:
-
             cartao.nome = nome
             cartao.banco = banco
-
-            cartao.ultimos_digitos = (
-                ultimos_digitos
-                or None
-            )
-
-            cartao.limite = (
-                moeda_brasileira_para_decimal(
-                    limite
-                )
-            )
-
-            cartao.dia_fechamento = (
-                dia_fechamento
-            )
-
-            cartao.dia_vencimento = (
-                dia_vencimento
-            )
+            cartao.ultimos_digitos = ultimos_digitos or None
+            cartao.limite = moeda_brasileira_para_decimal(limite)
+            cartao.dia_fechamento = dia_fechamento
+            cartao.dia_vencimento = dia_vencimento
 
             db.session.commit()
             flash("Cartão atualizado com sucesso!", "success")
@@ -339,11 +175,13 @@ def editar(id):
     methods=["POST"]
 )
 def alternar(id):
-
-    cartao = Cartao.query.get_or_404(id)
+    usuario_id = session.get("usuario_id")
+    cartao = db.session.get(Cartao, id)
+    if not cartao or cartao.usuario_id != usuario_id:
+        flash("Cartão não encontrado.", "danger")
+        return redirect(url_for("cartoes.listar"))
 
     cartao.ativo = not cartao.ativo
-
     db.session.commit()
     novo_status = "ativado" if cartao.ativo else "desativado"
     flash(f"Cartão '{cartao.nome}' foi {novo_status}.", "info")
@@ -358,8 +196,11 @@ def alternar(id):
     methods=["POST"]
 )
 def excluir(id):
-
-    cartao = Cartao.query.get_or_404(id)
+    usuario_id = session.get("usuario_id")
+    cartao = db.session.get(Cartao, id)
+    if not cartao or cartao.usuario_id != usuario_id:
+        flash("Cartão não encontrado.", "danger")
+        return redirect(url_for("cartoes.listar"))
 
     compras_vinculadas = CompraCartao.query.filter_by(cartao_id=cartao.id).first()
     if compras_vinculadas or cartao.faturas:

@@ -1,7 +1,7 @@
 import os
 import shutil
 from datetime import datetime
-from flask import Blueprint, send_file, request, redirect, url_for, flash
+from flask import Blueprint, send_file, request, redirect, url_for, flash, session
 from config import BASE_DIR
 from database import db
 
@@ -10,6 +10,10 @@ backup_bp = Blueprint("backup", __name__)
 
 @backup_bp.route("/backup/download", methods=["GET"])
 def download():
+    if not session.get("is_admin"):
+        flash("Apenas administradores podem fazer download do banco de dados.", "danger")
+        return redirect(url_for("dashboard.dashboard"))
+
     db_path = os.path.join(BASE_DIR, "data", "financeiro.db")
     if not os.path.exists(db_path):
         flash("Arquivo de banco de dados não encontrado.", "danger")
@@ -26,6 +30,10 @@ def download():
 
 @backup_bp.route("/backup/restaurar", methods=["POST"])
 def restaurar():
+    if not session.get("is_admin"):
+        flash("Apenas administradores podem restaurar o banco de dados.", "danger")
+        return redirect(url_for("dashboard.dashboard"))
+
     arquivo = request.files.get("arquivo_db")
     if not arquivo or not arquivo.filename:
         flash("Nenhum arquivo selecionado para restauração.", "warning")

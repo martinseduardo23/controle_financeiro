@@ -3,7 +3,8 @@ from datetime import date, datetime
 from flask import (
     Blueprint,
     render_template,
-    request
+    request,
+    session
 )
 
 from models import Lancamento, CompraCartao
@@ -64,6 +65,7 @@ def obter_mes():
 @relatorios_bp.route("/")
 def listar():
 
+    usuario_id = session.get("usuario_id")
     ano, mes = obter_mes()
 
 
@@ -102,6 +104,7 @@ def listar():
     lancamentos = (
         Lancamento.query
         .filter(
+            Lancamento.usuario_id == usuario_id,
             Lancamento.data >= inicio,
             Lancamento.data < fim
         )
@@ -303,6 +306,7 @@ def listar():
     compras_cartao_mes = (
         CompraCartao.query
         .filter(
+            CompraCartao.usuario_id == usuario_id,
             CompraCartao.data_compra >= inicio,
             CompraCartao.data_compra < fim
         )

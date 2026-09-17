@@ -10,14 +10,15 @@ from services.faturas_cartao import vincular_parcelas_compra
 from routes.compras_cartao import criar_parcelas
 
 
-def obter_ou_criar_cartao_nubank():
+def obter_ou_criar_cartao_nubank(usuario_id=None):
     """
-    Retorna o cartão 'Nubank' cadastrado no sistema.
+    Retorna o cartão 'Nubank' cadastrado no sistema para o usuário especificado.
     Caso não exista, cria um automaticamente.
     """
-    cartao = Cartao.query.filter(Cartao.nome.ilike("%Nubank%")).first()
+    cartao = Cartao.query.filter(Cartao.usuario_id == usuario_id, Cartao.nome.ilike("%Nubank%")).first()
     if not cartao:
         cartao = Cartao(
+            usuario_id=usuario_id,
             nome="Nubank Roxinho",
             banco="Nubank",
             ultimos_digitos="0000",
@@ -31,14 +32,18 @@ def obter_ou_criar_cartao_nubank():
     return cartao
 
 
-def obter_ou_criar_conta_nubank():
+def obter_ou_criar_conta_nubank(usuario_id=None):
     """
-    Retorna a conta bancária 'NuConta' cadastrada no sistema.
+    Retorna a conta bancária 'NuConta' cadastrada no sistema para o usuário.
     Caso não exista, cria uma automaticamente.
     """
-    conta = Conta.query.filter(Conta.nome.ilike("%Nubank%") | Conta.nome.ilike("%NuConta%")).first()
+    conta = Conta.query.filter(
+        Conta.usuario_id == usuario_id,
+        (Conta.nome.ilike("%Nubank%") | Conta.nome.ilike("%NuConta%"))
+    ).first()
     if not conta:
         conta = Conta(
+            usuario_id=usuario_id,
             nome="Nubank (NuConta)",
             tipo="Conta corrente",
             saldo_inicial=0.0,
@@ -49,9 +54,9 @@ def obter_ou_criar_conta_nubank():
     return conta
 
 
-def mapear_categoria(categoria_nome, tipo="despesa"):
+def mapear_categoria(categoria_nome, tipo="despesa", usuario_id=None):
     """
-    Mapeia nomes de categorias comuns do Nubank para categorias do sistema.
+    Mapeia nomes de categorias comuns do Nubank para categorias do usuário no sistema.
     """
     mapa = {
         "alimentacao": "Alimentação",
@@ -68,12 +73,16 @@ def mapear_categoria(categoria_nome, tipo="despesa"):
     }
     nome_padrao = mapa.get(categoria_nome.lower().strip(), categoria_nome.capitalize()) if categoria_nome else "Outros"
 
-    cat = Categoria.query.filter(Categoria.nome.ilike(nome_padrao), Categoria.tipo == tipo).first()
+    cat = Categoria.query.filter(
+        Categoria.usuario_id == usuario_id,
+        Categoria.nome.ilike(nome_padrao),
+        Categoria.tipo == tipo
+    ).first()
     if not cat:
-        # Busca qualquer categoria ativa do tipo correspondente
-        cat = Categoria.query.filter_by(tipo=tipo, ativa=True).first()
+        # Busca qualquer categoria ativa do tipo correspondente para este usuário
+        cat = Categoria.query.filter_by(usuario_id=usuario_id, tipo=tipo, ativa=True).first()
         if not cat:
-            cat = Categoria(nome=nome_padrao, tipo=tipo, ativa=True)
+            cat = Categoria(usuario_id=usuario_id, nome=nome_padrao, tipo=tipo, ativa=True)
             db.session.add(cat)
             db.session.commit()
     return cat
@@ -83,10 +92,10 @@ def mapear_categoria(categoria_nome, tipo="despesa"):
 # PROCESSAR TRANSAÇÃO DO APPLE PAY (TEMPO REAL)
 # =========================================================
 
-def processar_transacao_apple_pay(dados):
+def processar_transacao_apple_pay(dados, usuario_id=None):
     """
     Recebe os dados disparados pelo app Atalhos (Shortcuts) do iPhone via Apple Pay.
-    Cadastra a transação como Compra no Cartão Nubank.
+    Cadastra a transação como Compra no Cartão Nubank do usuário especificado.
     """
     estabelecimento = (
         dados.get("estabelecimento")
@@ -135,12 +144,13 @@ def processar_transacao_apple_pay(dados):
         elif isinstance(data_str, (date, datetime)):
             data_compra = data_str if isinstance(data_str, date) else data_str.date()
 
-    cartao = obter_ou_criar_cartao_nubank()
+    cartao = obter_ou_criar_cartao_nubank(usuario_id=usuario_id)
     transacao_id = str(dados.get("id") or dados.get("transacao_id") or "").strip()
     marcador = f"[Apple Pay: {transacao_id}]" if transacao_id else f"[Apple Pay {data_compra.strftime('%d/%m')}]"
 
-    # Verificação de duplicata
+    # Verificação de duplicata para o usuário
     compra_existente = CompraCartao.query.filter(
+        CompraCartao.usuario_id == usuario_id,
         CompraCartao.cartao_id == cartao.id,
         CompraCartao.data_compra == data_compra,
         CompraCartao.valor_total == valor_decimal,
@@ -151,9 +161,10 @@ def processar_transacao_apple_pay(dados):
         return compra_existente, False, f"Compra '{estabelecimento}' de R$ {valor_decimal} já cadastrada anteriormente."
 
     cat_nome = dados.get("categoria") or dados.get("category") or "Outros"
-    categoria = mapear_categoria(cat_nome, tipo="despesa")
+    categoria = mapear_categoria(cat_nome, tipo="despesa", usuario_id=usuario_id)
 
     nova_compra = CompraCartao(
+        usuario_id=usuario_id,
         descricao=estabelecimento,
         valor_total=valor_decimal,
         data_compra=data_compra,
@@ -321,7 +332,7 @@ def parsear_ofx_nubank(conteudo_str):
 # IMPORTAÇÃO EM LOTE COM PREVENÇÃO DE DUPLICATAS
 # =========================================================
 
-def importar_lote_nubank(transacoes, destino="cartao"):
+def importar_lote_nubank(transacoes, destino="cartao", usuario_id=None):
     """
     Importa a lista de transações com verificação inteligente de duplicatas
     (compatibilidade com compras já inseridas via Apple Pay ou importadas antes).
@@ -330,7 +341,7 @@ def importar_lote_nubank(transacoes, destino="cartao"):
     duplicados = 0
 
     if destino == "cartao":
-        cartao = obter_ou_criar_cartao_nubank()
+        cartao = obter_ou_criar_cartao_nubank(usuario_id=usuario_id)
         for item in transacoes:
             data_item = item["data"]
             valor_item = item["valor"]
@@ -338,6 +349,7 @@ def importar_lote_nubank(transacoes, destino="cartao"):
 
             # Checa se já existe compra similar no cartão (evita duplicar com Apple Pay)
             existente = CompraCartao.query.filter(
+                CompraCartao.usuario_id == usuario_id,
                 CompraCartao.cartao_id == cartao.id,
                 CompraCartao.data_compra == data_item,
                 CompraCartao.valor_total == valor_item,
@@ -348,8 +360,9 @@ def importar_lote_nubank(transacoes, destino="cartao"):
                 duplicados += 1
                 continue
 
-            categoria = mapear_categoria(item.get("categoria", "Outros"), tipo="despesa")
+            categoria = mapear_categoria(item.get("categoria", "Outros"), tipo="despesa", usuario_id=usuario_id)
             nova_compra = CompraCartao(
+                usuario_id=usuario_id,
                 descricao=desc_item,
                 valor_total=valor_item,
                 data_compra=data_item,
@@ -366,7 +379,7 @@ def importar_lote_nubank(transacoes, destino="cartao"):
             importados += 1
 
     else:
-        conta = obter_ou_criar_conta_nubank()
+        conta = obter_ou_criar_conta_nubank(usuario_id=usuario_id)
         for item in transacoes:
             data_item = item["data"]
             valor_item = item["valor"]
@@ -375,6 +388,7 @@ def importar_lote_nubank(transacoes, destino="cartao"):
 
             # Checa se já existe lançamento similar na conta
             existente = Lancamento.query.filter(
+                Lancamento.usuario_id == usuario_id,
                 Lancamento.conta_id == conta.id,
                 Lancamento.data == data_item,
                 Lancamento.valor == valor_item,
@@ -385,8 +399,9 @@ def importar_lote_nubank(transacoes, destino="cartao"):
                 duplicados += 1
                 continue
 
-            categoria = mapear_categoria(item.get("categoria", "Outros"), tipo=tipo_item)
+            categoria = mapear_categoria(item.get("categoria", "Outros"), tipo=tipo_item, usuario_id=usuario_id)
             novo_lanc = Lancamento(
+                usuario_id=usuario_id,
                 descricao=desc_item,
                 valor=valor_item,
                 tipo=tipo_item,

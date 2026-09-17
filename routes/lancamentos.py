@@ -6,7 +6,8 @@ from flask import (
     request,
     redirect,
     url_for,
-    flash
+    flash,
+    session
 )
 
 from sqlalchemy import or_
@@ -32,8 +33,9 @@ def moeda_brasileira_para_decimal(valor):
     return valor.replace(".", "").replace(",", ".")
 
 
-def categorias_por_tipo(tipo):
+def categorias_por_tipo(tipo, usuario_id):
     return Categoria.query.filter_by(
+        usuario_id=usuario_id,
         ativa=True,
         tipo=tipo
     ).order_by(
@@ -150,15 +152,11 @@ def aplicar_filtros(query, filtros):
 
 @lancamentos_bp.route("/")
 def listar():
-
+    usuario_id = session.get("usuario_id")
     filtros = obter_filtros()
 
-    query = Lancamento.query
-
-    query = aplicar_filtros(
-        query,
-        filtros
-    )
+    query = Lancamento.query.filter_by(usuario_id=usuario_id)
+    query = aplicar_filtros(query, filtros)
 
     lancamentos = query.order_by(
         Lancamento.data.desc(),
@@ -183,12 +181,14 @@ def listar():
     )
 
     contas = Conta.query.filter_by(
+        usuario_id=usuario_id,
         ativa=True
     ).order_by(
         Conta.nome
     ).all()
 
     categorias = Categoria.query.filter_by(
+        usuario_id=usuario_id,
         ativa=True
     ).order_by(
         Categoria.tipo,
@@ -212,11 +212,10 @@ def listar():
     methods=["GET", "POST"]
 )
 def novo():
-
+    usuario_id = session.get("usuario_id")
     erro = None
 
     if request.method == "POST":
-
         descricao = request.form.get("descricao", "").strip()
         valor = request.form.get("valor", "0")
         tipo = request.form.get("tipo", "").strip()
@@ -242,11 +241,13 @@ def novo():
 
         categoria = Categoria.query.filter_by(
             id=categoria_id,
+            usuario_id=usuario_id,
             ativa=True
         ).first()
 
         conta = Conta.query.filter_by(
             id=conta_id,
+            usuario_id=usuario_id,
             ativa=True
         ).first()
 
@@ -269,7 +270,8 @@ def novo():
                 status=status,
                 conta_id=conta.id,
                 categoria_id=categoria.id,
-                observacao=observacao
+                observacao=observacao,
+                usuario_id=usuario_id
             )
 
             db.session.add(lancamento)
@@ -281,12 +283,14 @@ def novo():
             )
 
     contas = Conta.query.filter_by(
+        usuario_id=usuario_id,
         ativa=True
     ).order_by(
         Conta.nome
     ).all()
 
     categorias = Categoria.query.filter_by(
+        usuario_id=usuario_id,
         ativa=True
     ).order_by(
         Categoria.tipo,
@@ -307,12 +311,15 @@ def novo():
     methods=["GET", "POST"]
 )
 def editar(id):
+    usuario_id = session.get("usuario_id")
+    lancamento = db.session.get(Lancamento, id)
+    if not lancamento or lancamento.usuario_id != usuario_id:
+        flash("Lançamento não encontrado.", "danger")
+        return redirect(url_for("lancamentos.listar"))
 
-    lancamento = Lancamento.query.get_or_404(id)
     erro = None
 
     if request.method == "POST":
-
         descricao = request.form.get("descricao", "").strip()
         valor = request.form.get("valor", "0")
         tipo = request.form.get("tipo", "").strip()
@@ -338,11 +345,13 @@ def editar(id):
 
         categoria = Categoria.query.filter_by(
             id=categoria_id,
+            usuario_id=usuario_id,
             ativa=True
         ).first()
 
         conta = Conta.query.filter_by(
             id=conta_id,
+            usuario_id=usuario_id,
             ativa=True
         ).first()
 
@@ -374,12 +383,14 @@ def editar(id):
             )
 
     contas = Conta.query.filter_by(
+        usuario_id=usuario_id,
         ativa=True
     ).order_by(
         Conta.nome
     ).all()
 
     categorias = Categoria.query.filter_by(
+        usuario_id=usuario_id,
         ativa=True
     ).order_by(
         Categoria.tipo,
@@ -400,8 +411,11 @@ def editar(id):
     methods=["POST"]
 )
 def excluir(id):
-
-    lancamento = Lancamento.query.get_or_404(id)
+    usuario_id = session.get("usuario_id")
+    lancamento = db.session.get(Lancamento, id)
+    if not lancamento or lancamento.usuario_id != usuario_id:
+        flash("Lançamento não encontrado.", "danger")
+        return redirect(url_for("lancamentos.listar"))
 
     aporte_vinculado = MetaAporte.query.filter_by(lancamento_id=id).first()
     if aporte_vinculado:

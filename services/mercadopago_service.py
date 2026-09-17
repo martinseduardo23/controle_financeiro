@@ -1,4 +1,4 @@
-﻿import os
+import os
 import json
 import urllib.request
 import urllib.error
@@ -59,14 +59,15 @@ def consultar_pagamento_mp(payment_id, access_token=None):
     return None
 
 
-def obter_ou_criar_conta_mp():
+def obter_ou_criar_conta_mp(usuario_id=None):
     """
-    Retorna a conta 'Mercado Pago' cadastrada no sistema.
+    Retorna a conta 'Mercado Pago' cadastrada no sistema para o usuário especificado.
     Caso não exista, cria uma automaticamente.
     """
-    conta = Conta.query.filter_by(nome="Mercado Pago").first()
+    conta = Conta.query.filter_by(nome="Mercado Pago", usuario_id=usuario_id).first()
     if not conta:
         conta = Conta(
+            usuario_id=usuario_id,
             nome="Mercado Pago",
             tipo="Carteira",
             saldo_inicial=0.0,
@@ -77,18 +78,19 @@ def obter_ou_criar_conta_mp():
     return conta
 
 
-def obter_ou_criar_categoria_mp(nome="Mercado Pago", tipo="despesa"):
+def obter_ou_criar_categoria_mp(nome="Mercado Pago", tipo="despesa", usuario_id=None):
     """
-    Retorna uma categoria com o nome especificado.
+    Retorna uma categoria com o nome especificado para o usuário.
     Caso não exista, cria uma automaticamente.
     """
-    cat = Categoria.query.filter_by(nome=nome, tipo=tipo).first()
+    cat = Categoria.query.filter_by(nome=nome, tipo=tipo, usuario_id=usuario_id).first()
     if not cat:
-        # Se não houver específica, busca alguma categoria padrão do mesmo tipo
-        cat_geral = Categoria.query.filter_by(tipo=tipo, ativa=True).first()
+        # Se não houver específica, busca alguma categoria padrão do mesmo tipo para o usuário
+        cat_geral = Categoria.query.filter_by(tipo=tipo, ativa=True, usuario_id=usuario_id).first()
         if cat_geral:
             return cat_geral
         cat = Categoria(
+            usuario_id=usuario_id,
             nome=nome,
             tipo=tipo,
             ativa=True
@@ -98,7 +100,7 @@ def obter_ou_criar_categoria_mp(nome="Mercado Pago", tipo="despesa"):
     return cat
 
 
-def processar_pagamento_mp(dados_pagamento):
+def processar_pagamento_mp(dados_pagamento, usuario_id=None):
     """
     Converte o objeto de pagamento retornado pela API do Mercado Pago (ou simulação)
     em um registro na tabela 'lancamentos', evitando duplicações por idempotência.
@@ -107,9 +109,10 @@ def processar_pagamento_mp(dados_pagamento):
     if not payment_id:
         return None, False, "ID do pagamento ausente."
 
-    # 1. Idempotência: Checa se já existe lançamento com este identificador
+    # 1. Idempotência: Checa se já existe lançamento com este identificador para o usuário
     marcador = f"[Mercado Pago ID: {payment_id}]"
     existente = Lancamento.query.filter(
+        Lancamento.usuario_id == usuario_id,
         Lancamento.observacao.like(f"%{marcador}%")
     ).first()
 
@@ -170,8 +173,8 @@ def processar_pagamento_mp(dados_pagamento):
     status_lancamento = "pago" if status_mp in ("approved", "accredited", "pago") else "pendente"
 
     # 7. Conta e Categoria
-    conta = obter_ou_criar_conta_mp()
-    categoria = obter_ou_criar_categoria_mp(nome="Mercado Pago", tipo=tipo)
+    conta = obter_ou_criar_conta_mp(usuario_id=usuario_id)
+    categoria = obter_ou_criar_categoria_mp(nome="Mercado Pago", tipo=tipo, usuario_id=usuario_id)
 
     # 8. Criação do Lançamento
     detalhes_op = []
@@ -183,6 +186,7 @@ def processar_pagamento_mp(dados_pagamento):
     obs_final = " | ".join(detalhes_op)
 
     novo_lancamento = Lancamento(
+        usuario_id=usuario_id,
         descricao=descricao,
         valor=valor_decimal,
         tipo=tipo,

@@ -24,6 +24,17 @@ class Categoria(db.Model):
         default=True
     )
 
+    usuario_id = db.Column(
+        db.Integer,
+        db.ForeignKey("usuarios.id"),
+        nullable=False
+    )
+
+    usuario = db.relationship(
+        "Usuario",
+        back_populates="categorias"
+    )
+
     lancamentos = db.relationship(
         "Lancamento",
         back_populates="categoria",

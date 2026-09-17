@@ -2,12 +2,13 @@ import json
 from datetime import date
 from decimal import Decimal
 
-from flask import Blueprint, render_template, request
+from flask import Blueprint, render_template, request, session
 
 from models import (
     Conta,
     Lancamento,
-    FaturaCartao
+    FaturaCartao,
+    Cartao
 )
 
 
@@ -24,15 +25,17 @@ def dashboard():
         from routes.integracoes import webhook_mercadopago
         return webhook_mercadopago()
 
+    usuario_id = session.get("usuario_id")
     hoje = date.today()
 
     # =====================================================
-    # CONTAS ATIVAS
+    # CONTAS ATIVAS DO USUÁRIO
     # =====================================================
 
     contas = (
         Conta.query
         .filter_by(
+            usuario_id=usuario_id,
             ativa=True
         )
         .all()
@@ -48,10 +51,11 @@ def dashboard():
     else:
         fim_mes = date(hoje.year, hoje.month + 1, 1)
 
-    # Lançamentos apenas do mês atual via SQL
+    # Lançamentos apenas do mês atual do usuário
     lancamentos_mes = (
         Lancamento.query
         .filter(
+            Lancamento.usuario_id == usuario_id,
             Lancamento.data >= inicio_mes,
             Lancamento.data < fim_mes
         )
@@ -59,12 +63,14 @@ def dashboard():
     )
 
     # =====================================================
-    # FATURAS DE CARTÃO EM ABERTO
+    # FATURAS DE CARTÃO EM ABERTO DO USUÁRIO
     # =====================================================
 
     faturas_abertas = (
         FaturaCartao.query
+        .join(Cartao)
         .filter(
+            Cartao.usuario_id == usuario_id,
             FaturaCartao.status != "paga"
         )
         .all()
@@ -76,10 +82,11 @@ def dashboard():
 
     saldo_atual = sum(conta.saldo_atual() for conta in contas)
 
-    # Saldo projetado considerando apenas contas ativas
+    # Saldo projetado considerando apenas contas ativas do usuário
     saldo_projetado = sum(float(c.saldo_inicial or 0) for c in contas)
     lancamentos_ativas = (
         Lancamento.query
+        .filter(Lancamento.usuario_id == usuario_id)
         .join(Conta)
         .filter(Conta.ativa == True)
         .all()
@@ -163,6 +170,7 @@ def dashboard():
     atrasados = (
         Lancamento.query
         .filter(
+            Lancamento.usuario_id == usuario_id,
             Lancamento.status != "pago",
             Lancamento.data < hoje
         )
@@ -184,6 +192,7 @@ def dashboard():
     proximos = (
         Lancamento.query
         .filter(
+            Lancamento.usuario_id == usuario_id,
             Lancamento.status != "pago",
             Lancamento.data >= hoje
         )
@@ -231,6 +240,7 @@ def dashboard():
         fim_m = date(y + 1, 1, 1) if m == 12 else date(y, m + 1, 1)
 
         l_periodo = Lancamento.query.filter(
+            Lancamento.usuario_id == usuario_id,
             Lancamento.data >= ini_m,
             Lancamento.data < fim_m,
             Lancamento.status == "pago"

@@ -6,7 +6,8 @@ from flask import (
     render_template,
     request,
     redirect,
-    url_for
+    url_for,
+    session
 )
 
 from database import db
@@ -62,10 +63,13 @@ def moeda_brasileira_para_decimal(valor):
 @metas_bp.route("/")
 def listar():
 
+    usuario_id = session.get("usuario_id")
+
     metas = (
         Meta.query
         .filter_by(
-            ativa=True
+            ativa=True,
+            usuario_id=usuario_id
         )
         .order_by(
             Meta.prazo.asc(),
@@ -289,7 +293,11 @@ def nova():
 
         if erro is None:
 
+            usuario_id = session.get("usuario_id")
+
             meta = Meta(
+
+                usuario_id=usuario_id,
 
                 nome=nome,
 
@@ -351,9 +359,12 @@ def nova():
 )
 def editar(id):
 
-    meta = Meta.query.get_or_404(
-        id
-    )
+    usuario_id = session.get("usuario_id")
+
+    meta = Meta.query.filter_by(
+        id=id,
+        usuario_id=usuario_id
+    ).first_or_404()
 
     erro = None
 
@@ -547,14 +558,18 @@ def editar(id):
 )
 def aportar(id):
 
-    meta = Meta.query.get_or_404(
-        id
-    )
+    usuario_id = session.get("usuario_id")
+
+    meta = Meta.query.filter_by(
+        id=id,
+        usuario_id=usuario_id
+    ).first_or_404()
 
     contas = (
         Conta.query
         .filter_by(
-            ativa=True
+            ativa=True,
+            usuario_id=usuario_id
         )
         .order_by(
             Conta.nome
@@ -619,7 +634,8 @@ def aportar(id):
             Conta.query
             .filter_by(
                 id=conta_id_int,
-                ativa=True
+                ativa=True,
+                usuario_id=usuario_id
             )
             .first()
         )
@@ -707,7 +723,8 @@ def aportar(id):
                 Categoria.query
                 .filter_by(
                     nome="Metas financeiras",
-                    tipo="despesa"
+                    tipo="despesa",
+                    usuario_id=usuario_id
                 )
                 .first()
             )
@@ -721,7 +738,9 @@ def aportar(id):
 
                     tipo="despesa",
 
-                    ativa=True
+                    ativa=True,
+
+                    usuario_id=usuario_id
 
                 )
 
@@ -733,6 +752,8 @@ def aportar(id):
 
 
             lancamento = Lancamento(
+
+                usuario_id=usuario_id,
 
                 descricao=(
                     f"Aporte para meta: "
@@ -839,9 +860,12 @@ def aportar(id):
 )
 def excluir(id):
 
-    meta = Meta.query.get_or_404(
-        id
-    )
+    usuario_id = session.get("usuario_id")
+
+    meta = Meta.query.filter_by(
+        id=id,
+        usuario_id=usuario_id
+    ).first_or_404()
 
     meta.ativa = False
 

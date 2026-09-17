@@ -8,7 +8,8 @@ from flask import (
     request,
     redirect,
     url_for,
-    flash
+    flash,
+    session
 )
 
 from database import db
@@ -185,8 +186,8 @@ def criar_parcelas(compra):
 
 @compras_cartao_bp.route("/")
 def listar():
-
-    compras = CompraCartao.query.order_by(
+    usuario_id = session.get("usuario_id")
+    compras = CompraCartao.query.filter_by(usuario_id=usuario_id).order_by(
         CompraCartao.data_compra.desc(),
         CompraCartao.id.desc()
     ).all()
@@ -295,10 +296,11 @@ def listar():
     "/detalhes/<int:id>"
 )
 def detalhes(id):
-
-    compra = CompraCartao.query.get_or_404(
-        id
-    )
+    usuario_id = session.get("usuario_id")
+    compra = db.session.get(CompraCartao, id)
+    if not compra or compra.usuario_id != usuario_id:
+        flash("Compra não encontrada.", "danger")
+        return redirect(url_for("compras_cartao.listar"))
 
     parcelas = sorted(
         compra.parcelas_relacionadas,
@@ -327,6 +329,7 @@ def detalhes(id):
 )
 def nova():
 
+    usuario_id = session.get("usuario_id")
     erro = None
 
     if request.method == "POST":
@@ -418,11 +421,13 @@ def nova():
 
         cartao = Cartao.query.filter_by(
             id=cartao_id_int,
+            usuario_id=usuario_id,
             ativo=True
         ).first()
 
         categoria = Categoria.query.filter_by(
             id=categoria_id_int,
+            usuario_id=usuario_id,
             tipo="despesa",
             ativa=True
         ).first()
@@ -504,7 +509,9 @@ def nova():
 
                     categoria_id=categoria.id,
 
-                    observacao=observacao
+                    observacao=observacao,
+
+                    usuario_id=usuario_id
 
                 )
 
@@ -544,12 +551,14 @@ def nova():
                 )
 
     cartoes = Cartao.query.filter_by(
+        usuario_id=usuario_id,
         ativo=True
     ).order_by(
         Cartao.nome
     ).all()
 
     categorias = Categoria.query.filter_by(
+        usuario_id=usuario_id,
         tipo="despesa",
         ativa=True
     ).order_by(
@@ -580,10 +589,11 @@ def nova():
     methods=["GET", "POST"]
 )
 def editar(id):
-
-    compra = CompraCartao.query.get_or_404(
-        id
-    )
+    usuario_id = session.get("usuario_id")
+    compra = db.session.get(CompraCartao, id)
+    if not compra or compra.usuario_id != usuario_id:
+        flash("Compra não encontrada.", "danger")
+        return redirect(url_for("compras_cartao.listar"))
 
     if compra_tem_parcela_paga(compra):
         flash("Esta compra não pode ser editada pois possui parcelas em faturas já quitadas.", "warning")
@@ -839,12 +849,14 @@ def editar(id):
                 )
 
     cartoes = Cartao.query.filter_by(
+        usuario_id=usuario_id,
         ativo=True
     ).order_by(
         Cartao.nome
     ).all()
 
     categorias = Categoria.query.filter_by(
+        usuario_id=usuario_id,
         tipo="despesa",
         ativa=True
     ).order_by(
@@ -869,10 +881,11 @@ def editar(id):
     methods=["POST"]
 )
 def excluir(id):
-
-    compra = CompraCartao.query.get_or_404(
-        id
-    )
+    usuario_id = session.get("usuario_id")
+    compra = db.session.get(CompraCartao, id)
+    if not compra or compra.usuario_id != usuario_id:
+        flash("Compra não encontrada.", "danger")
+        return redirect(url_for("compras_cartao.listar"))
 
     if compra_tem_parcela_paga(compra):
         flash("Esta compra não pode ser excluída pois possui parcelas em faturas já quitadas.", "warning")
