@@ -1,4 +1,4 @@
-from flask import Flask
+from flask import Flask, request, session, redirect, url_for
 
 from config import Config
 from database import db
@@ -6,7 +6,8 @@ from database import db
 from models import (
     Conta,
     Categoria,
-    Lancamento
+    Lancamento,
+    Usuario
 )
 
 from routes.dashboard import dashboard_bp
@@ -19,6 +20,9 @@ from routes.faturas_cartao import faturas_cartao_bp
 from routes.metas import metas_bp
 from routes.relatorios import relatorios_bp
 from routes.integracoes import integracoes_bp
+from routes.auth import auth_bp
+from routes.transferencias import transferencias_bp
+from routes.backup import backup_bp
 
 
 # =========================================================
@@ -164,6 +168,47 @@ def criar_app():
         integracoes_bp
     )
 
+    # Autenticação e Usuários
+    app.register_blueprint(
+        auth_bp
+    )
+
+    # Transferências entre contas
+    app.register_blueprint(
+        transferencias_bp
+    )
+
+    # Backup do sistema
+    app.register_blueprint(
+        backup_bp
+    )
+
+
+    # =====================================================
+    # CONTROLE DE ACESSO (AUTENTICAÇÃO)
+    # =====================================================
+
+    @app.before_request
+    def proteger_rotas():
+        # Arquivos estáticos são sempre livres
+        if request.endpoint == "static":
+            return
+
+        # Webhooks externos (Mercado Pago, Apple Pay) não exigem login
+        path = request.path or ""
+        if path.startswith("/webhooks") or path.startswith("/webhook"):
+            return
+
+        # Rota de login
+        if request.endpoint == "auth.login":
+            return
+
+        # Se não logado, redireciona para login
+        if not session.get("usuario_id"):
+            if request.method == "GET" and request.endpoint:
+                return redirect(url_for("auth.login", next=request.url))
+            return redirect(url_for("auth.login"))
+
 
     # =====================================================
     # INICIALIZAÇÃO DO BANCO
@@ -259,6 +304,16 @@ def inicializar_dados():
 
             )
         )
+
+
+    # -----------------------------------------------------
+    # USUÁRIO INICIAL (ADMIN)
+    # -----------------------------------------------------
+
+    if not Usuario.query.first():
+        admin = Usuario(username="admin")
+        admin.set_password("admin123")
+        db.session.add(admin)
 
 
     # -----------------------------------------------------

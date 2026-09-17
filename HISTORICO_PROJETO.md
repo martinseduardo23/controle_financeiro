@@ -31,26 +31,39 @@ Documento de transição e contexto para continuidade do desenvolvimento do proj
   - Criação automática de contas e cartões Nubank, geração de parcelas e vinculação automática com as faturas correspondentes.
   - Simulador interativo do Apple Pay e guia passo a passo ilustrado na tela `/integracoes/nubank`.
 
+- **Autenticação e Segurança de Produção (`models/usuario.py`, `routes/auth.py`, `templates/login.html`)**:
+  - Modelo `Usuario` com hash criptográfico seguro (`werkzeug.security`).
+  - Tela de login minimalista Dark Mode puro (`#000000`) e tela de troca de senha (`/perfil/alterar-senha`).
+  - Proteção de rotas global com `@app.before_request`, mantendo os endpoints de webhooks (`/webhooks/*`) públicos para receber notificações do Mercado Pago e Apple Pay 24/7.
+  - Usuário padrão inicial configurado como `admin` (`admin123`).
+- **Transferência entre Contas Bancárias (`routes/transferencias.py`, `templates/dashboard.html`)**:
+  - Modal rápido e inteligente no Dashboard para transferir saldo entre contas com débito e crédito automáticos vinculados por código de transação (`TRF-...`).
+- **Backup & Restauração em 1 Clique (`routes/backup.py`)**:
+  - Download direto do arquivo SQLite `.db` e upload de restauração com cópia de segurança automática.
+- **Gráficos Visuais no Dashboard (`routes/dashboard.py`, `templates/dashboard.html`)**:
+  - Integrado Chart.js:
+    - Gráfico Donut (Rosca): Gastos por categoria no mês atual.
+    - Gráfico de Barras: Histórico dos últimos 6 meses comparando receitas vs. despesas.
+- **Reset do Banco para Produção**:
+  - Backup preventivo criado em `data/financeiro_backup_pre_producao.db`.
+  - Base de dados zerada e pronta com categorias padrão limpas, uma conta inicial e usuário `admin`.
+
 ### 2. Interface Visual (UI/UX)
 - **Tema**: Dark Mode Absoluto (Preto verdadeiro `#000000` / `#0a0a0d`), estilo fintech moderna com tipografia Inter, cards com bordas suaves e badges de alto contraste.
 - **Identidade**: Nome atualizado para **Controle Financeiro** (removido "Financeiro Pro"), novo ícone financeiro em SVG no logo.
-- **Templates**: Todos os 21 templates foram modernizados e padronizados com suporte a mobile responsivo.
+- **Templates**: Todos os 23 templates modernizados e padronizados com suporte a mobile responsivo.
 - **Facilidade**: Criado `iniciar.bat` para rodar o projeto com 2 cliques na porta 5000.
 
 ---
 
-## 🎯 Próximas Funcionalidades Sugeridas para Implementar em Casa
+## 🎯 Próximas Funcionalidades Sugeridas para o Futuro
 
-1. **Transferência entre Contas Bancárias**:
-   - Tela/modal de transferência entre duas contas cadastradas com débito na origem e crédito no destino.
-2. **Lançamentos Recorrentes (Fixos/Assinaturas)**:
+1. **Lançamentos Recorrentes (Fixos/Assinaturas)**:
    - Salário, aluguel, condomínio, internet, streamings com repetição mensal automática.
-3. **Teto de Gastos / Orçamento por Categoria (Budgeting)**:
+2. **Teto de Gastos / Orçamento por Categoria (Budgeting)**:
    - Limite estipulado de gastos por categoria no mês com barra de acompanhamento no Dashboard.
-4. **Gráficos Interativos (Chart.js)**:
-   - Gráfico de evolução do patrimônio (linha/área) e rosca (donut) de despesas no Dashboard e Relatórios.
-5. **Backup em 1 Clique**:
-   - Botão para exportar e restaurar o arquivo `data/financeiro.db`.
+3. **Filtros Avançados por Período Customizado**:
+   - Seleção de intervalo de datas livre para relatórios e exportação para Excel/PDF.
 
 ---
 

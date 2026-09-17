@@ -1,3 +1,4 @@
+import json
 from datetime import date
 from decimal import Decimal
 
@@ -194,6 +195,53 @@ def dashboard():
         .all()
     )
 
+    # =====================================================
+    # DADOS PARA GRÁFICOS (CHART.JS)
+    # =====================================================
+
+    # 1. Gastos por Categoria no Mês Atual (Donut)
+    despesas_cat = {}
+    for l in lancamentos_mes:
+        if l.tipo == "despesa" and l.status == "pago":
+            cat_nome = l.categoria.nome if l.categoria else "Outros"
+            if cat_nome == "Transferência":
+                continue
+            despesas_cat[cat_nome] = despesas_cat.get(cat_nome, 0.0) + float(l.valor or 0)
+
+    despesas_cat_sorted = sorted(despesas_cat.items(), key=lambda x: x[1], reverse=True)
+    chart_cat_labels = [item[0] for item in despesas_cat_sorted]
+    chart_cat_values = [round(item[1], 2) for item in despesas_cat_sorted]
+
+    # 2. Histórico de Receitas vs Despesas (Últimos 6 Meses)
+    meses_labels = []
+    meses_receitas = []
+    meses_despesas = []
+    nomes_meses = ["", "Jan", "Fev", "Mar", "Abr", "Mai", "Jun", "Jul", "Ago", "Set", "Out", "Nov", "Dez"]
+
+    for i in range(5, -1, -1):
+        m = hoje.month - i
+        y = hoje.year
+        while m <= 0:
+            m += 12
+            y -= 1
+
+        meses_labels.append(f"{nomes_meses[m]}/{str(y)[2:]}")
+
+        ini_m = date(y, m, 1)
+        fim_m = date(y + 1, 1, 1) if m == 12 else date(y, m + 1, 1)
+
+        l_periodo = Lancamento.query.filter(
+            Lancamento.data >= ini_m,
+            Lancamento.data < fim_m,
+            Lancamento.status == "pago"
+        ).all()
+
+        rec_m = sum(float(l.valor or 0) for l in l_periodo if l.tipo == "receita" and (not l.categoria or l.categoria.nome != "Transferência"))
+        desp_m = sum(float(l.valor or 0) for l in l_periodo if l.tipo == "despesa" and (not l.categoria or l.categoria.nome != "Transferência"))
+
+        meses_receitas.append(round(rec_m, 2))
+        meses_despesas.append(round(desp_m, 2))
+
     return render_template(
         "dashboard.html",
         saldo_atual=saldo_atual,
@@ -209,5 +257,11 @@ def dashboard():
         hoje=hoje,
         comprometido_cartoes=comprometido_cartoes,
         disponivel_apos_cartoes=disponivel_apos_cartoes,
-        cartoes_comprometidos=cartoes_comprometidos_lista
+        cartoes_comprometidos=cartoes_comprometidos_lista,
+        contas=contas,
+        chart_cat_labels=json.dumps(chart_cat_labels, ensure_ascii=False),
+        chart_cat_values=json.dumps(chart_cat_values),
+        chart_meses_labels=json.dumps(meses_labels, ensure_ascii=False),
+        chart_rec_values=json.dumps(meses_receitas),
+        chart_desp_values=json.dumps(meses_despesas)
     )

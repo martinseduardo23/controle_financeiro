@@ -8,6 +8,7 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}?v=dark_black_1">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
         :root {
             color-scheme: dark;
@@ -124,6 +125,28 @@
                 </svg>
                 Nubank & Apple Pay
             </a>
+            <span class="menu-section-label">Sistema</span>
+
+            <a href="{{ url_for('backup.download') }}" title="Baixar cópia do banco de dados SQLite">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/>
+                </svg>
+                Backup dos Dados
+            </a>
+
+            <a href="{{ url_for('auth.alterar_senha') }}" class="{% if request.endpoint and 'alterar_senha' in request.endpoint %}active{% endif %}">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z"/>
+                </svg>
+                Alterar Senha
+            </a>
+
+            <a href="{{ url_for('auth.logout') }}" style="color: #f87171;">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/>
+                </svg>
+                Sair ({{ session.get('username', 'Usuário') }})
+            </a>
         </nav>
     </aside>
 
@@ -138,7 +161,15 @@
                 </svg>
             </button>
             <div class="logo-text" style="font-size: 16px;">Controle <span>Financeiro</span></div>
-            <div style="width: 32px;"></div>
+            <div style="display: flex; align-items: center; gap: 10px;">
+                {% if session.get('username') %}
+                    <span style="font-size: 12px; color: var(--text-muted); display: flex; align-items: center; gap: 5px;">
+                        <span style="width: 8px; height: 8px; border-radius: 50%; background: #10b981; display: inline-block;"></span>
+                        {{ session.get('username') }}
+                    </span>
+                    <a href="{{ url_for('auth.logout') }}" class="btn btn-secondary" style="padding: 4px 10px; font-size: 11px; border-color: rgba(239, 68, 68, 0.3); color: #fca5a5;">Sair</a>
+                {% endif %}
+            </div>
         </div>
 
         <main class="main-content">

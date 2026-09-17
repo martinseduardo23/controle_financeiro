@@ -1,0 +1,70 @@
+{% extends "base.html" %}
+
+{% block title %}
+Alterar Senha - Controle Financeiro
+{% endblock %}
+
+{% block content %}
+
+<div class="page-header">
+    <div class="page-header-content">
+        <div>
+            <h1>Alterar Senha</h1>
+            <p>Atualize sua senha de acesso ao sistema.</p>
+        </div>
+        <a href="{{ url_for('dashboard.dashboard') }}" class="btn btn-secondary">
+            ← Voltar ao Dashboard
+        </a>
+    </div>
+</div>
+
+<div class="form-card" style="max-width: 500px;">
+    <form method="POST" action="{{ url_for('auth.alterar_senha') }}">
+        <div class="form-group">
+            <label for="senha_atual">Senha Atual</label>
+            <input
+                type="password"
+                id="senha_atual"
+                name="senha_atual"
+                placeholder="Digite sua senha atual"
+                required
+                autocomplete="current-password"
+            >
+        </div>
+
+        <div class="form-group">
+            <label for="nova_senha">Nova Senha</label>
+            <input
+                type="password"
+                id="nova_senha"
+                name="nova_senha"
+                placeholder="Mínimo de 4 caracteres"
+                required
+                autocomplete="new-password"
+            >
+        </div>
+
+        <div class="form-group">
+            <label for="confirmacao">Confirmar Nova Senha</label>
+            <input
+                type="password"
+                id="confirmacao"
+                name="confirmacao"
+                placeholder="Repita a nova senha"
+                required
+                autocomplete="new-password"
+            >
+        </div>
+
+        <div style="display: flex; gap: 12px; margin-top: 24px;">
+            <button type="submit" class="btn btn-primary" style="flex: 1;">
+                Salvar Nova Senha
+            </button>
+            <a href="{{ url_for('dashboard.dashboard') }}" class="btn btn-secondary">
+                Cancelar
+            </a>
+        </div>
+    </form>
+</div>
+
+{% endblock %}
