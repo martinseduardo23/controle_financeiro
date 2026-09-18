@@ -19,3 +19,5 @@ Thumbs.db
 *.driveupload
 .env
 *token*.txt
+*.secret_key
+.secret_key
