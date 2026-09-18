@@ -1,0 +1,524 @@
+{% extends "base.html" %}
+
+{% block title %}
+Calculadora InfinitePay - Controle Financeiro
+{% endblock %}
+
+{% block content %}
+
+<div class="page-header">
+    <div class="page-header-content">
+        <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 6px;">
+            <div style="width: 32px; height: 32px; border-radius: 8px; background: #00ff5f; color: #000; display: flex; align-items: center; justify-content: center; font-weight: 900; font-size: 16px; box-shadow: 0 0 15px rgba(0, 255, 95, 0.4);">
+                ∞
+            </div>
+            <h1>Calculadora & Simulador InfinitePay</h1>
+        </div>
+        <p>Calcule exatamente o valor das parcelas, o acréscimo de juros e o valor total antes de comprar ou vender.</p>
+    </div>
+    <div class="page-header-actions">
+        <button type="button" class="btn btn-secondary" onclick="abrirModalTaxas()">
+            ⚙️ Ajustar Taxas da Máquina
+        </button>
+    </div>
+</div>
+
+<!-- PAINEL PRINCIPAL DE SIMULAÇÃO -->
+<div class="panel" style="margin-bottom: 28px; border-color: rgba(0, 255, 95, 0.25);">
+    <div class="panel-header" style="border-bottom: 1px solid rgba(255, 255, 255, 0.08); padding-bottom: 16px;">
+        <div>
+            <h2>Dados da Simulação</h2>
+            <span class="panel-subtitle">Preencha o valor da compra e selecione a modalidade da taxa</span>
+        </div>
+        <span class="badge" style="background: rgba(0, 255, 95, 0.15); color: #00ff5f; border: 1px solid rgba(0, 255, 95, 0.3);">
+            Taxas Oficiais InfinitePay
+        </span>
+    </div>
+
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 20px; margin-top: 10px;">
+        
+        <!-- VALOR DA COMPRA -->
+        <div>
+            <label style="display: block; font-size: 13px; font-weight: 600; color: var(--text-secondary); margin-bottom: 8px;">
+                Valor do Produto / Compra (R$)
+            </label>
+            <div class="currency-input" style="background: #000;">
+                <span class="currency-prefix" style="color: #00ff5f;">R$</span>
+                <input 
+                    type="text" 
+                    id="sim-valor" 
+                    class="currency-field"
+                    value="{{ valor_inicial or '1.000,00' }}" 
+                    style="font-size: 20px; font-weight: 700; color: #fff; background: transparent; border: none; outline: none; width: 100%;"
+                    oninput="recalcular()"
+                    placeholder="0,00"
+                >
+            </div>
+            <!-- ATALHOS DE VALOR RÁPIDOS -->
+            <div style="display: flex; gap: 6px; margin-top: 8px; flex-wrap: wrap;">
+                <button type="button" class="btn btn-secondary" style="padding: 4px 10px; font-size: 11px;" onclick="definirValor(200)">R$ 200</button>
+                <button type="button" class="btn btn-secondary" style="padding: 4px 10px; font-size: 11px;" onclick="definirValor(500)">R$ 500</button>
+                <button type="button" class="btn btn-secondary" style="padding: 4px 10px; font-size: 11px;" onclick="definirValor(1000)">R$ 1.000</button>
+                <button type="button" class="btn btn-secondary" style="padding: 4px 10px; font-size: 11px;" onclick="definirValor(2500)">R$ 2.500</button>
+                <button type="button" class="btn btn-secondary" style="padding: 4px 10px; font-size: 11px;" onclick="definirValor(5000)">R$ 5.000</button>
+            </div>
+        </div>
+
+        <!-- QUEM PAGA A TAXA -->
+        <div>
+            <label style="display: block; font-size: 13px; font-weight: 600; color: var(--text-secondary); margin-bottom: 8px;">
+                Quem assume a taxa da maquininha?
+            </label>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+                <button 
+                    type="button" 
+                    id="btn-modo-comprador" 
+                    class="btn" 
+                    onclick="alterarModo('comprador')"
+                    style="display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 12px; border-radius: var(--radius-md); text-align: center; border: 2px solid #00ff5f; background: rgba(0, 255, 95, 0.1); color: #fff; font-weight: 700; cursor: pointer; transition: all 0.2s;"
+                >
+                    <span style="font-size: 13px;">Comprador Paga</span>
+                    <span style="font-size: 11px; font-weight: 400; color: #a1a1aa;">(Repasse de juros)</span>
+                </button>
+
+                <button 
+                    type="button" 
+                    id="btn-modo-vendedor" 
+                    class="btn" 
+                    onclick="alterarModo('vendedor')"
+                    style="display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 12px; border-radius: var(--radius-md); text-align: center; border: 1px solid var(--border-color); background: #0a0a0e; color: #a1a1aa; font-weight: 700; cursor: pointer; transition: all 0.2s;"
+                >
+                    <span style="font-size: 13px;">Vendedor Assume</span>
+                    <span style="font-size: 11px; font-weight: 400; color: #71717a;">(Parcelamento sem juros)</span>
+                </button>
+            </div>
+            <p id="modo-explicacao" style="font-size: 11.5px; color: #00ff5f; margin-top: 8px; line-height: 1.4;">
+                💡 O vendedor repassa a taxa para você: o valor do produto é acrescido do juro oficial da maquininha.
+            </p>
+        </div>
+
+        <!-- CANAL / MODELO -->
+        <div>
+            <label style="display: block; font-size: 13px; font-weight: 600; color: var(--text-secondary); margin-bottom: 8px;">
+                Canal da InfinitePay
+            </label>
+            <select id="sim-canal" onchange="alterarCanal()" style="width: 100%; padding: 12px 14px; background: #000; border: 1px solid var(--border-color); border-radius: var(--radius-md); color: #fff; font-size: 14px;">
+                <option value="smart">Maquininha (InfiniteSmart / Tap) - Mais comum</option>
+                <option value="link">InfiniteLink (Link de Pagamento)</option>
+                <option value="custom">Taxas Personalizadas</option>
+            </select>
+            <span style="display: block; font-size: 11.5px; color: var(--text-muted); margin-top: 6px;">
+                Baseado no plano padrão (Visa / Mastercard).
+            </span>
+        </div>
+
+    </div>
+</div>
+
+<!-- CARDS COM DESTAQUES DA SIMULAÇÃO -->
+<div class="cards" style="margin-bottom: 28px;">
+    <div class="card">
+        <span class="card-title">À Vista no Débito (1,38%)</span>
+        <strong id="card-debito-valor" style="color: #fff; font-size: 20px;">R$ 0,00</strong>
+        <span class="card-hint" id="card-debito-hint">Custo de taxa: R$ 0,00</span>
+    </div>
+
+    <div class="card">
+        <span class="card-title">Crédito 1x (3,16%)</span>
+        <strong id="card-credito-1x" style="color: #38bdf8; font-size: 20px;">R$ 0,00</strong>
+        <span class="card-hint" id="card-credito-1x-hint">Vencimento na fatura</span>
+    </div>
+
+    <div class="card">
+        <span class="card-title">Parcelado 6x (9,58%)</span>
+        <strong id="card-6x-valor" style="color: #c084fc; font-size: 20px;">6x de R$ 0,00</strong>
+        <span class="card-hint" id="card-6x-total">Total: R$ 0,00</span>
+    </div>
+
+    <div class="card">
+        <span class="card-title">Parcelado 12x (13,44%)</span>
+        <strong id="card-12x-valor" style="color: #00ff5f; font-size: 20px;">12x de R$ 0,00</strong>
+        <span class="card-hint" id="card-12x-total">Total: R$ 0,00</span>
+    </div>
+</div>
+
+<!-- TABELA COMPLETA DE PARCELAS -->
+<div class="panel">
+    <div class="panel-header">
+        <div>
+            <h2>Tabela Completa de Parcelamento</h2>
+            <span class="panel-subtitle">Veja detalhadamente cada parcela e lance diretamente no seu cartão</span>
+        </div>
+        <div style="display: flex; gap: 8px; align-items: center;">
+            <label style="font-size: 12px; color: var(--text-secondary);">Exibir até:</label>
+            <select id="sel-max-parcelas" onchange="recalcular()" style="background: #000; border: 1px solid var(--border-color); color: #fff; padding: 6px 10px; border-radius: var(--radius-sm); font-size: 12px;">
+                <option value="12" selected>12 Parcelas</option>
+                <option value="18">18 Parcelas</option>
+            </select>
+        </div>
+    </div>
+
+    <div class="table-responsive">
+        <table class="table" style="width: 100%;">
+            <thead>
+                <tr>
+                    <th style="width: 90px;">Parcelas</th>
+                    <th style="width: 90px;">Taxa</th>
+                    <th>Valor da Parcela</th>
+                    <th>Total Cobrado</th>
+                    <th id="th-juros">Juros da Máquina</th>
+                    <th>Custo Efetivo</th>
+                    <th style="text-align: right;">Ação</th>
+                </tr>
+            </thead>
+            <tbody id="tabela-parcelas-corpo">
+                <!-- Preenchido via JavaScript -->
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- MODAL DE EDIÇÃO DE TAXAS -->
+<div id="modal-taxas" style="display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.85); z-index: 9999; align-items: center; justify-content: center; padding: 16px; backdrop-filter: blur(4px);">
+    <div style="background: #0d0d12; border: 1px solid rgba(0, 255, 95, 0.3); border-radius: 12px; width: 100%; max-width: 650px; max-height: 90vh; display: flex; flex-direction: column; overflow: hidden; box-shadow: 0 20px 40px rgba(0,0,0,0.9);">
+        
+        <div style="padding: 18px 24px; border-bottom: 1px solid #1e1e26; display: flex; justify-content: space-between; align-items: center;">
+            <div style="display: flex; align-items: center; gap: 10px;">
+                <span style="font-size: 20px;">⚙️</span>
+                <h3 style="margin: 0; font-size: 16px; color: #fff;">Configurar Taxas da InfinitePay (%)</h3>
+            </div>
+            <button type="button" onclick="fecharModalTaxas()" style="background: none; border: none; color: #a1a1aa; font-size: 20px; cursor: pointer;">&times;</button>
+        </div>
+
+        <div style="padding: 20px 24px; overflow-y: auto; flex: 1;">
+            <p style="font-size: 12px; color: var(--text-secondary); margin-bottom: 16px;">
+                Ajuste os percentuais cobrados pela sua máquina InfinitePay caso você possua taxas negociadas ou promocionais. Os valores ficam salvos no seu navegador.
+            </p>
+
+            <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 12px;" id="grid-inputs-taxas">
+                <!-- Inputs gerados via JS -->
+            </div>
+        </div>
+
+        <div style="padding: 16px 24px; border-top: 1px solid #1e1e26; display: flex; justify-content: space-between; align-items: center; background: #08080b;">
+            <button type="button" class="btn btn-secondary" onclick="restaurarTaxasPadrao()" style="font-size: 12px;">
+                🔄 Restaurar Padrão InfinitePay
+            </button>
+            <div style="display: flex; gap: 10px;">
+                <button type="button" class="btn btn-secondary" onclick="fecharModalTaxas()">Cancelar</button>
+                <button type="button" class="btn btn-primary" onclick="salvarTaxasPersonalizadas()" style="background: #00ff5f; color: #000; border-color: #00ff5f; font-weight: 700;">
+                    Salvar Taxas
+                </button>
+            </div>
+        </div>
+
+    </div>
+</div>
+
+<script>
+// =========================================================
+// TAXAS PADRÃO OFICIAIS INFINITEPAY
+// =========================================================
+const TAXAS_PADRAO_SMART = {
+    1: 3.16,
+    2: 5.40,
+    3: 6.46,
+    4: 7.51,
+    5: 8.55,
+    6: 9.58,
+    7: 10.36,
+    8: 10.99,
+    9: 11.61,
+    10: 12.23,
+    11: 12.84,
+    12: 13.44,
+    13: 14.05,
+    14: 14.65,
+    15: 15.25,
+    16: 15.85,
+    17: 16.45,
+    18: 17.05
+};
+
+const TAXAS_PADRAO_LINK = {
+    1: 4.20,
+    2: 6.70,
+    3: 7.90,
+    4: 9.10,
+    5: 10.30,
+    6: 11.50,
+    7: 12.50,
+    8: 13.50,
+    9: 14.50,
+    10: 15.50,
+    11: 16.50,
+    12: 17.50,
+    13: 18.50,
+    14: 19.50,
+    15: 20.50,
+    16: 21.50,
+    17: 22.50,
+    18: 23.50
+};
+
+let modoAtual = "comprador"; // 'comprador' (repassa taxa) ou 'vendedor' (assume taxa)
+let canalAtual = "smart";
+
+function obterTaxasAtuais() {
+    if (canalAtual === "link") return TAXAS_PADRAO_LINK;
+    if (canalAtual === "custom") {
+        const salvo = localStorage.getItem("infinitepay_taxas_custom");
+        if (salvo) {
+            try { return JSON.parse(salvo); } catch(e) {}
+        }
+    }
+    return TAXAS_PADRAO_SMART;
+}
+
+function parseMoeda(texto) {
+    if (!texto) return 0;
+    const limpo = texto.toString().replace("R$", "").replace(/\s/g, "").replace(/\./g, "").replace(",", ".");
+    const num = parseFloat(limpo);
+    return isNaN(num) ? 0 : num;
+}
+
+function formatarMoeda(val) {
+    return val.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+}
+
+function definirValor(valorNum) {
+    document.getElementById("sim-valor").value = formatarMoeda(valorNum);
+    recalcular();
+}
+
+function alterarModo(modo) {
+    modoAtual = modo;
+    const btnComp = document.getElementById("btn-modo-comprador");
+    const btnVend = document.getElementById("btn-modo-vendedor");
+    const exp = document.getElementById("modo-explicacao");
+    const thJuros = document.getElementById("th-juros");
+
+    if (modo === "comprador") {
+        btnComp.style.border = "2px solid #00ff5f";
+        btnComp.style.background = "rgba(0, 255, 95, 0.1)";
+        btnComp.style.color = "#fff";
+
+        btnVend.style.border = "1px solid var(--border-color)";
+        btnVend.style.background = "#0a0a0e";
+        btnVend.style.color = "#a1a1aa";
+
+        exp.innerHTML = "💡 <strong>Comprador paga:</strong> O valor original do produto é acrescido da taxa da maquininha para que o vendedor receba o valor integral.";
+        thJuros.innerText = "Juros da Máquina";
+    } else {
+        btnVend.style.border = "2px solid #38bdf8";
+        btnVend.style.background = "rgba(56, 189, 248, 0.1)";
+        btnVend.style.color = "#fff";
+
+        btnComp.style.border = "1px solid var(--border-color)";
+        btnComp.style.background = "#0a0a0e";
+        btnComp.style.color = "#a1a1aa";
+
+        exp.innerHTML = "💡 <strong>Vendedor assume:</strong> O comprador paga o valor original sem juros, e a InfinitePay desconta a taxa do valor que o vendedor recebe.";
+        thJuros.innerText = "Desconto da Taxa";
+    }
+    recalcular();
+}
+
+function alterarCanal() {
+    canalAtual = document.getElementById("sim-canal").value;
+    if (canalAtual === "custom") {
+        abrirModalTaxas();
+    }
+    recalcular();
+}
+
+function recalcular() {
+    const valorBase = parseMoeda(document.getElementById("sim-valor").value);
+    const taxas = obterTaxasAtuais();
+    const maxParcelas = parseInt(document.getElementById("sel-max-parcelas").value) || 12;
+
+    // Atualiza cards de destaque
+    const taxaDebito = 1.38;
+    let totalDebito = valorBase;
+    let taxaDebitoReais = 0;
+    if (modoAtual === "comprador") {
+        totalDebito = valorBase / (1 - (taxaDebito / 100));
+        taxaDebitoReais = totalDebito - valorBase;
+    } else {
+        totalDebito = valorBase;
+        taxaDebitoReais = valorBase * (taxaDebito / 100);
+    }
+    document.getElementById("card-debito-valor").innerText = `R$ ${formatarMoeda(totalDebito)}`;
+    document.getElementById("card-debito-hint").innerText = modoAtual === "comprador" ? `Acréscimo: +R$ ${formatarMoeda(taxaDebitoReais)}` : `Líquido: R$ ${formatarMoeda(valorBase - taxaDebitoReais)}`;
+
+    // Crédito 1x
+    const taxa1x = taxas[1] || 3.16;
+    let total1x = valorBase;
+    let taxa1xReais = 0;
+    if (modoAtual === "comprador") {
+        total1x = valorBase / (1 - (taxa1x / 100));
+        taxa1xReais = total1x - valorBase;
+    } else {
+        total1x = valorBase;
+        taxa1xReais = valorBase * (taxa1x / 100);
+    }
+    document.getElementById("card-credito-1x").innerText = `R$ ${formatarMoeda(total1x)}`;
+    document.getElementById("card-credito-1x-hint").innerText = modoAtual === "comprador" ? `Juros: +R$ ${formatarMoeda(taxa1xReais)}` : `Líquido: R$ ${formatarMoeda(valorBase - taxa1xReais)}`;
+
+    // 6x
+    const taxa6x = taxas[6] || 9.58;
+    let total6x = valorBase;
+    if (modoAtual === "comprador") total6x = valorBase / (1 - (taxa6x / 100));
+    const parc6x = total6x / 6;
+    document.getElementById("card-6x-valor").innerText = `6x de R$ ${formatarMoeda(parc6x)}`;
+    document.getElementById("card-6x-total").innerText = `Total: R$ ${formatarMoeda(total6x)}`;
+
+    // 12x
+    const taxa12x = taxas[12] || 13.44;
+    let total12x = valorBase;
+    if (modoAtual === "comprador") total12x = valorBase / (1 - (taxa12x / 100));
+    const parc12x = total12x / 12;
+    document.getElementById("card-12x-valor").innerText = `12x de R$ ${formatarMoeda(parc12x)}`;
+    document.getElementById("card-12x-total").innerText = `Total: R$ ${formatarMoeda(total12x)}`;
+
+    // Monta a Tabela
+    const tbody = document.getElementById("tabela-parcelas-corpo");
+    tbody.innerHTML = "";
+
+    if (valorBase <= 0) {
+        tbody.innerHTML = `<tr><td colspan="7" style="text-align: center; color: var(--text-muted); padding: 30px;">Informe um valor válido acima para simular.</td></tr>`;
+        return;
+    }
+
+    for (let p = 1; p <= maxParcelas; p++) {
+        const taxa = taxas[p] || (p * 1.15 + 2.0);
+        let total = valorBase;
+        let parcela = 0;
+        let custoJuros = 0;
+        let custoEfetivoPct = 0;
+
+        if (modoAtual === "comprador") {
+            const denom = 1.0 - (taxa / 100.0);
+            total = denom > 0 ? (valorBase / denom) : valorBase;
+            parcela = total / p;
+            custoJuros = total - valorBase;
+            custoEfetivoPct = (custoJuros / valorBase) * 100;
+        } else {
+            total = valorBase;
+            parcela = valorBase / p;
+            custoJuros = valorBase * (taxa / 100.0);
+            custoEfetivoPct = taxa;
+        }
+
+        const tr = document.createElement("tr");
+        tr.style.transition = "background 0.15s ease";
+
+        // Parâmetros para envio para compras no cartão
+        const urlLancamento = `{{ url_for('compras_cartao.nova') }}?valor=${total.toFixed(2)}&parcelas=${p}&descricao=${encodeURIComponent('Compra InfinitePay (' + p + 'x)')}&obs=${encodeURIComponent('Simulado na Calculadora InfinitePay: ' + p + 'x de R$ ' + formatarMoeda(parcela))}`;
+
+        tr.innerHTML = `
+            <td>
+                <span class="badge" style="background: ${p === 1 ? 'rgba(56, 189, 248, 0.15)' : (p <= 6 ? 'rgba(192, 132, 252, 0.15)' : 'rgba(0, 255, 95, 0.15)')}; color: ${p === 1 ? '#38bdf8' : (p <= 6 ? '#c084fc' : '#00ff5f')}; font-weight: 700;">
+                    ${p}x
+                </span>
+            </td>
+            <td style="color: var(--text-secondary); font-family: monospace;">${taxa.toFixed(2)}%</td>
+            <td style="font-weight: 700; color: #fff; font-size: 15px;">
+                R$ ${formatarMoeda(parcela)}
+            </td>
+            <td style="font-weight: 600; color: var(--text-primary);">
+                R$ ${formatarMoeda(total)}
+            </td>
+            <td style="color: ${modoAtual === 'comprador' ? 'var(--danger)' : '#38bdf8'}; font-weight: 600;">
+                ${modoAtual === 'comprador' ? '+ R$ ' + formatarMoeda(custoJuros) : '- R$ ' + formatarMoeda(custoJuros)}
+            </td>
+            <td style="color: var(--text-secondary); font-size: 13px;">
+                +${custoEfetivoPct.toFixed(2)}%
+            </td>
+            <td style="text-align: right;">
+                <a href="${urlLancamento}" class="btn btn-sm btn-secondary" title="Lançar nos Meus Cartões" style="padding: 5px 10px; font-size: 12px; display: inline-flex; align-items: center; gap: 4px;">
+                    💳 <span>Lançar</span>
+                </a>
+            </td>
+        `;
+
+        tbody.appendChild(tr);
+    }
+}
+
+// =========================================================
+// MODAL DE AJUSTE DE TAXAS
+// =========================================================
+function abrirModalTaxas() {
+    const taxas = obterTaxasAtuais();
+    const grid = document.getElementById("grid-inputs-taxas");
+    grid.innerHTML = "";
+
+    for (let p = 1; p <= 18; p++) {
+        const val = taxas[p] || (p * 1.15 + 2.0);
+        const div = document.createElement("div");
+        div.style.background = "#050508";
+        div.style.border = "1px solid #202028";
+        div.style.borderRadius = "8px";
+        div.style.padding = "8px 10px";
+        div.innerHTML = `
+            <div style="font-size: 11px; font-weight: 600; color: #a1a1aa; margin-bottom: 4px;">${p}x</div>
+            <div style="display: flex; align-items: center; gap: 4px;">
+                <input 
+                    type="number" 
+                    step="0.01" 
+                    id="taxa-input-${p}" 
+                    value="${parseFloat(val).toFixed(2)}" 
+                    style="width: 100%; background: transparent; border: none; color: #00ff5f; font-weight: 700; font-size: 14px; outline: none;"
+                >
+                <span style="color: #71717a; font-size: 12px;">%</span>
+            </div>
+        `;
+        grid.appendChild(div);
+    }
+
+    document.getElementById("modal-taxas").style.display = "flex";
+}
+
+function fecharModalTaxas() {
+    document.getElementById("modal-taxas").style.display = "none";
+}
+
+function salvarTaxasPersonalizadas() {
+    const novasTaxas = {};
+    for (let p = 1; p <= 18; p++) {
+        const inp = document.getElementById(`taxa-input-${p}`);
+        if (inp) {
+            novasTaxas[p] = parseFloat(inp.value) || 0;
+        }
+    }
+    localStorage.setItem("infinitepay_taxas_custom", JSON.stringify(novasTaxas));
+    canalAtual = "custom";
+    document.getElementById("sim-canal").value = "custom";
+    fecharModalTaxas();
+    recalcular();
+}
+
+function restaurarTaxasPadrao() {
+    localStorage.removeItem("infinitepay_taxas_custom");
+    canalAtual = "smart";
+    document.getElementById("sim-canal").value = "smart";
+    fecharModalTaxas();
+    recalcular();
+}
+
+// Inicializa na carga da página
+document.addEventListener("DOMContentLoaded", function() {
+    // Aplica máscara de moeda amigável
+    const inputValor = document.getElementById("sim-valor");
+    inputValor.addEventListener("blur", function() {
+        const val = parseMoeda(this.value);
+        this.value = formatarMoeda(val);
+        recalcular();
+    });
+
+    recalcular();
+});
+</script>
+
+{% endblock %}

@@ -23,6 +23,7 @@ from routes.integracoes import integracoes_bp
 from routes.auth import auth_bp
 from routes.transferencias import transferencias_bp
 from routes.backup import backup_bp
+from routes.simulador import simulador_bp
 
 
 # =========================================================
@@ -181,6 +182,11 @@ def criar_app():
     # Backup do sistema
     app.register_blueprint(
         backup_bp
+    )
+
+    # Simulador e Calculadora de Taxas (InfinitePay, etc.)
+    app.register_blueprint(
+        simulador_bp
     )
 
 

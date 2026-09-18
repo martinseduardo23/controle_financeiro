@@ -565,18 +565,34 @@ def nova():
         Categoria.nome
     ).all()
 
+    compra_sugerida = None
+    if request.method == "GET":
+        valor_arg = request.args.get("valor")
+        parcelas_arg = request.args.get("parcelas")
+        descricao_arg = request.args.get("descricao")
+        obs_arg = request.args.get("observacao") or request.args.get("obs")
+        if valor_arg or parcelas_arg or descricao_arg or obs_arg:
+            try:
+                val_limpo = Decimal(str(valor_arg).replace(",", "."))
+            except Exception:
+                val_limpo = Decimal("0.00")
+            from types import SimpleNamespace
+            compra_sugerida = SimpleNamespace(
+                descricao=descricao_arg or "",
+                valor_total=val_limpo,
+                parcelas=int(parcelas_arg) if parcelas_arg and parcelas_arg.isdigit() else 1,
+                data_compra=datetime.now().date(),
+                cartao_id=None,
+                categoria_id=None,
+                observacao=obs_arg or ""
+            )
+
     return render_template(
-
         "compra_cartao_form.html",
-
-        compra=None,
-
+        compra=compra_sugerida,
         cartoes=cartoes,
-
         categorias=categorias,
-
         erro=erro
-
     )
 
 
