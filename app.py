@@ -1,4 +1,6 @@
-from flask import Flask, request, session, redirect, url_for
+import os
+import uuid
+from flask import Flask, request, session, redirect, url_for, g
 
 from config import Config
 from database import db
@@ -7,7 +9,8 @@ from models import (
     Conta,
     Categoria,
     Lancamento,
-    Usuario
+    Usuario,
+    LogAuditoria
 )
 
 from routes.dashboard import dashboard_bp
@@ -189,24 +192,29 @@ def criar_app():
         simulador_bp
     )
 
+    # Limite máximo de payload para proteção contra DoS / Uploads gigantes
+    app.config["MAX_CONTENT_LENGTH"] = 16 * 1024 * 1024  # 16 MB
 
     # =====================================================
-    # CONTROLE DE ACESSO (AUTENTICAÇÃO)
+    # CONTROLE DE ACESSO E RASTREABILIDADE
     # =====================================================
 
     @app.before_request
     def proteger_rotas():
+        # Injeta correlation ID (request_id) para rastreabilidade de requisições
+        g.request_id = request.headers.get("X-Request-ID") or str(uuid.uuid4())
+
         # Arquivos estáticos são sempre livres
         if request.endpoint == "static":
             return
 
-        # Webhooks externos (Mercado Pago, Apple Pay) não exigem login
+        # Webhooks externos possuem autenticação própria por token no caminho
         path = request.path or ""
         if path.startswith("/webhooks") or path.startswith("/webhook"):
             return
 
-        # Rota de login
-        if request.endpoint == "auth.login":
+        # Rotas públicas de autenticação (Login e 2FA)
+        if request.endpoint in ("auth.login", "auth.verificar_2fa"):
             return
 
         # Se não logado, redireciona para login
@@ -215,17 +223,40 @@ def criar_app():
                 return redirect(url_for("auth.login", next=request.url))
             return redirect(url_for("auth.login"))
 
+    @app.after_request
+    def injetar_cabecalhos_seguranca(response):
+        # Injeta correlation ID para auditoria
+        if hasattr(g, "request_id"):
+            response.headers["X-Request-ID"] = g.request_id
+
+        # Cabeçalhos de Proteção HTTP (OWASP ASVS / Top 10)
+        response.headers["X-Content-Type-Options"] = "nosniff"
+        response.headers["X-Frame-Options"] = "SAMEORIGIN"
+        response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
+        response.headers["Permissions-Policy"] = "geolocation=(), camera=(), microphone=()"
+
+        # Content-Security-Policy estrito
+        csp = (
+            "default-src 'self'; "
+            "script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; "
+            "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; "
+            "font-src 'self' https://fonts.gstatic.com; "
+            "img-src 'self' data: https:; "
+            "connect-src 'self'; "
+            "frame-ancestors 'self';"
+        )
+        response.headers["Content-Security-Policy"] = csp
+
+        return response
 
     # =====================================================
-    # INICIALIZAÇÃO DO BANCO
+    # INICIALIZAÇÃO E AUTO-MIGRAÇÃO DO BANCO
     # =====================================================
 
     with app.app_context():
-
+        migrar_schema_sqlite()
         db.create_all()
-
         inicializar_dados()
-
 
     # -----------------------------------------------------
     # SUPORTE A PROXY REVERSO (NGINX / VPS / SSL)
@@ -240,6 +271,31 @@ def criar_app():
     )
 
     return app
+
+
+def migrar_schema_sqlite():
+    """Aplica migrações incrementais no banco SQLite de forma idempotente e segura."""
+    import sqlite3
+    db_file = os.path.join(os.path.abspath(os.path.dirname(__file__)), "data", "financeiro.db")
+    if not os.path.exists(db_file):
+        return
+    try:
+        conn = sqlite3.connect(db_file)
+        cursor = conn.cursor()
+        cursor.execute("PRAGMA table_info(usuarios);")
+        colunas = [row[1] for row in cursor.fetchall()]
+        if colunas:
+            if "totp_secret" not in colunas:
+                cursor.execute("ALTER TABLE usuarios ADD COLUMN totp_secret VARCHAR(64);")
+            if "is_2fa_enabled" not in colunas:
+                cursor.execute("ALTER TABLE usuarios ADD COLUMN is_2fa_enabled BOOLEAN DEFAULT 0 NOT NULL;")
+            if "backup_codes" not in colunas:
+                cursor.execute("ALTER TABLE usuarios ADD COLUMN backup_codes TEXT;")
+        conn.commit()
+        conn.close()
+    except Exception as e:
+        print("[Migracao SQLite Warning]:", e)
+
 
 
 # =========================================================

@@ -54,7 +54,7 @@ def obter_secret_key():
     return nova_chave
 
 
-def obter_token_mercadopago():
+def obter_token_mercadopago(chave_secreta: str = None):
     env_token = os.environ.get("MERCADO_PAGO_ACCESS_TOKEN", "").strip()
     if env_token:
         return env_token
@@ -62,7 +62,11 @@ def obter_token_mercadopago():
     if os.path.exists(token_file):
         try:
             with open(token_file, "r", encoding="utf-8") as f:
-                return f.read().strip()
+                conteudo = f.read().strip()
+                if conteudo:
+                    from services.security_service import descriptografar_token
+                    sec = chave_secreta or os.environ.get("SECRET_KEY") or obter_secret_key()
+                    return descriptografar_token(conteudo, sec)
         except Exception:
             return ""
     return ""

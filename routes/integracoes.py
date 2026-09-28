@@ -140,9 +140,10 @@ def mercadopago_simular():
 def webhook_mercadopago(token=None):
     """
     Endpoint chamado pelos servidores do Mercado Pago em tempo real.
-    Suporta token específico do usuário na URL para multi-tenancy.
-    Sempre retorna HTTP 200 para confirmar recebimento.
+    Exige obrigatoriamente um webhook_token válido do usuário para evitar injeção não autorizada.
     """
+    from services.audit_service import registrar_auditoria
+
     if request.method in ("GET", "OPTIONS"):
         return jsonify({
             "status": "online",
@@ -150,19 +151,23 @@ def webhook_mercadopago(token=None):
             "timestamp": datetime.now().isoformat()
         }), 200
 
-    usuario_id = None
-    if token:
-        usuario = Usuario.query.filter_by(webhook_token=token).first()
-        if not usuario:
-            return jsonify({
-                "status": "error",
-                "message": "Token de webhook não encontrado."
-            }), 404
-        usuario_id = usuario.id
-    else:
-        admin = Usuario.query.filter_by(is_admin=True).first() or Usuario.query.first()
-        usuario_id = admin.id if admin else None
+    # Validação estrita de autorização por token
+    if not token:
+        registrar_auditoria("webhook.mercadopago_unauthorized", status="falha", detalhes={"motivo": "Token ausente"})
+        return jsonify({
+            "status": "error",
+            "message": "Token de autenticação de webhook obrigatório."
+        }), 401
 
+    usuario = Usuario.query.filter_by(webhook_token=token).first()
+    if not usuario:
+        registrar_auditoria("webhook.mercadopago_forbidden", status="falha", detalhes={"motivo": "Token inválido", "token": token[:6] + "..."})
+        return jsonify({
+            "status": "error",
+            "message": "Token de webhook inválido ou usuário inexistente."
+        }), 403
+
+    usuario_id = usuario.id
     dados = request.get_json(silent=True) or {}
 
     # Extrai o payment_id do payload JSON ou dos parâmetros de URL
@@ -181,34 +186,24 @@ def webhook_mercadopago(token=None):
     elif request.args.get("id"):
         payment_id = str(request.args.get("id"))
 
-    # Verifica o tipo de evento
-    topic = dados.get("type") or dados.get("topic") or request.args.get("topic") or request.args.get("type") or dados.get("action")
-
-    # Se recebeu um ID de pagamento e temos o token configurado, consulta na API oficial
     token_api = Config.MERCADO_PAGO_ACCESS_TOKEN or obter_token_mercadopago()
     if payment_id and token_api:
         detalhes = consultar_pagamento_mp(payment_id, token_api)
         if detalhes:
             lancamento, criado, msg = processar_pagamento_mp(detalhes, usuario_id=usuario_id)
+            if criado:
+                registrar_auditoria("webhook.mercadopago_processado", usuario_id=usuario_id, detalhes={"payment_id": payment_id})
             return jsonify({
                 "status": "success" if criado else "ignored",
                 "payment_id": payment_id,
                 "message": msg
             }), 200
 
-    # Se não temos token mas recebemos um payload com dados diretos (ex: testes manuais)
-    if payment_id and (dados.get("transaction_amount") or dados.get("valor")):
-        lancamento, criado, msg = processar_pagamento_mp(dados, usuario_id=usuario_id)
-        return jsonify({
-            "status": "success" if criado else "ignored",
-            "message": msg
-        }), 200
-
-    # Responde 200 para eventos não processáveis (ex: merchant_order, chargeback, etc.)
+    # Responde 200 para eventos não processáveis (ex: merchant_order, status pendente)
     return jsonify({
         "status": "received",
         "payment_id": payment_id,
-        "message": "Notificação recebida com sucesso."
+        "message": "Notificação recebida e processada."
     }), 200
 
 
@@ -276,9 +271,10 @@ def nubank_painel():
 def webhook_nubank(token=None):
     """
     Endpoint chamado pelo app Atalhos (Shortcuts) do iPhone via Apple Pay.
-    Suporta token específico do usuário na URL (/webhooks/nubank/<token>).
-    Sempre responde HTTP 200 com JSON.
+    Exige token específico do usuário na URL (/webhooks/nubank/<token>).
     """
+    from services.audit_service import registrar_auditoria
+
     if request.method in ("GET", "OPTIONS"):
         return jsonify({
             "status": "online",
@@ -286,21 +282,27 @@ def webhook_nubank(token=None):
             "timestamp": datetime.now().isoformat()
         }), 200
 
-    usuario_id = None
-    if token:
-        usuario = Usuario.query.filter_by(webhook_token=token).first()
-        if not usuario:
-            return jsonify({
-                "status": "error",
-                "message": "Token de webhook não encontrado."
-            }), 404
-        usuario_id = usuario.id
-    else:
-        admin = Usuario.query.filter_by(is_admin=True).first() or Usuario.query.first()
-        usuario_id = admin.id if admin else None
+    if not token:
+        registrar_auditoria("webhook.nubank_unauthorized", status="falha", detalhes={"motivo": "Token ausente"})
+        return jsonify({
+            "status": "error",
+            "message": "Token de webhook obrigatório."
+        }), 401
 
+    usuario = Usuario.query.filter_by(webhook_token=token).first()
+    if not usuario:
+        registrar_auditoria("webhook.nubank_forbidden", status="falha", detalhes={"motivo": "Token inválido"})
+        return jsonify({
+            "status": "error",
+            "message": "Token de webhook não encontrado."
+        }), 403
+
+    usuario_id = usuario.id
     dados = request.get_json(silent=True) or request.form.to_dict() or {}
     compra, criado, msg = processar_transacao_apple_pay(dados, usuario_id=usuario_id)
+
+    if criado:
+        registrar_auditoria("webhook.nubank_processado", usuario_id=usuario_id, detalhes={"compra_id": compra.id if compra else None})
 
     return jsonify({
         "status": "success" if criado else "ignored",

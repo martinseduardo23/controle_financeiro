@@ -1,0 +1,158 @@
+{% extends "base.html" %}
+
+{% block title %}Segurança e 2FA - Controle Financeiro{% endblock %}
+
+{% block content %}
+<div class="content-header">
+    <div>
+        <h1 class="page-title">Segurança da Conta & 2FA</h1>
+        <p class="page-subtitle">Proteja seus dados financeiros ativando a Autenticação em Duas Etapas (Google / Microsoft Authenticator).</p>
+    </div>
+</div>
+
+{% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+        <div style="margin-bottom: 20px;">
+            {% for category, message in messages %}
+                <div class="alert alert-{{ category if category != 'error' else 'danger' }}">
+                    {{ message }}
+                </div>
+            {% endfor %}
+        </div>
+    {% endif %}
+{% endwith %}
+
+{# Exibe códigos de backup recém-gerados caso estejam disponíveis #}
+{% if session.get('backup_codes_apresentar') %}
+<div class="card" style="border: 2px solid #10b981; background: rgba(16, 185, 129, 0.05); margin-bottom: 24px;">
+    <div style="display: flex; align-items: flex-start; gap: 16px;">
+        <div style="font-size: 32px;">🔐</div>
+        <div style="flex: 1;">
+            <h3 style="color: #10b981; margin: 0 0 8px 0; font-size: 18px; font-weight: 700;">
+                ATENÇÃO: Guarde seus Códigos de Recuperação!
+            </h3>
+            <p style="color: #cbd5e1; font-size: 14px; margin: 0 0 16px 0; line-height: 1.5;">
+                Caso perca ou descarregue seu celular, cada um desses códigos permitirá um acesso emergencial à sua conta. Eles <strong>não serão exibidos novamente</strong>.
+            </p>
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 10px; margin-bottom: 16px;">
+                {% for code in session.get('backup_codes_apresentar') %}
+                    <div style="background: #1e293b; border: 1px dashed #475569; padding: 10px; text-align: center; border-radius: 8px; font-family: monospace; font-size: 16px; font-weight: 700; color: #38bdf8;">
+                        {{ code }}
+                    </div>
+                {% endfor %}
+            </div>
+            <p style="font-size: 12px; color: #94a3b8; margin: 0;">
+                Dica: Tire uma foto ou salve em seu gerenciador de senhas.
+            </p>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 24px;">
+
+    <!-- CARD DE STATUS 2FA -->
+    <div class="card">
+        <h2 style="font-size: 18px; font-weight: 600; margin-bottom: 16px; display: flex; align-items: center; gap: 10px;">
+            <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" fill="none" viewBox="0 0 24 24" stroke="currentColor" style="color: #3b82f6;">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/>
+            </svg>
+            Status da Proteção
+        </h2>
+
+        {% if usuario.is_2fa_enabled %}
+            <div style="display: flex; align-items: center; gap: 12px; padding: 14px; background: rgba(16, 185, 129, 0.1); border: 1px solid rgba(16, 185, 129, 0.25); border-radius: 10px; margin-bottom: 20px;">
+                <div style="width: 14px; height: 14px; border-radius: 50%; background: #10b981;"></div>
+                <div style="font-weight: 600; color: #10b981; font-size: 15px;">2FA Ativado e Protegendo sua Conta</div>
+            </div>
+
+            <p style="font-size: 14px; color: #94a3b8; line-height: 1.6; margin-bottom: 20px;">
+                A cada login, será solicitado o código de 6 dígitos gerado pelo seu aplicativo autenticador.
+                Você possui atualmente <strong>{{ codigos_restantes }}</strong> códigos de recuperação disponíveis.
+            </p>
+
+            <div style="border-top: 1px solid rgba(255, 255, 255, 0.08); padding-top: 20px; display: flex; flex-direction: column; gap: 16px;">
+                <!-- Gerar novos códigos -->
+                <form method="POST" action="{{ url_for('auth.gerar_novos_codigos_backup') }}" onsubmit="return confirm('Deseja invalidar os códigos antigos e gerar 5 novos códigos de recuperação?');">
+                    <div style="margin-bottom: 10px;">
+                        <label style="font-size: 12px; color: #94a3b8; display: block; margin-bottom: 6px;">Confirme sua senha para novos códigos:</label>
+                        <input type="password" name="senha_confirmacao" class="form-control" placeholder="Sua senha atual" required>
+                    </div>
+                    <button type="submit" class="btn btn-secondary" style="width: 100%;">
+                        🔄 Gerar Novos Códigos de Backup
+                    </button>
+                </form>
+
+                <!-- Desativar 2FA -->
+                <form method="POST" action="{{ url_for('auth.desativar_2fa') }}" onsubmit="return confirm('Tem certeza que deseja desativar a autenticação em 2 etapas? Sua conta ficará menos segura.');">
+                    <div style="margin-bottom: 10px;">
+                        <label style="font-size: 12px; color: #f87171; display: block; margin-bottom: 6px;">Confirme sua senha para DESATIVAR:</label>
+                        <input type="password" name="senha_confirmacao" class="form-control" placeholder="Sua senha atual" required>
+                    </div>
+                    <button type="submit" class="btn btn-danger" style="width: 100%;">
+                        Desativar 2FA
+                    </button>
+                </form>
+            </div>
+
+        {% else %}
+            <div style="display: flex; align-items: center; gap: 12px; padding: 14px; background: rgba(239, 68, 68, 0.1); border: 1px solid rgba(239, 68, 68, 0.25); border-radius: 10px; margin-bottom: 20px;">
+                <div style="width: 14px; height: 14px; border-radius: 50%; background: #ef4444;"></div>
+                <div style="font-weight: 600; color: #ef4444; font-size: 15px;">2FA Desativado (Conta Vulnerável)</div>
+            </div>
+
+            <p style="font-size: 14px; color: #94a3b8; line-height: 1.6; margin-bottom: 20px;">
+                Com a aplicação hospedada na internet, recomendamos fortemente que você ative a proteção de duas etapas agora mesmo seguindo as instruções ao lado.
+            </p>
+        {% endif %}
+    </div>
+
+    <!-- CARD DE ATIVAÇÃO DE 2FA -->
+    {% if not usuario.is_2fa_enabled %}
+    <div class="card">
+        <h2 style="font-size: 18px; font-weight: 600; margin-bottom: 16px;">
+            Como Ativar em 3 Passos Rápidos
+        </h2>
+
+        <div style="margin-bottom: 20px;">
+            <p style="font-size: 13px; color: #cbd5e1; margin-bottom: 12px;">
+                <strong>1.</strong> No seu celular, abra o <strong>Google Authenticator</strong> ou <strong>Microsoft Authenticator</strong> e toque em <strong>+ (Escanear código QR)</strong>:
+            </p>
+
+            <div style="background: #ffffff; padding: 16px; border-radius: 12px; display: inline-block; box-shadow: 0 4px 14px rgba(0,0,0,0.4); max-width: 200px;">
+                {{ qr_svg|safe }}
+            </div>
+
+            <div style="margin-top: 14px;">
+                <span style="font-size: 12px; color: #94a3b8;">Não consegue ler o QR Code? Digite a chave manual:</span>
+                <div style="font-family: monospace; font-size: 14px; color: #38bdf8; background: #0f172a; padding: 8px 12px; border-radius: 6px; margin-top: 6px; letter-spacing: 1px; word-break: break-all;">
+                    {{ secret_temp }}
+                </div>
+            </div>
+        </div>
+
+        <form method="POST" action="{{ url_for('auth.ativar_2fa') }}">
+            <p style="font-size: 13px; color: #cbd5e1; margin-bottom: 10px;">
+                <strong>2.</strong> Digite o código de 6 dígitos exibido no seu aplicativo para confirmar a sincronização:
+            </p>
+
+            <div style="display: flex; gap: 10px; margin-bottom: 16px;">
+                <input 
+                    type="text" 
+                    name="codigo_verificacao" 
+                    class="form-control" 
+                    placeholder="000000" 
+                    maxlength="6" 
+                    style="font-size: 20px; letter-spacing: 4px; text-align: center; font-family: monospace; max-width: 180px;"
+                    required
+                >
+                <button type="submit" class="btn btn-primary" style="flex: 1;">
+                    Ativar 2FA Agora
+                </button>
+            </div>
+        </form>
+    </div>
+    {% endif %}
+
+</div>
+{% endblock %}

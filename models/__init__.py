@@ -8,3 +8,4 @@ from .fatura_cartao import FaturaCartao
 from .meta import Meta
 from .meta_aporte import MetaAporte
 from .usuario import Usuario
+from .log_auditoria import LogAuditoria

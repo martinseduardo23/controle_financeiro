@@ -12,7 +12,7 @@ from config import BASE_DIR, Config, obter_token_mercadopago
 
 def salvar_token_mercadopago(token):
     """
-    Salva o Access Token do Mercado Pago em data/mp_token.txt
+    Salva o Access Token do Mercado Pago criptografado em data/mp_token.txt
     e atualiza a configuração em tempo de execução.
     """
     token = token.strip()
@@ -21,8 +21,11 @@ def salvar_token_mercadopago(token):
         os.makedirs(data_dir, exist_ok=True)
 
     token_file = os.path.join(data_dir, "mp_token.txt")
+    from services.security_service import criptografar_token
+    cifrado = criptografar_token(token, Config.SECRET_KEY)
+
     with open(token_file, "w", encoding="utf-8") as f:
-        f.write(token)
+        f.write(cifrado)
 
     Config.MERCADO_PAGO_ACCESS_TOKEN = token
     return token
