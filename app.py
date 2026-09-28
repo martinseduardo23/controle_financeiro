@@ -221,8 +221,12 @@ def criar_app():
         if path.startswith("/webhooks") or path.startswith("/webhook"):
             return
 
+        # Validação de certificados SSL (cPanel AutoSSL / Let's Encrypt / Sectigo DCV)
+        if path.startswith("/.well-known"):
+            return
+
         # Rotas públicas de autenticação (Login e 2FA)
-        if request.endpoint in ("auth.login", "auth.verificar_2fa"):
+        if request.endpoint in ("auth.login", "auth.verificar_2fa", "servir_desafio_ssl"):
             return
 
         # Se não logado, redireciona para login
@@ -245,6 +249,28 @@ def criar_app():
             if request.endpoint and request.endpoint not in rotas_livres_2fa:
                 flash("Para a segurança dos dados financeiros, configure a Autenticação em 2 Etapas (2FA) para liberar o sistema.", "warning")
                 return redirect(url_for("auth.seguranca_2fa"))
+
+    @app.route("/.well-known/<path:filename>")
+    def servir_desafio_ssl(filename):
+        """
+        Permite que o cPanel AutoSSL / Let's Encrypt / Sectigo valide o domínio via HTTP DCV.
+        """
+        pastas_busca = [
+            "/home/martinst/controlefinanceiro.martinstechti.com.br/.well-known",
+            "/home/martinst/controlefinanceiro/.well-known",
+            "/home/martinst/public_html/.well-known",
+            os.path.join(os.path.dirname(os.path.abspath(__file__)), ".well-known"),
+        ]
+        for base in pastas_busca:
+            caminho_real = os.path.abspath(os.path.join(base, filename))
+            if caminho_real.startswith(os.path.abspath(base)) and os.path.isfile(caminho_real):
+                try:
+                    with open(caminho_real, "rb") as f:
+                        conteudo = f.read()
+                    return conteudo, 200, {"Content-Type": "text/plain; charset=utf-8"}
+                except Exception:
+                    pass
+        return "Desafio ACME não encontrado", 404
 
     @app.after_request
     def injetar_cabecalhos_seguranca(response):
