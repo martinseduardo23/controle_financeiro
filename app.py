@@ -1,6 +1,6 @@
 import os
 import uuid
-from flask import Flask, request, session, redirect, url_for, g
+from flask import Flask, request, session, redirect, url_for, g, flash
 
 from config import Config
 from database import db
@@ -99,6 +99,14 @@ def criar_app():
     )(
         formatar_moeda
     )
+
+    @app.context_processor
+    def injetar_usuario():
+        usuario_id = session.get("usuario_id")
+        if usuario_id:
+            usuario = db.session.get(Usuario, usuario_id)
+            return {"usuario_atual": usuario}
+        return {"usuario_atual": None}
 
 
     # -----------------------------------------------------
@@ -218,10 +226,25 @@ def criar_app():
             return
 
         # Se não logado, redireciona para login
-        if not session.get("usuario_id"):
+        usuario_id = session.get("usuario_id")
+        if not usuario_id:
             if request.method == "GET" and request.endpoint:
                 return redirect(url_for("auth.login", next=request.url))
             return redirect(url_for("auth.login"))
+
+        # Se logado, garante a obrigatoriedade da configuração de 2FA
+        usuario = db.session.get(Usuario, usuario_id)
+        if usuario and not usuario.is_2fa_enabled:
+            rotas_livres_2fa = (
+                "auth.seguranca_2fa",
+                "auth.ativar_2fa",
+                "auth.concluir_onboarding_2fa",
+                "auth.logout",
+                "static"
+            )
+            if request.endpoint and request.endpoint not in rotas_livres_2fa:
+                flash("Para a segurança dos dados financeiros, configure a Autenticação em 2 Etapas (2FA) para liberar o sistema.", "warning")
+                return redirect(url_for("auth.seguranca_2fa"))
 
     @app.after_request
     def injetar_cabecalhos_seguranca(response):

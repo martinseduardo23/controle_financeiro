@@ -187,6 +187,48 @@ class SecurityTestSuite(unittest.TestCase):
         self.assertGreater(len(logs), 0)
         self.assertIn("sec_user", logs[0].detalhes)
 
+    # ---------------------------------------------------------
+    # TESTE 8: Onboarding Obrigatório de 2FA Bloqueia Acesso
+    # ---------------------------------------------------------
+    def test_08_mandatory_2fa_onboarding_blocks_access(self):
+        # 1. Usuário sem 2FA loga com senha correta -> Redirecionado para /perfil/seguranca
+        res_login = self.client.post("/login", data={"username": "sec_user", "password": "SenhaForte123!"}, follow_redirects=False)
+        self.assertEqual(res_login.status_code, 302)
+        self.assertIn("/perfil/seguranca", res_login.location)
+
+        # 2. Tentativa de acessar o Dashboard sem 2FA ativado é barrada pelo middleware
+        res_dash = self.client.get("/dashboard", follow_redirects=False)
+        self.assertEqual(res_dash.status_code, 302)
+        self.assertIn("/perfil/seguranca", res_dash.location)
+
+        # 3. Acesso à página de segurança/2FA é permitido e exibe banner obrigatório
+        res_sec = self.client.get("/perfil/seguranca")
+        self.assertEqual(res_sec.status_code, 200)
+        self.assertIn("Configuração Obrigatória de Segurança", res_sec.get_data(as_text=True))
+
+        # 4. Ativa o 2FA usando o segredo temporário gerado na sessão
+        with self.client.session_transaction() as sess:
+            secret_temp = sess.get("temp_totp_secret")
+        self.assertIsNotNone(secret_temp)
+
+        codigo_totp = pyotp.TOTP(secret_temp).now()
+        res_ativar = self.client.post("/perfil/2fa/ativar", data={"codigo_verificacao": codigo_totp}, follow_redirects=False)
+        self.assertEqual(res_ativar.status_code, 302)
+
+        # 5. Verifica se o usuário agora tem 2FA habilitado no banco
+        db.session.refresh(self.user)
+        self.assertTrue(self.user.is_2fa_enabled)
+
+        # 6. Conclui o onboarding e navega até o dashboard
+        res_concluir = self.client.get("/perfil/2fa/concluir", follow_redirects=False)
+        self.assertEqual(res_concluir.status_code, 302)
+        self.assertIn("/dashboard", res_concluir.location)
+
+        # 7. Dashboard agora responde com 200 OK sem bloqueio
+        res_dash_ok = self.client.get("/dashboard")
+        self.assertEqual(res_dash_ok.status_code, 200)
+
 
 if __name__ == "__main__":
     unittest.main()
+

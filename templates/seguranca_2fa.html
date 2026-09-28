@@ -22,6 +22,22 @@
     {% endif %}
 {% endwith %}
 
+{% if not usuario.is_2fa_enabled %}
+<div class="card" style="border: 2px solid #f59e0b; background: rgba(245, 158, 11, 0.08); margin-bottom: 24px;">
+    <div style="display: flex; align-items: flex-start; gap: 16px;">
+        <div style="font-size: 32px;">🛡️</div>
+        <div>
+            <h3 style="color: #f59e0b; margin: 0 0 6px 0; font-size: 18px; font-weight: 700;">
+                Configuração Obrigatória de Segurança (Primeiro Acesso)
+            </h3>
+            <p style="color: #cbd5e1; font-size: 14px; margin: 0; line-height: 1.5;">
+                Para garantir o sigilo e a proteção das suas informações financeiras, é <strong>obrigatório</strong> ativar a Autenticação em Duas Etapas (2FA) antes de acessar o sistema. Siga o passo a passo abaixo para parear seu aplicativo autenticador e liberar o acesso completo.
+            </p>
+        </div>
+    </div>
+</div>
+{% endif %}
+
 {# Exibe códigos de backup recém-gerados caso estejam disponíveis #}
 {% if session.get('backup_codes_apresentar') %}
 <div class="card" style="border: 2px solid #10b981; background: rgba(16, 185, 129, 0.05); margin-bottom: 24px;">
@@ -41,9 +57,17 @@
                     </div>
                 {% endfor %}
             </div>
-            <p style="font-size: 12px; color: #94a3b8; margin: 0;">
+            <p style="font-size: 12px; color: #94a3b8; margin: 0 0 16px 0;">
                 Dica: Tire uma foto ou salve em seu gerenciador de senhas.
             </p>
+            <div style="display: flex; justify-content: flex-end;">
+                <a href="{{ url_for('auth.concluir_onboarding_2fa') }}" class="btn btn-primary" style="padding: 10px 24px; font-size: 15px; font-weight: 600; background: #10b981; border-color: #10b981; display: inline-flex; align-items: center; gap: 8px;">
+                    <span>Concluir e Acessar o Sistema</span>
+                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"/>
+                    </svg>
+                </a>
+            </div>
         </div>
     </div>
 </div>

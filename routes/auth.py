@@ -58,7 +58,7 @@ def login():
                 registrar_auditoria("auth.login_password_ok_pending_2fa", usuario_id=usuario.id)
                 return redirect(url_for("auth.verificar_2fa"))
 
-            # Sem 2FA: Concede acesso direto
+            # Sem 2FA: Concede sessão mas força o onboarding obrigatório de 2FA
             limiter_login.limpar_sucesso(chave_ip)
             limiter_login.limpar_sucesso(chave_usuario)
 
@@ -67,13 +67,9 @@ def login():
             session["username"] = usuario.username
             session["is_admin"] = bool(usuario.is_admin)
 
-            registrar_auditoria("auth.login_success", usuario_id=usuario.id)
-            flash(f"Bem-vindo(a) de volta, {usuario.username}!", "success")
-
-            next_url = request.args.get("next")
-            if next_url and next_url.startswith("/") and not next_url.startswith("//"):
-                return redirect(next_url)
-            return redirect(url_for("dashboard.dashboard"))
+            registrar_auditoria("auth.login_success_pending_2fa", usuario_id=usuario.id)
+            flash(f"Bem-vindo(a), {usuario.username}! Para a segurança das suas finanças, configure a Autenticação em Duas Etapas (2FA) para liberar o sistema.", "warning")
+            return redirect(url_for("auth.seguranca_2fa"))
 
         # Credenciais incorretas: registra falha
         limiter_login.registrar_falha(chave_ip, max_tentativas=5, janela_segundos=300, tempo_bloqueio=600)
@@ -215,8 +211,24 @@ def ativar_2fa():
     session["backup_codes_apresentar"] = backup_codes
 
     registrar_auditoria("auth.2fa_enabled", usuario_id=usuario.id)
-    flash("Autenticação em 2 Etapas (2FA) ATIVADA com sucesso! Salve seus códigos de recuperação abaixo.", "success")
+    flash("Autenticação em 2 Etapas (2FA) ATIVADA com sucesso! Salve seus códigos de recuperação abaixo e clique em Concluir para liberar o sistema.", "success")
     return redirect(url_for("auth.seguranca_2fa"))
+
+
+@auth_bp.route("/perfil/2fa/concluir", methods=["GET"])
+def concluir_onboarding_2fa():
+    usuario_id = session.get("usuario_id")
+    if not usuario_id:
+        return redirect(url_for("auth.login"))
+
+    usuario = db.session.get(Usuario, usuario_id)
+    if not usuario or not usuario.is_2fa_enabled:
+        flash("Configure e ative o 2FA para liberar o acesso ao sistema.", "warning")
+        return redirect(url_for("auth.seguranca_2fa"))
+
+    session.pop("backup_codes_apresentar", None)
+    flash("Autenticação em 2 Etapas confirmada! Acesso total liberado com segurança.", "success")
+    return redirect(url_for("dashboard.dashboard"))
 
 
 @auth_bp.route("/perfil/2fa/desativar", methods=["POST"])
@@ -349,7 +361,7 @@ def novo_usuario():
     try:
         usuario_criado = criar_usuario(username, password, is_admin=is_admin)
         registrar_auditoria("auth.user_created", usuario_id=session.get("usuario_id"), detalhes={"novo_usuario": username, "is_admin": is_admin})
-        flash(f"Usuário '{usuario_criado.username}' criado com sucesso!", "success")
+        flash(f"Usuário '{usuario_criado.username}' criado com sucesso! No primeiro login, a ativação do 2FA será obrigatória.", "success")
     except ValueError as e:
         flash(str(e), "danger")
     except Exception as e:

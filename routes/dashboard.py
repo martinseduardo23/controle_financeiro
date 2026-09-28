@@ -19,6 +19,7 @@ dashboard_bp = Blueprint(
 
 
 @dashboard_bp.route("/", methods=["GET", "POST"])
+@dashboard_bp.route("/dashboard", methods=["GET"])
 def dashboard():
 
     if request.method == "POST":
