@@ -1,3 +1,18 @@
+// Exposição global imediata para alternância de layout
+window.alternarModoLayout = function(forcarModo) {
+    try {
+        var atual = localStorage.getItem("modo_layout") || "responsive";
+        var novo = forcarModo || (atual === "responsive" ? "desktop" : "responsive");
+        localStorage.setItem("modo_layout", novo);
+        var url = new URL(window.location.href);
+        url.searchParams.set("modo", novo);
+        window.location.href = url.toString();
+    } catch (e) {
+        var q = (forcarModo === "desktop") ? "?modo=desktop" : "?modo=responsive";
+        window.location.href = window.location.pathname + q;
+    }
+};
+
 document.addEventListener("DOMContentLoaded", () => {
 
     const camposMoeda = document.querySelectorAll(
@@ -311,9 +326,7 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     function alternarModoLayout(forcarModo) {
-        const atual = document.documentElement.getAttribute("data-layout-mode") || obterModoLayout();
-        const novo = forcarModo || (atual === "responsive" ? "desktop" : "responsive");
-        aplicarModoLayout(novo, true);
+        window.alternarModoLayout(forcarModo);
     }
 
     function mostrarToastModo(msg) {

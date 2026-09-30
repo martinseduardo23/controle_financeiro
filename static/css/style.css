@@ -245,14 +245,30 @@ html, body {
     border-color: var(--border-hover);
 }
 
-/* Botão flutuante discreto para retornar ao celular quando estiver no modo desktop */
+/* Banner superior e botão flutuante para retornar ao celular quando estiver no modo desktop */
+#desktop-mode-banner {
+    display: none;
+    background: #1e1b4b;
+    color: #e0e7ff;
+    padding: 10px 16px;
+    font-size: 13px;
+    font-weight: 500;
+    border-bottom: 1px solid #4338ca;
+    justify-content: space-between;
+    align-items: center;
+    gap: 10px;
+    width: 100%;
+    box-sizing: border-box;
+}
+
 .floating-mode-pill {
     display: none;
     position: fixed;
     bottom: 24px;
     right: 24px;
     background: #4f46e5;
-    color: #ffffff;
+    color: #ffffff !important;
+    text-decoration: none !important;
     border: 1px solid rgba(255, 255, 255, 0.2);
     border-radius: 9999px;
     padding: 10px 18px;
@@ -260,15 +276,21 @@ html, body {
     font-weight: 600;
     box-shadow: 0 8px 24px rgba(79, 70, 229, 0.5);
     cursor: pointer;
-    z-index: 999;
+    z-index: 999999;
     align-items: center;
     gap: 8px;
+    pointer-events: auto;
     transition: var(--transition);
 }
 
 .floating-mode-pill:hover {
     background: #4338ca;
     transform: translateY(-2px);
+    color: #ffffff !important;
+}
+
+html[data-layout-mode="desktop"] #desktop-mode-banner {
+    display: flex;
 }
 
 html[data-layout-mode="desktop"] .floating-mode-pill {
@@ -276,6 +298,7 @@ html[data-layout-mode="desktop"] .floating-mode-pill {
 }
 
 @media (min-width: 1025px) {
+    #desktop-mode-banner,
     .floating-mode-pill {
         display: none !important;
     }
