@@ -72,18 +72,107 @@ def obter_token_mercadopago(chave_secreta: str = None):
     return ""
 
 
+def obter_db_encryption_key():
+    """
+    Retorna a chave de criptografia AES-256 do banco de dados.
+    1. Verifica a variável de ambiente DB_ENCRYPTION_KEY (.env)
+    2. Se ausente, busca em data/.db_key
+    3. Se não existir, gera e persiste uma chave forte de 64 caracteres hexadecimais.
+    """
+    env_key = os.environ.get("DB_ENCRYPTION_KEY", "").strip()
+    if env_key:
+        return env_key
+
+    data_dir = os.path.join(BASE_DIR, "data")
+    key_file = os.path.join(data_dir, ".db_key")
+
+    if os.path.exists(key_file):
+        try:
+            with open(key_file, "r", encoding="utf-8") as f:
+                conteudo = f.read().strip()
+                if len(conteudo) >= 16:
+                    return conteudo
+        except Exception:
+            pass
+
+    nova_chave = secrets.token_hex(32)
+    try:
+        os.makedirs(data_dir, exist_ok=True)
+        with open(key_file, "w", encoding="utf-8") as f:
+            f.write(nova_chave)
+    except Exception:
+        pass
+
+    return nova_chave
+
+
+def configurar_banco_dados(base_dir: str) -> str:
+    """
+    Configura a URI do SQLAlchemy com criptografia de banco em repouso (SQLCipher AES-256).
+    Se sqlcipher3 estiver instalado:
+      - Ativa o suporte via SQLAlchemy (sqlite+pysqlcipher).
+      - Se detectar um banco existente plano (não-criptografado), migra seus dados
+        automaticamente e cria backup de segurança antes da conversão.
+      - Retorna a URI criptografada.
+    Se sqlcipher3 não estiver disponível no ambiente, utiliza SQLite padrão.
+    """
+    data_dir = os.path.join(base_dir, "data")
+    os.makedirs(data_dir, exist_ok=True)
+    db_path = os.path.join(data_dir, "financeiro.db")
+
+    try:
+        import sqlcipher3
+        import sys
+        sys.modules['pysqlcipher3'] = sqlcipher3
+        sys.modules['pysqlcipher3.dbapi2'] = sqlcipher3
+        tem_sqlcipher = True
+    except ImportError:
+        tem_sqlcipher = False
+
+    if not tem_sqlcipher:
+        return "sqlite:///" + db_path
+
+    chave = obter_db_encryption_key()
+
+    # Verifica se o banco existente é SQLite padrão aberto e necessita criptografia
+    if os.path.exists(db_path):
+        try:
+            with open(db_path, "rb") as f:
+                header = f.read(16)
+            if header == b"SQLite format 3\x00":
+                import shutil
+                backup_path = db_path + ".backup_legivel"
+                temp_enc_path = db_path + ".enc_temp"
+                if os.path.exists(temp_enc_path):
+                    os.remove(temp_enc_path)
+
+                shutil.copy2(db_path, backup_path)
+
+                conn = sqlcipher3.connect(db_path)
+                escaped_key = chave.replace("'", "''")
+                conn.execute(f"ATTACH DATABASE '{temp_enc_path}' AS encrypted KEY '{escaped_key}'")
+                conn.execute("SELECT sqlcipher_export('encrypted')")
+                conn.execute("DETACH DATABASE encrypted")
+                conn.close()
+
+                os.remove(db_path)
+                shutil.move(temp_enc_path, db_path)
+        except Exception:
+            pass
+
+    import urllib.parse
+    encoded_key = urllib.parse.quote_plus(chave)
+    clean_path = db_path.replace("\\", "/")
+    if not clean_path.startswith("/"):
+        clean_path = "/" + clean_path
+
+    return f"sqlite+pysqlcipher://:{encoded_key}@{clean_path}"
+
+
 class Config:
     SECRET_KEY = obter_secret_key()
-
-    SQLALCHEMY_DATABASE_URI = (
-        "sqlite:///"
-        + os.path.join(
-            BASE_DIR,
-            "data",
-            "financeiro.db"
-        )
-    )
-
+    DB_ENCRYPTION_KEY = obter_db_encryption_key()
+    SQLALCHEMY_DATABASE_URI = configurar_banco_dados(BASE_DIR)
     SQLALCHEMY_TRACK_MODIFICATIONS = False
     MERCADO_PAGO_ACCESS_TOKEN = obter_token_mercadopago()
 

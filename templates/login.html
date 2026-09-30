@@ -178,7 +178,7 @@
 
         <div class="form-group">
             <label for="password">Senha</label>
-            <div class="password-input-group">
+            <div class="password-input-group" style="position: relative; width: 100%; display: flex; align-items: center;">
                 <input 
                     type="password" 
                     id="password" 
@@ -187,8 +187,9 @@
                     placeholder="Sua senha" 
                     required
                     autocomplete="current-password"
+                    style="width: 100%; height: 44px; padding: 10px 46px 10px 14px; background: #050507; border: 1px solid rgba(255, 255, 255, 0.15); border-radius: 8px; color: #f8fafc; font-size: 14px; outline: none; box-sizing: border-box;"
                 >
-                <button type="button" class="password-toggle-btn" onclick="togglePasswordVisibility('password', this)" title="Mostrar / Ocultar">
+                <button type="button" class="password-toggle-btn" onclick="togglePasswordVisibility('password', this)" title="Mostrar / Ocultar" style="position: absolute; right: 6px; top: 50%; transform: translateY(-50%); background: transparent; border: none; color: #94a3b8; cursor: pointer; padding: 8px 10px; display: flex; align-items: center; justify-content: center; border-radius: 6px; z-index: 5;">
                     <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
                 </button>
             </div>

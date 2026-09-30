@@ -342,31 +342,26 @@ def criar_app():
 
 
 def migrar_schema_sqlite():
-    """Aplica migrações incrementais no banco SQLite de forma idempotente e segura."""
-    import sqlite3
-    db_file = os.path.join(os.path.abspath(os.path.dirname(__file__)), "data", "financeiro.db")
-    if not os.path.exists(db_file):
-        return
+    """Aplica migrações incrementais no banco de forma idempotente e segura via SQLAlchemy."""
+    from sqlalchemy import text
     try:
-        conn = sqlite3.connect(db_file)
-        cursor = conn.cursor()
-        cursor.execute("PRAGMA table_info(usuarios);")
-        colunas = [row[1] for row in cursor.fetchall()]
-        if colunas:
-            if "totp_secret" not in colunas:
-                cursor.execute("ALTER TABLE usuarios ADD COLUMN totp_secret VARCHAR(64);")
-            if "is_2fa_enabled" not in colunas:
-                cursor.execute("ALTER TABLE usuarios ADD COLUMN is_2fa_enabled BOOLEAN DEFAULT 0 NOT NULL;")
-            if "backup_codes" not in colunas:
-                cursor.execute("ALTER TABLE usuarios ADD COLUMN backup_codes TEXT;")
-            if "acesso_mercadopago" not in colunas:
-                cursor.execute("ALTER TABLE usuarios ADD COLUMN acesso_mercadopago BOOLEAN DEFAULT 1 NOT NULL;")
-            if "acesso_infinitepay" not in colunas:
-                cursor.execute("ALTER TABLE usuarios ADD COLUMN acesso_infinitepay BOOLEAN DEFAULT 1 NOT NULL;")
-            if "acesso_nubank" not in colunas:
-                cursor.execute("ALTER TABLE usuarios ADD COLUMN acesso_nubank BOOLEAN DEFAULT 1 NOT NULL;")
-        conn.commit()
-        conn.close()
+        with db.engine.connect() as conn:
+            res = conn.execute(text("PRAGMA table_info(usuarios);")).fetchall()
+            colunas = [row[1] for row in res]
+            if colunas:
+                if "totp_secret" not in colunas:
+                    conn.execute(text("ALTER TABLE usuarios ADD COLUMN totp_secret VARCHAR(64);"))
+                if "is_2fa_enabled" not in colunas:
+                    conn.execute(text("ALTER TABLE usuarios ADD COLUMN is_2fa_enabled BOOLEAN DEFAULT 0 NOT NULL;"))
+                if "backup_codes" not in colunas:
+                    conn.execute(text("ALTER TABLE usuarios ADD COLUMN backup_codes TEXT;"))
+                if "acesso_mercadopago" not in colunas:
+                    conn.execute(text("ALTER TABLE usuarios ADD COLUMN acesso_mercadopago BOOLEAN DEFAULT 1 NOT NULL;"))
+                if "acesso_infinitepay" not in colunas:
+                    conn.execute(text("ALTER TABLE usuarios ADD COLUMN acesso_infinitepay BOOLEAN DEFAULT 1 NOT NULL;"))
+                if "acesso_nubank" not in colunas:
+                    conn.execute(text("ALTER TABLE usuarios ADD COLUMN acesso_nubank BOOLEAN DEFAULT 1 NOT NULL;"))
+                conn.commit()
     except Exception as e:
         print("[Migracao SQLite Warning]:", e)
 

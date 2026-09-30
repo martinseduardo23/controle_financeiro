@@ -328,6 +328,54 @@ class SecurityTestSuite(unittest.TestCase):
         u_ok = criar_usuario("user_forte", "SuperSenha@2026")
         self.assertIsNotNone(u_ok.id)
 
+    # ---------------------------------------------------------
+    # TESTE 11: Criptografia de Banco de Dados em Repouso
+    # ---------------------------------------------------------
+    def test_11_criptografia_banco_dados(self):
+        import sqlcipher3
+        import sqlite3
+        from config import obter_db_encryption_key
+
+        chave = obter_db_encryption_key()
+        self.assertTrue(len(chave) >= 16)
+
+        test_db = os.path.join(BASE_DIR, "data", "test_enc_suite.db")
+        if os.path.exists(test_db):
+            try:
+                os.remove(test_db)
+            except Exception:
+                pass
+
+        # Cria banco com SQLCipher
+        conn = sqlcipher3.connect(test_db)
+        conn.execute(f"PRAGMA key = '{chave}'")
+        conn.execute("CREATE TABLE segredo (id INT, dado TEXT)")
+        conn.execute("INSERT INTO segredo VALUES (1, 'Transacao Sigilosa')")
+        conn.commit()
+        conn.close()
+
+        # 1. Tenta ler com SQLite comum (deve rejeitar e falhar)
+        with self.assertRaises(Exception):
+            c = sqlite3.connect(test_db)
+            c.execute("SELECT * FROM segredo").fetchall()
+
+        # 2. Lê os primeiros bytes para certificar que o cabeçalho não é texto plano
+        with open(test_db, "rb") as f:
+            header = f.read(16)
+        self.assertNotEqual(header, b"SQLite format 3\x00")
+
+        # 3. Lê com SQLCipher e chave correta
+        conn2 = sqlcipher3.connect(test_db)
+        conn2.execute(f"PRAGMA key = '{chave}'")
+        dados = conn2.execute("SELECT dado FROM segredo").fetchall()
+        conn2.close()
+        self.assertEqual(dados[0][0], "Transacao Sigilosa")
+
+        try:
+            os.remove(test_db)
+        except Exception:
+            pass
+
 
 if __name__ == "__main__":
     unittest.main()

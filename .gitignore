@@ -21,3 +21,6 @@ Thumbs.db
 *token*.txt
 *.secret_key
 .secret_key
+*.db_key
+.db_key
+*.backup_legivel
