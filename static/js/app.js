@@ -259,6 +259,104 @@ document.addEventListener("DOMContentLoaded", () => {
         });
     }
 
+    // =====================================================
+    // CONTROLE DE MODO DE LAYOUT (RESPONSIVO vs DESKTOP)
+    // =====================================================
+    function obterModoLayout() {
+        const salvo = localStorage.getItem("modo_layout");
+        if (salvo === "responsive" || salvo === "desktop") {
+            return salvo;
+        }
+        return window.innerWidth <= 768 ? "responsive" : "desktop";
+    }
+
+    function aplicarModoLayout(modo, animar = false) {
+        if (!modo) modo = obterModoLayout();
+
+        document.documentElement.setAttribute("data-layout-mode", modo);
+        document.body.classList.remove("mode-responsive", "mode-desktop");
+        document.body.classList.add(modo === "responsive" ? "mode-responsive" : "mode-desktop");
+
+        const btnResp = document.getElementById("btn-layout-responsive");
+        const btnDesk = document.getElementById("btn-layout-desktop");
+        if (btnResp && btnDesk) {
+            btnResp.classList.toggle("active", modo === "responsive");
+            btnDesk.classList.toggle("active", modo === "desktop");
+        }
+
+        const sidebarText = document.getElementById("sidebar-layout-text");
+        const sidebarIcon = document.getElementById("sidebar-layout-icon");
+        if (sidebarText) {
+            sidebarText.textContent = modo === "responsive" ? "Visualização: Responsiva" : "Visualização: Desktop";
+        }
+        if (sidebarIcon) {
+            if (modo === "responsive") {
+                sidebarIcon.innerHTML = '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 18h.01M8 21h8a2 2 0 002-2V5a2 2 0 00-2-2H8a2 2 0 00-2 2v14a2 2 0 002 2z"/>';
+            } else {
+                sidebarIcon.innerHTML = '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/>';
+            }
+        }
+
+        const meta = document.getElementById("meta-viewport");
+        if (meta) {
+            if (modo === "desktop" && window.innerWidth <= 768) {
+                meta.setAttribute("content", "width=1200, initial-scale=0.35, user-scalable=yes");
+            } else {
+                meta.setAttribute("content", "width=device-width, initial-scale=1.0, maximum-scale=5.0");
+            }
+        }
+
+        localStorage.setItem("modo_layout", modo);
+
+        if (animar) {
+            mostrarToastModo(
+                modo === "responsive"
+                    ? "📱 Modo Responsivo ativado (Celular / Compacto)"
+                    : "💻 Modo Desktop ativado (Visão Completa / Computador)"
+            );
+        }
+    }
+
+    function alternarModoLayout(forcarModo) {
+        const atual = document.documentElement.getAttribute("data-layout-mode") || obterModoLayout();
+        const novo = forcarModo || (atual === "responsive" ? "desktop" : "responsive");
+        aplicarModoLayout(novo, true);
+    }
+
+    function mostrarToastModo(msg) {
+        let toast = document.getElementById("toast-layout-mode");
+        if (!toast) {
+            toast = document.createElement("div");
+            toast.id = "toast-layout-mode";
+            toast.className = "toast-layout-mode";
+            document.body.appendChild(toast);
+        }
+        toast.textContent = msg;
+        toast.classList.add("visible");
+        clearTimeout(toast._timeout);
+        toast._timeout = setTimeout(() => {
+            toast.classList.remove("visible");
+        }, 2200);
+    }
+
+    // Expondo globalmente para chamadas de onclick
+    window.alternarModoLayout = alternarModoLayout;
+    window.aplicarModoLayout = aplicarModoLayout;
+
+    // Inicializa o modo atual
+    aplicarModoLayout(obterModoLayout(), false);
+
+    // Fecha sidebar ao clicar em um link em modo responsivo ou telas mobile
+    document.querySelectorAll(".sidebar a").forEach((link) => {
+        link.addEventListener("click", () => {
+            const modoAtual = document.documentElement.getAttribute("data-layout-mode");
+            if (window.innerWidth <= 768 || modoAtual === "responsive") {
+                if (sidebar) sidebar.classList.remove("open");
+                if (overlay) overlay.classList.remove("active");
+            }
+        });
+    });
+
     // Confirmação para botões com [data-confirm]
     document.querySelectorAll("[data-confirm]").forEach((el) => {
         el.addEventListener("submit", (e) => {
