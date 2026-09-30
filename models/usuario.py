@@ -24,6 +24,11 @@ class Usuario(db.Model):
     is_2fa_enabled = db.Column(db.Boolean, default=False, nullable=False)
     backup_codes = db.Column(db.Text, nullable=True)  # Lista JSON de códigos de emergência
 
+    # Permissões de Módulos e Integrações
+    acesso_mercadopago = db.Column(db.Boolean, default=True, nullable=False)
+    acesso_infinitepay = db.Column(db.Boolean, default=True, nullable=False)
+    acesso_nubank = db.Column(db.Boolean, default=True, nullable=False)
+
     # Relacionamentos
     contas = db.relationship("Conta", back_populates="usuario", cascade="all, delete-orphan")
     categorias = db.relationship("Categoria", back_populates="usuario", cascade="all, delete-orphan")

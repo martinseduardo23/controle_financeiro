@@ -54,6 +54,28 @@ Gestão de Usuários - Controle Financeiro
                 >
             </div>
 
+            <div style="margin-top: 14px; padding: 14px; background: rgba(255, 255, 255, 0.02); border: 1px solid var(--border); border-radius: var(--radius-sm);">
+                <label style="font-size: 13px; font-weight: 600; color: #fff; display: block; margin-bottom: 8px;">
+                    Módulos Liberados:
+                </label>
+                <div style="display: flex; flex-direction: column; gap: 8px;">
+                    <label style="display: flex; align-items: center; gap: 8px; font-size: 13px; color: var(--text-secondary); cursor: pointer; margin: 0;">
+                        <input type="checkbox" name="acesso_mercadopago" value="1" checked style="width: 16px; height: 16px; accent-color: #6366f1;">
+                        <span>Mercado Pago / Mercado Livre</span>
+                    </label>
+
+                    <label style="display: flex; align-items: center; gap: 8px; font-size: 13px; color: var(--text-secondary); cursor: pointer; margin: 0;">
+                        <input type="checkbox" name="acesso_infinitepay" value="1" checked style="width: 16px; height: 16px; accent-color: #6366f1;">
+                        <span>Calculadora InfinitePay</span>
+                    </label>
+
+                    <label style="display: flex; align-items: center; gap: 8px; font-size: 13px; color: var(--text-secondary); cursor: pointer; margin: 0;">
+                        <input type="checkbox" name="acesso_nubank" value="1" checked style="width: 16px; height: 16px; accent-color: #6366f1;">
+                        <span>Nubank & Apple Pay</span>
+                    </label>
+                </div>
+            </div>
+
             <div class="form-group" style="display: flex; align-items: center; gap: 8px; margin-top: 14px;">
                 <input type="checkbox" id="is_admin" name="is_admin" value="1" style="width: 16px; height: 16px; accent-color: #10b981;">
                 <label for="is_admin" style="font-size: 13px; color: var(--text-secondary); margin: 0; cursor: pointer;">
@@ -114,6 +136,7 @@ Gestão de Usuários - Controle Financeiro
                     <th>ID</th>
                     <th>Usuário</th>
                     <th>Tipo</th>
+                    <th>Módulos Liberados</th>
                     <th>Criado em</th>
                     <th>Token de Webhook</th>
                     <th style="text-align: right;">Ações</th>
@@ -136,6 +159,26 @@ Gestão de Usuários - Controle Financeiro
                             <span class="badge badge-secondary">Usuário Padrão</span>
                         {% endif %}
                     </td>
+                    <td>
+                        <div style="display: flex; flex-wrap: wrap; gap: 4px;">
+                            {% if u.is_admin %}
+                                <span class="badge badge-success" style="font-size: 10px;">Todos (Admin)</span>
+                            {% else %}
+                                {% if u.acesso_mercadopago %}
+                                    <span class="badge badge-info" style="font-size: 10px;">Mercado Livre</span>
+                                {% endif %}
+                                {% if u.acesso_infinitepay %}
+                                    <span class="badge badge-primary" style="font-size: 10px;">InfinitePay</span>
+                                {% endif %}
+                                {% if u.acesso_nubank %}
+                                    <span class="badge badge-secondary" style="font-size: 10px;">Nubank</span>
+                                {% endif %}
+                                {% if not u.acesso_mercadopago and not u.acesso_infinitepay and not u.acesso_nubank %}
+                                    <span style="font-size: 11px; color: var(--text-muted);">Nenhum</span>
+                                {% endif %}
+                            {% endif %}
+                        </div>
+                    </td>
                     <td style="color: var(--text-secondary); font-size: 12px;">
                         {{ u.criado_em.strftime("%d/%m/%Y %H:%M") if u.criado_em else "-" }}
                     </td>
@@ -144,6 +187,17 @@ Gestão de Usuários - Controle Financeiro
                     </td>
                     <td style="text-align: right;">
                         <div style="display: flex; gap: 6px; justify-content: flex-end; align-items: center;">
+                            <!-- Botão Editar Permissões -->
+                            <button 
+                                type="button" 
+                                class="btn btn-secondary btn-sm" 
+                                onclick="abrirModalPermissoes('{{ u.id }}', '{{ u.username }}', {{ 'true' if u.is_admin else 'false' }}, {{ 'true' if u.acesso_mercadopago else 'false' }}, {{ 'true' if u.acesso_infinitepay else 'false' }}, {{ 'true' if u.acesso_nubank else 'false' }})"
+                                style="padding: 4px 8px; font-size: 11px; border-color: rgba(99, 102, 241, 0.4); color: #818cf8;"
+                                title="Editar módulos permitidos para este usuário"
+                            >
+                                Permissões
+                            </button>
+
                             <!-- Botão Resetar Senha -->
                             <button 
                                 type="button" 
@@ -171,6 +225,47 @@ Gestão de Usuários - Controle Financeiro
     </div>
 </div>
 
+<!-- MODAL EDITAR PERMISSÕES -->
+<div id="modalPermissoes" class="sidebar-overlay" style="display: none; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0,0,0,0.85); backdrop-filter: blur(4px); z-index: 9999; align-items: center; justify-content: center;">
+    <div class="form-card" style="width: 100%; max-width: 440px; margin: 20px;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 18px; padding-bottom: 10px; border-bottom: 1px solid var(--border);">
+            <h2 style="font-size: 17px; margin: 0; color: #fff;">Permissões de <span id="permModalUsername" style="color: #818cf8;"></span></h2>
+            <button type="button" onclick="fecharModalPermissoes()" style="background: none; border: none; color: var(--text-muted); font-size: 22px; cursor: pointer;">&times;</button>
+        </div>
+
+        <form id="formPermissoes" method="POST" action="">
+            <div style="display: flex; flex-direction: column; gap: 12px; margin-bottom: 20px;">
+                <label style="display: flex; align-items: center; gap: 10px; font-size: 13px; color: #f8fafc; cursor: pointer; margin: 0;">
+                    <input type="checkbox" id="perm_mercadopago" name="acesso_mercadopago" value="1" style="width: 18px; height: 18px; accent-color: #6366f1;">
+                    <span>Mercado Pago / Mercado Livre</span>
+                </label>
+
+                <label style="display: flex; align-items: center; gap: 10px; font-size: 13px; color: #f8fafc; cursor: pointer; margin: 0;">
+                    <input type="checkbox" id="perm_infinitepay" name="acesso_infinitepay" value="1" style="width: 18px; height: 18px; accent-color: #6366f1;">
+                    <span>Calculadora InfinitePay</span>
+                </label>
+
+                <label style="display: flex; align-items: center; gap: 10px; font-size: 13px; color: #f8fafc; cursor: pointer; margin: 0;">
+                    <input type="checkbox" id="perm_nubank" name="acesso_nubank" value="1" style="width: 18px; height: 18px; accent-color: #6366f1;">
+                    <span>Nubank & Apple Pay</span>
+                </label>
+
+                <div style="border-top: 1px solid var(--border); margin-top: 8px; padding-top: 12px;">
+                    <label style="display: flex; align-items: center; gap: 10px; font-size: 13px; color: #10b981; cursor: pointer; margin: 0;">
+                        <input type="checkbox" id="perm_is_admin" name="is_admin" value="1" style="width: 18px; height: 18px; accent-color: #10b981;">
+                        <span>Administrador (acesso irrestrito)</span>
+                    </label>
+                </div>
+            </div>
+
+            <div style="display: flex; gap: 10px;">
+                <button type="submit" class="btn btn-primary" style="flex: 1;">Salvar Permissões</button>
+                <button type="button" class="btn btn-secondary" onclick="fecharModalPermissoes()">Cancelar</button>
+            </div>
+        </form>
+    </div>
+</div>
+
 <!-- MODAL REDEFINIR SENHA -->
 <div id="modalResetarSenha" class="sidebar-overlay" style="display: none; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0,0,0,0.85); backdrop-filter: blur(4px); z-index: 9999; align-items: center; justify-content: center;">
     <div class="form-card" style="width: 100%; max-width: 420px; margin: 20px;">
@@ -194,6 +289,20 @@ Gestão de Usuários - Controle Financeiro
 </div>
 
 <script>
+function abrirModalPermissoes(id, username, isAdmin, mp, inf, nu) {
+    document.getElementById('permModalUsername').innerText = username;
+    document.getElementById('formPermissoes').action = '/usuarios/' + id + '/permissoes';
+    document.getElementById('perm_is_admin').checked = isAdmin;
+    document.getElementById('perm_mercadopago').checked = mp || isAdmin;
+    document.getElementById('perm_infinitepay').checked = inf || isAdmin;
+    document.getElementById('perm_nubank').checked = nu || isAdmin;
+    document.getElementById('modalPermissoes').style.display = 'flex';
+}
+
+function fecharModalPermissoes() {
+    document.getElementById('modalPermissoes').style.display = 'none';
+}
+
 function abrirModalResetarSenha(id, username) {
     document.getElementById('resetModalUsername').innerText = username;
     document.getElementById('formResetarSenha').action = '/usuarios/' + id + '/resetar-senha';
@@ -205,9 +314,13 @@ function fecharModalResetarSenha() {
 }
 
 window.addEventListener('click', function(e) {
-    const modal = document.getElementById('modalResetarSenha');
-    if (e.target === modal) {
+    const modalSenha = document.getElementById('modalResetarSenha');
+    const modalPerm = document.getElementById('modalPermissoes');
+    if (e.target === modalSenha) {
         fecharModalResetarSenha();
+    }
+    if (e.target === modalPerm) {
+        fecharModalPermissoes();
     }
 });
 </script>

@@ -53,7 +53,14 @@ def inicializar_dados_usuario(usuario):
     db.session.commit()
 
 
-def criar_usuario(username, password, is_admin=False):
+def criar_usuario(
+    username,
+    password,
+    is_admin=False,
+    acesso_mercadopago=True,
+    acesso_infinitepay=True,
+    acesso_nubank=True
+):
     """
     Cria um novo usuário no sistema e inicializa seus dados individuais.
     """
@@ -68,9 +75,18 @@ def criar_usuario(username, password, is_admin=False):
     if not password or len(password) < 4:
         raise ValueError("A senha deve ter pelo menos 4 caracteres.")
 
+    # Se for admin, garante acesso total a todos os módulos
+    if is_admin:
+        acesso_mercadopago = True
+        acesso_infinitepay = True
+        acesso_nubank = True
+
     novo_usuario = Usuario(
         username=username,
-        is_admin=is_admin
+        is_admin=is_admin,
+        acesso_mercadopago=acesso_mercadopago,
+        acesso_infinitepay=acesso_infinitepay,
+        acesso_nubank=acesso_nubank
     )
     novo_usuario.set_password(password)
     db.session.add(novo_usuario)

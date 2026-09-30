@@ -353,14 +353,34 @@ def novo_usuario():
     username = (request.form.get("username") or "").strip()
     password = request.form.get("password") or ""
     is_admin = bool(request.form.get("is_admin"))
+    acesso_mercadopago = bool(request.form.get("acesso_mercadopago"))
+    acesso_infinitepay = bool(request.form.get("acesso_infinitepay"))
+    acesso_nubank = bool(request.form.get("acesso_nubank"))
 
     if len(password) < 8:
         flash("A senha inicial do novo usuário deve ter pelo menos 8 caracteres.", "warning")
         return redirect(url_for("auth.listar_usuarios"))
 
     try:
-        usuario_criado = criar_usuario(username, password, is_admin=is_admin)
-        registrar_auditoria("auth.user_created", usuario_id=session.get("usuario_id"), detalhes={"novo_usuario": username, "is_admin": is_admin})
+        usuario_criado = criar_usuario(
+            username,
+            password,
+            is_admin=is_admin,
+            acesso_mercadopago=acesso_mercadopago,
+            acesso_infinitepay=acesso_infinitepay,
+            acesso_nubank=acesso_nubank
+        )
+        registrar_auditoria(
+            "auth.user_created",
+            usuario_id=session.get("usuario_id"),
+            detalhes={
+                "novo_usuario": username,
+                "is_admin": is_admin,
+                "acesso_mercadopago": acesso_mercadopago,
+                "acesso_infinitepay": acesso_infinitepay,
+                "acesso_nubank": acesso_nubank,
+            }
+        )
         flash(f"Usuário '{usuario_criado.username}' criado com sucesso! No primeiro login, a ativação do 2FA será obrigatória.", "success")
     except ValueError as e:
         flash(str(e), "danger")
@@ -414,4 +434,51 @@ def resetar_senha_usuario(id):
     db.session.commit()
     registrar_auditoria("auth.user_password_reset", usuario_id=session.get("usuario_id"), detalhes={"usuario_afetado": usuario.username})
     flash(f"Senha do usuário '{usuario.username}' redefinida com sucesso!", "success")
+    return redirect(url_for("auth.listar_usuarios"))
+
+
+@auth_bp.route("/usuarios/<int:id>/permissoes", methods=["POST"])
+def atualizar_permissoes_usuario(id):
+    if not session.get("is_admin"):
+        flash("Acesso restrito a administradores.", "danger")
+        return redirect(url_for("dashboard.dashboard"))
+
+    usuario = db.session.get(Usuario, id)
+    if not usuario:
+        flash("Usuário não encontrado.", "danger")
+        return redirect(url_for("auth.listar_usuarios"))
+
+    # Não permite tirar o próprio status de administrador para evitar auto-bloqueio
+    if id == session.get("usuario_id"):
+        is_admin = True
+    else:
+        is_admin = bool(request.form.get("is_admin"))
+
+    acesso_mercadopago = bool(request.form.get("acesso_mercadopago"))
+    acesso_infinitepay = bool(request.form.get("acesso_infinitepay"))
+    acesso_nubank = bool(request.form.get("acesso_nubank"))
+
+    if is_admin:
+        acesso_mercadopago = True
+        acesso_infinitepay = True
+        acesso_nubank = True
+
+    usuario.is_admin = is_admin
+    usuario.acesso_mercadopago = acesso_mercadopago
+    usuario.acesso_infinitepay = acesso_infinitepay
+    usuario.acesso_nubank = acesso_nubank
+
+    db.session.commit()
+    registrar_auditoria(
+        "auth.user_permissions_updated",
+        usuario_id=session.get("usuario_id"),
+        detalhes={
+            "usuario_afetado": usuario.username,
+            "is_admin": is_admin,
+            "acesso_mercadopago": acesso_mercadopago,
+            "acesso_infinitepay": acesso_infinitepay,
+            "acesso_nubank": acesso_nubank,
+        }
+    )
+    flash(f"Permissões do usuário '{usuario.username}' atualizadas com sucesso!", "success")
     return redirect(url_for("auth.listar_usuarios"))

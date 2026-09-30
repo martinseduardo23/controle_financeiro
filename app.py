@@ -250,6 +250,25 @@ def criar_app():
                 flash("Para a segurança dos dados financeiros, configure a Autenticação em 2 Etapas (2FA) para liberar o sistema.", "warning")
                 return redirect(url_for("auth.seguranca_2fa"))
 
+        # Controle de acesso granular por módulo (Mercado Pago / Mercado Livre, Nubank, InfinitePay)
+        if usuario and not usuario.is_admin:
+            endpoint = request.endpoint or ""
+            
+            # 1. Mercado Pago / Mercado Livre
+            if endpoint.startswith("integracoes.mercadopago") and not getattr(usuario, "acesso_mercadopago", True):
+                flash("Você não possui permissão para acessar a integração do Mercado Pago / Mercado Livre.", "warning")
+                return redirect(url_for("dashboard.dashboard"))
+
+            # 2. Nubank & Apple Pay
+            if endpoint.startswith("integracoes.nubank") and not getattr(usuario, "acesso_nubank", True):
+                flash("Você não possui permissão para acessar a integração do Nubank.", "warning")
+                return redirect(url_for("dashboard.dashboard"))
+
+            # 3. Calculadora InfinitePay
+            if "infinitepay" in endpoint and not getattr(usuario, "acesso_infinitepay", True):
+                flash("Você não possui permissão para acessar a Calculadora InfinitePay.", "warning")
+                return redirect(url_for("dashboard.dashboard"))
+
     @app.route("/.well-known/<path:filename>")
     def servir_desafio_ssl(filename):
         """
@@ -340,6 +359,12 @@ def migrar_schema_sqlite():
                 cursor.execute("ALTER TABLE usuarios ADD COLUMN is_2fa_enabled BOOLEAN DEFAULT 0 NOT NULL;")
             if "backup_codes" not in colunas:
                 cursor.execute("ALTER TABLE usuarios ADD COLUMN backup_codes TEXT;")
+            if "acesso_mercadopago" not in colunas:
+                cursor.execute("ALTER TABLE usuarios ADD COLUMN acesso_mercadopago BOOLEAN DEFAULT 1 NOT NULL;")
+            if "acesso_infinitepay" not in colunas:
+                cursor.execute("ALTER TABLE usuarios ADD COLUMN acesso_infinitepay BOOLEAN DEFAULT 1 NOT NULL;")
+            if "acesso_nubank" not in colunas:
+                cursor.execute("ALTER TABLE usuarios ADD COLUMN acesso_nubank BOOLEAN DEFAULT 1 NOT NULL;")
         conn.commit()
         conn.close()
     except Exception as e:

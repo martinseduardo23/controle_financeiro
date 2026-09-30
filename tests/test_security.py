@@ -228,6 +228,71 @@ class SecurityTestSuite(unittest.TestCase):
         res_dash_ok = self.client.get("/dashboard")
         self.assertEqual(res_dash_ok.status_code, 200)
 
+    # ---------------------------------------------------------
+    # TESTE 9: Controle Granular de Permissões de Módulos
+    # ---------------------------------------------------------
+    def test_09_permissoes_modulos(self):
+        from services.usuario_service import criar_usuario
+        # Cria usuário restrito (sem Mercado Pago, sem InfinitePay, sem Nubank)
+        u_restrito = criar_usuario(
+            username="user_restrito",
+            password="SenhaValida123!",
+            is_admin=False,
+            acesso_mercadopago=False,
+            acesso_infinitepay=False,
+            acesso_nubank=False
+        )
+        u_restrito.is_2fa_enabled = True
+        db.session.commit()
+
+        # Simula sessão logada como o usuário restrito
+        with self.client.session_transaction() as sess:
+            sess["usuario_id"] = u_restrito.id
+            sess["username"] = u_restrito.username
+            sess["is_admin"] = False
+            sess["autenticado_2fa"] = True
+
+        # Tenta acessar Mercado Pago -> bloqueado e redirecionado para dashboard
+        res_mp = self.client.get("/integracoes/mercadopago", follow_redirects=False)
+        self.assertEqual(res_mp.status_code, 302)
+        self.assertIn("/dashboard", res_mp.location)
+
+        # Tenta acessar Nubank -> bloqueado e redirecionado para dashboard
+        res_nu = self.client.get("/integracoes/nubank", follow_redirects=False)
+        self.assertEqual(res_nu.status_code, 302)
+        self.assertIn("/dashboard", res_nu.location)
+
+        # Tenta acessar InfinitePay -> bloqueado e redirecionado para dashboard
+        res_inf = self.client.get("/calculadora/infinitepay", follow_redirects=False)
+        self.assertEqual(res_inf.status_code, 302)
+        self.assertIn("/dashboard", res_inf.location)
+
+        # Agora loga como Admin e atualiza as permissões desse usuário
+        self.user.is_2fa_enabled = True
+        db.session.commit()
+        with self.client.session_transaction() as sess:
+            sess["usuario_id"] = self.user.id
+            sess["username"] = self.user.username
+            sess["is_admin"] = True
+            sess["autenticado_2fa"] = True
+
+        res_update = self.client.post(
+            f"/usuarios/{u_restrito.id}/permissoes",
+            data={
+                "acesso_mercadopago": "1",
+                "acesso_infinitepay": "1",
+                "acesso_nubank": "1"
+            },
+            follow_redirects=False
+        )
+        self.assertEqual(res_update.status_code, 302)
+
+        # Verifica no banco se as permissões foram atualizadas
+        db.session.refresh(u_restrito)
+        self.assertTrue(u_restrito.acesso_mercadopago)
+        self.assertTrue(u_restrito.acesso_infinitepay)
+        self.assertTrue(u_restrito.acesso_nubank)
+
 
 if __name__ == "__main__":
     unittest.main()

@@ -184,22 +184,39 @@
                     Relatórios
                 </a>
 
+                {% if usuario_atual %}
+                    {% set pode_mp = usuario_atual.is_admin or usuario_atual.acesso_mercadopago %}
+                    {% set pode_nu = usuario_atual.is_admin or usuario_atual.acesso_nubank %}
+                    {% set pode_inf = usuario_atual.is_admin or usuario_atual.acesso_infinitepay %}
+                {% else %}
+                    {% set pode_mp = true %}
+                    {% set pode_nu = true %}
+                    {% set pode_inf = true %}
+                {% endif %}
+
+                {% if pode_mp or pode_nu %}
                 <span class="menu-section-label">Integrações</span>
 
+                {% if pode_mp %}
                 <a href="{{ url_for('integracoes.mercadopago_painel') }}" class="{% if request.endpoint and 'mercadopago' in request.endpoint %}active{% endif %}">
                     <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/>
                     </svg>
                     Mercado Pago
                 </a>
+                {% endif %}
 
+                {% if pode_nu %}
                 <a href="{{ url_for('integracoes.nubank_painel') }}" class="{% if request.endpoint and 'nubank' in request.endpoint %}active{% endif %}">
                     <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 18h.01M8 21h8a2 2 0 002-2V5a2 2 0 00-2-2H8a2 2 0 00-2 2v14a2 2 0 002 2z"/>
                     </svg>
                     Nubank & Apple Pay
                 </a>
+                {% endif %}
+                {% endif %}
 
+                {% if pode_inf %}
                 <span class="menu-section-label">Ferramentas</span>
 
                 <a href="{{ url_for('simulador.infinitepay') }}" class="{% if request.endpoint and 'infinitepay' in request.endpoint %}active{% endif %}">
@@ -208,6 +225,7 @@
                     </svg>
                     Calculadora InfinitePay
                 </a>
+                {% endif %}
 
                 <span class="menu-section-label">Sistema</span>
 
