@@ -7,7 +7,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}?v=v9_clean_pill">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}?v=v10_top_icon">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script>
         (function() {
@@ -59,17 +59,20 @@
             background-color: #000000 !important;
             color: #f8fafc !important;
         }
-        /* Botão flutuante discreto */
-        #floating-mode-pill {
-            display: none;
+        /* Ícone do botão compacto no topo */
+        html[data-layout-mode="desktop"] .svg-mode-desktop {
+            display: none !important;
         }
-        html[data-layout-mode="desktop"] #floating-mode-pill {
-            display: inline-flex !important;
+        html[data-layout-mode="desktop"] .svg-mode-mobile {
+            display: block !important;
+            color: #818cf8 !important;
         }
-        @media (min-width: 1025px) {
-            #floating-mode-pill {
-                display: none !important;
-            }
+        html:not([data-layout-mode="desktop"]) .svg-mode-desktop {
+            display: block !important;
+            color: var(--text-muted) !important;
+        }
+        html:not([data-layout-mode="desktop"]) .svg-mode-mobile {
+            display: none !important;
         }
     </style>
 </head>
@@ -269,29 +272,34 @@
                 <div class="logo-text top-bar-logo" style="font-size: 15px;">Controle <span>Financeiro</span></div>
             </div>
 
-            <div style="display: flex; align-items: center; gap: 10px;">
+            <div style="display: flex; align-items: center; gap: 8px;">
                 {% if session.get('username') %}
                     {% if usuario_atual and not usuario_atual.is_2fa_enabled %}
                         <a href="{{ url_for('auth.seguranca_2fa') }}" style="text-decoration: none; font-size: 11px; background: rgba(239, 68, 68, 0.2); color: #f87171; border: 1px solid rgba(239, 68, 68, 0.4); padding: 3px 8px; border-radius: 6px; font-weight: 600; display: inline-flex; align-items: center; gap: 4px;" title="Ativar autenticação 2FA">
-                            ⚠️ <span class="hide-mobile-xs">2FA Pendente</span>
+                            ⚠️ <span class="hide-mobile-xs">2FA</span>
                         </a>
                     {% endif %}
                     <span class="top-bar-username" style="font-size: 12px; color: var(--text-muted); display: flex; align-items: center; gap: 5px;">
                         <span style="width: 8px; height: 8px; border-radius: 50%; background: {% if usuario_atual and not usuario_atual.is_2fa_enabled %}#ef4444{% else %}#10b981{% endif %}; display: inline-block;"></span>
                         {{ session.get('username') }}
                     </span>
+
+                    <!-- BOTÃO COMPACTO DE ALTERNAR CELULAR / COMPUTADOR -->
+                    <button type="button" class="top-bar-btn" id="btn-layout-toggle-top" onclick="alternarModoLayout()" title="Alternar entre visualização Celular e Computador" aria-label="Alternar entre modo Celular e Computador" style="width: 34px; height: 34px; padding: 0; display: inline-flex; align-items: center; justify-content: center; border-radius: 8px; flex-shrink: 0;">
+                        <!-- Mostra monitor quando no celular (para ir ao computador) -->
+                        <svg class="svg-mode-desktop" xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/>
+                        </svg>
+                        <!-- Mostra celular quando no computador (para voltar ao celular) -->
+                        <svg class="svg-mode-mobile" xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 18h.01M8 21h8a2 2 0 002-2V5a2 2 0 00-2-2H8a2 2 0 00-2 2v14a2 2 0 002 2z"/>
+                        </svg>
+                    </button>
+
                     <a href="{{ url_for('auth.logout') }}" class="btn btn-secondary" style="padding: 4px 10px; font-size: 11px; border-color: rgba(239, 68, 68, 0.3); color: #fca5a5;">Sair</a>
                 {% endif %}
             </div>
         </div>
-
-        <!-- Botão flutuante para retornar ao modo celular quando estiver no modo desktop -->
-        <a href="?modo=responsive" id="floating-mode-pill" class="floating-mode-pill" onclick="alternarModoLayout('responsive'); return false;" style="position: fixed; bottom: 20px; right: 20px; z-index: 999999; background: rgba(30, 41, 59, 0.92); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); color: #ffffff; padding: 10px 18px; border-radius: 9999px; font-weight: 600; font-size: 13px; text-decoration: none; box-shadow: 0 8px 24px rgba(0, 0, 0, 0.45); border: 1px solid rgba(255, 255, 255, 0.18); align-items: center; gap: 8px; cursor: pointer;" title="Voltar para a Versão Celular">
-            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 18h.01M8 21h8a2 2 0 002-2V5a2 2 0 00-2-2H8a2 2 0 00-2 2v14a2 2 0 002 2z"/>
-            </svg>
-            <span>Voltar para Versão Celular</span>
-        </a>
 
         <main class="main-content">
             <!-- FLASH MESSAGES -->
@@ -335,7 +343,7 @@
 </div>
 
 <!-- JAVASCRIPT -->
-<script src="{{ url_for('static', filename='js/app.js') }}?v=v9_clean_pill"></script>
+<script src="{{ url_for('static', filename='js/app.js') }}?v=v10_top_icon"></script>
 
 </body>
 </html>

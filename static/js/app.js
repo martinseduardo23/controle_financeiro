@@ -305,6 +305,11 @@ document.addEventListener("DOMContentLoaded", () => {
             }
         }
 
+        const topBtn = document.getElementById("btn-layout-toggle-top");
+        if (topBtn) {
+            topBtn.title = modo === "responsive" ? "Mudar para Modo Computador" : "Mudar para Modo Celular";
+        }
+
         const meta = document.getElementById("meta-viewport");
         if (meta) {
             if (modo === "desktop" && window.innerWidth <= 768) {
