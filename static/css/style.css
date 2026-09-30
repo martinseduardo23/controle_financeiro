@@ -216,7 +216,8 @@ html, body {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    padding: 12px 24px;
+    padding: 0 16px;
+    height: 56px;
     background: #000000;
     border-bottom: 1px solid var(--border);
     position: sticky;
@@ -226,10 +227,11 @@ html, body {
 }
 
 .top-bar-btn {
-    background: transparent;
+    background: rgba(255, 255, 255, 0.05);
     border: 1px solid var(--border);
     color: var(--text-primary);
-    padding: 8px;
+    width: 36px;
+    height: 36px;
     border-radius: var(--radius-sm);
     cursor: pointer;
     display: flex;
@@ -243,46 +245,40 @@ html, body {
     border-color: var(--border-hover);
 }
 
-/* Seletor de Modo de Layout (Responsivo vs Desktop) */
-.layout-mode-selector {
-    display: inline-flex;
-    align-items: center;
-    background: rgba(255, 255, 255, 0.05);
-    border: 1px solid var(--border);
+/* Botão flutuante discreto para retornar ao celular quando estiver no modo desktop */
+.floating-mode-pill {
+    display: none;
+    position: fixed;
+    bottom: 24px;
+    right: 24px;
+    background: #4f46e5;
+    color: #ffffff;
+    border: 1px solid rgba(255, 255, 255, 0.2);
     border-radius: 9999px;
-    padding: 3px;
-    gap: 2px;
-}
-
-.layout-mode-btn {
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    padding: 5px 12px;
-    border-radius: 9999px;
-    background: transparent;
-    border: none;
-    color: var(--text-muted);
-    font-size: 12px;
-    font-weight: 500;
+    padding: 10px 18px;
+    font-size: 13px;
+    font-weight: 600;
+    box-shadow: 0 8px 24px rgba(79, 70, 229, 0.5);
     cursor: pointer;
+    z-index: 999;
+    align-items: center;
+    gap: 8px;
     transition: var(--transition);
 }
 
-.layout-mode-btn:hover {
-    color: var(--text-primary);
+.floating-mode-pill:hover {
+    background: #4338ca;
+    transform: translateY(-2px);
 }
 
-.layout-mode-btn.active {
-    background: var(--primary);
-    color: #ffffff;
-    font-weight: 600;
-    box-shadow: 0 2px 8px rgba(99, 102, 241, 0.4);
+html[data-layout-mode="desktop"] .floating-mode-pill {
+    display: inline-flex;
 }
 
-.layout-mode-btn svg {
-    width: 14px;
-    height: 14px;
+@media (min-width: 1025px) {
+    .floating-mode-pill {
+        display: none !important;
+    }
 }
 
 .toast-layout-mode {
@@ -1208,17 +1204,20 @@ html[data-layout-mode="desktop"] .sidebar-overlay {
 }
 
 @media (max-width: 580px) {
-    .layout-mode-btn span {
-        display: none;
-    }
-    .layout-mode-btn {
-        padding: 6px 10px;
-    }
     .top-bar-username {
         display: none !important;
     }
     .top-bar {
-        padding: 10px 14px;
+        padding: 0 12px;
+    }
+}
+
+@media (max-width: 420px) {
+    .hide-mobile-xs {
+        display: none !important;
+    }
+    .top-bar-logo span {
+        display: none;
     }
 }
 

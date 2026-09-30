@@ -7,7 +7,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}?v=resp_mode_2">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}?v=clean_mobile_v6">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script>
         (function() {
@@ -219,8 +219,8 @@
     ====================================================== -->
     <div class="main-wrapper">
         <div class="top-bar">
-            <div style="display: flex; align-items: center; gap: 12px;">
-                <button type="button" class="top-bar-btn" id="sidebar-toggle" aria-label="Abrir menu" title="Recolher / Expandir Menu">
+            <div style="display: flex; align-items: center; gap: 10px;">
+                <button type="button" class="top-bar-btn" id="sidebar-toggle" aria-label="Abrir menu" title="Menu de Navegação">
                     <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/>
                     </svg>
@@ -228,28 +228,12 @@
                 <div class="logo-text top-bar-logo" style="font-size: 15px;">Controle <span>Financeiro</span></div>
             </div>
 
-            <!-- BOTÃO SELETOR DE MODO RESPONSIVO / DESKTOP -->
-            <div class="layout-mode-selector" role="group" aria-label="Modo de visualização">
-                <button type="button" class="layout-mode-btn" id="btn-layout-responsive" onclick="alternarModoLayout('responsive')" title="Ativar Modo Responsivo (Mobile / Compacto)">
-                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 18h.01M8 21h8a2 2 0 002-2V5a2 2 0 00-2-2H8a2 2 0 00-2 2v14a2 2 0 002 2z"/>
-                    </svg>
-                    <span>Responsivo</span>
-                </button>
-                <button type="button" class="layout-mode-btn" id="btn-layout-desktop" onclick="alternarModoLayout('desktop')" title="Ativar Modo Desktop (Completo / Computador)">
-                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/>
-                    </svg>
-                    <span>Desktop</span>
-                </button>
-            </div>
-
             <div style="display: flex; align-items: center; gap: 10px;">
                 {% if session.get('username') %}
                     {% if usuario_atual and not usuario_atual.is_2fa_enabled %}
-                        <span style="font-size: 11px; background: rgba(239, 68, 68, 0.2); color: #f87171; border: 1px solid rgba(239, 68, 68, 0.4); padding: 3px 8px; border-radius: 6px; font-weight: 600;">
-                            ⚠️ 2FA Pendente
-                        </span>
+                        <a href="{{ url_for('auth.seguranca_2fa') }}" style="text-decoration: none; font-size: 11px; background: rgba(239, 68, 68, 0.2); color: #f87171; border: 1px solid rgba(239, 68, 68, 0.4); padding: 3px 8px; border-radius: 6px; font-weight: 600; display: inline-flex; align-items: center; gap: 4px;" title="Ativar autenticação 2FA">
+                            ⚠️ <span class="hide-mobile-xs">2FA Pendente</span>
+                        </a>
                     {% endif %}
                     <span class="top-bar-username" style="font-size: 12px; color: var(--text-muted); display: flex; align-items: center; gap: 5px;">
                         <span style="width: 8px; height: 8px; border-radius: 50%; background: {% if usuario_atual and not usuario_atual.is_2fa_enabled %}#ef4444{% else %}#10b981{% endif %}; display: inline-block;"></span>
@@ -259,6 +243,14 @@
                 {% endif %}
             </div>
         </div>
+
+        <!-- Botão flutuante sutil para retornar ao modo celular se ativar modo desktop no celular -->
+        <button type="button" id="floating-mode-pill" class="floating-mode-pill" onclick="alternarModoLayout('responsive')" title="Voltar para a Versão Celular">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 18h.01M8 21h8a2 2 0 002-2V5a2 2 0 00-2-2H8a2 2 0 00-2 2v14a2 2 0 002 2z"/>
+            </svg>
+            <span>Voltar para Versão Celular</span>
+        </button>
 
         <main class="main-content">
             <!-- FLASH MESSAGES -->

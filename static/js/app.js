@@ -277,23 +277,16 @@ document.addEventListener("DOMContentLoaded", () => {
         document.body.classList.remove("mode-responsive", "mode-desktop");
         document.body.classList.add(modo === "responsive" ? "mode-responsive" : "mode-desktop");
 
-        const btnResp = document.getElementById("btn-layout-responsive");
-        const btnDesk = document.getElementById("btn-layout-desktop");
-        if (btnResp && btnDesk) {
-            btnResp.classList.toggle("active", modo === "responsive");
-            btnDesk.classList.toggle("active", modo === "desktop");
-        }
-
         const sidebarText = document.getElementById("sidebar-layout-text");
         const sidebarIcon = document.getElementById("sidebar-layout-icon");
         if (sidebarText) {
-            sidebarText.textContent = modo === "responsive" ? "Visualização: Responsiva" : "Visualização: Desktop";
+            sidebarText.textContent = modo === "responsive" ? "Mudar para Modo Desktop 💻" : "Mudar para Modo Celular 📱";
         }
         if (sidebarIcon) {
             if (modo === "responsive") {
-                sidebarIcon.innerHTML = '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 18h.01M8 21h8a2 2 0 002-2V5a2 2 0 00-2-2H8a2 2 0 00-2 2v14a2 2 0 002 2z"/>';
-            } else {
                 sidebarIcon.innerHTML = '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/>';
+            } else {
+                sidebarIcon.innerHTML = '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 18h.01M8 21h8a2 2 0 002-2V5a2 2 0 00-2-2H8a2 2 0 00-2 2v14a2 2 0 002 2z"/>';
             }
         }
 
