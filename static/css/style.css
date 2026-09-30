@@ -579,10 +579,22 @@ html:not([data-layout-mode="desktop"]) .svg-mode-mobile {
     color: #fb7185;
 }
 
-.badge-info {
-    background: var(--info-bg);
+.badge-info, .badge-mercadolivre, .badge-mercadopago {
+    background: rgba(14, 165, 233, 0.12);
     color: #38bdf8;
-    border: 1px solid rgba(14, 165, 233, 0.25);
+    border: 1px solid rgba(14, 165, 233, 0.3);
+}
+
+.badge-infinitepay {
+    background: rgba(234, 179, 8, 0.12);
+    color: #facc15;
+    border: 1px solid rgba(234, 179, 8, 0.35);
+}
+
+.badge-nubank {
+    background: rgba(168, 85, 247, 0.12);
+    color: #c084fc;
+    border: 1px solid rgba(168, 85, 247, 0.35);
 }
 
 /* Botões */

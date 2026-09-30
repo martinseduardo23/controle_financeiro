@@ -70,18 +70,27 @@ Gestão de Usuários - Controle Financeiro
                 </label>
                 <div style="display: flex; flex-direction: column; gap: 8px;">
                     <label style="display: flex; align-items: center; gap: 8px; font-size: 13px; color: var(--text-secondary); cursor: pointer; margin: 0;">
-                        <input type="checkbox" name="acesso_mercadopago" value="1" checked style="width: 16px; height: 16px; accent-color: #6366f1;">
-                        <span>Mercado Pago / Mercado Livre</span>
+                        <input type="checkbox" name="acesso_mercadopago" value="1" checked style="width: 16px; height: 16px; accent-color: #0ea5e9;">
+                        <span style="display: inline-flex; align-items: center; gap: 6px;">
+                            <span style="width: 7px; height: 7px; border-radius: 50%; background: #38bdf8;"></span>
+                            <span>Mercado Pago / Mercado Livre</span>
+                        </span>
                     </label>
 
                     <label style="display: flex; align-items: center; gap: 8px; font-size: 13px; color: var(--text-secondary); cursor: pointer; margin: 0;">
-                        <input type="checkbox" name="acesso_infinitepay" value="1" checked style="width: 16px; height: 16px; accent-color: #6366f1;">
-                        <span>Calculadora InfinitePay</span>
+                        <input type="checkbox" name="acesso_infinitepay" value="1" checked style="width: 16px; height: 16px; accent-color: #facc15;">
+                        <span style="display: inline-flex; align-items: center; gap: 6px;">
+                            <span style="width: 7px; height: 7px; border-radius: 50%; background: #facc15;"></span>
+                            <span>Calculadora InfinitePay</span>
+                        </span>
                     </label>
 
                     <label style="display: flex; align-items: center; gap: 8px; font-size: 13px; color: var(--text-secondary); cursor: pointer; margin: 0;">
-                        <input type="checkbox" name="acesso_nubank" value="1" checked style="width: 16px; height: 16px; accent-color: #6366f1;">
-                        <span>Nubank & Apple Pay</span>
+                        <input type="checkbox" name="acesso_nubank" value="1" checked style="width: 16px; height: 16px; accent-color: #a855f7;">
+                        <span style="display: inline-flex; align-items: center; gap: 6px;">
+                            <span style="width: 7px; height: 7px; border-radius: 50%; background: #c084fc;"></span>
+                            <span>Nubank & Apple Pay</span>
+                        </span>
                     </label>
                 </div>
             </div>
@@ -170,18 +179,18 @@ Gestão de Usuários - Controle Financeiro
                         {% endif %}
                     </td>
                     <td>
-                        <div style="display: flex; flex-wrap: wrap; gap: 4px;">
+                        <div style="display: flex; flex-wrap: wrap; gap: 6px; align-items: center;">
                             {% if u.is_admin %}
-                                <span class="badge badge-success" style="font-size: 10px;">Todos (Admin)</span>
+                                <span class="badge badge-success" style="font-size: 10.5px; background: rgba(16, 185, 129, 0.12); color: #34d399; border: 1px solid rgba(16, 185, 129, 0.3); padding: 3px 8px; border-radius: 9999px; font-weight: 600;">Todos (Admin)</span>
                             {% else %}
                                 {% if u.acesso_mercadopago %}
-                                    <span class="badge badge-info" style="font-size: 10px;">Mercado Livre</span>
+                                    <span class="badge badge-info" style="font-size: 10.5px; background: rgba(14, 165, 233, 0.12); color: #38bdf8; border: 1px solid rgba(14, 165, 233, 0.3); padding: 3px 8px; border-radius: 9999px; font-weight: 600;">Mercado Livre</span>
                                 {% endif %}
                                 {% if u.acesso_infinitepay %}
-                                    <span class="badge badge-primary" style="font-size: 10px;">InfinitePay</span>
+                                    <span class="badge badge-infinitepay" style="font-size: 10.5px; background: rgba(234, 179, 8, 0.12); color: #facc15; border: 1px solid rgba(234, 179, 8, 0.35); padding: 3px 8px; border-radius: 9999px; font-weight: 600;">InfinitePay</span>
                                 {% endif %}
                                 {% if u.acesso_nubank %}
-                                    <span class="badge badge-secondary" style="font-size: 10px;">Nubank</span>
+                                    <span class="badge badge-nubank" style="font-size: 10.5px; background: rgba(168, 85, 247, 0.12); color: #c084fc; border: 1px solid rgba(168, 85, 247, 0.35); padding: 3px 8px; border-radius: 9999px; font-weight: 600;">Nubank</span>
                                 {% endif %}
                                 {% if not u.acesso_mercadopago and not u.acesso_infinitepay and not u.acesso_nubank %}
                                     <span style="font-size: 11px; color: var(--text-muted);">Nenhum</span>
@@ -246,18 +255,27 @@ Gestão de Usuários - Controle Financeiro
         <form id="formPermissoes" method="POST" action="">
             <div style="display: flex; flex-direction: column; gap: 12px; margin-bottom: 20px;">
                 <label style="display: flex; align-items: center; gap: 10px; font-size: 13px; color: #f8fafc; cursor: pointer; margin: 0;">
-                    <input type="checkbox" id="perm_mercadopago" name="acesso_mercadopago" value="1" style="width: 18px; height: 18px; accent-color: #6366f1;">
-                    <span>Mercado Pago / Mercado Livre</span>
+                    <input type="checkbox" id="perm_mercadopago" name="acesso_mercadopago" value="1" style="width: 18px; height: 18px; accent-color: #0ea5e9;">
+                    <span style="display: inline-flex; align-items: center; gap: 6px;">
+                        <span style="width: 8px; height: 8px; border-radius: 50%; background: #38bdf8;"></span>
+                        <span>Mercado Pago / Mercado Livre</span>
+                    </span>
                 </label>
 
                 <label style="display: flex; align-items: center; gap: 10px; font-size: 13px; color: #f8fafc; cursor: pointer; margin: 0;">
-                    <input type="checkbox" id="perm_infinitepay" name="acesso_infinitepay" value="1" style="width: 18px; height: 18px; accent-color: #6366f1;">
-                    <span>Calculadora InfinitePay</span>
+                    <input type="checkbox" id="perm_infinitepay" name="acesso_infinitepay" value="1" style="width: 18px; height: 18px; accent-color: #facc15;">
+                    <span style="display: inline-flex; align-items: center; gap: 6px;">
+                        <span style="width: 8px; height: 8px; border-radius: 50%; background: #facc15;"></span>
+                        <span>Calculadora InfinitePay</span>
+                    </span>
                 </label>
 
                 <label style="display: flex; align-items: center; gap: 10px; font-size: 13px; color: #f8fafc; cursor: pointer; margin: 0;">
-                    <input type="checkbox" id="perm_nubank" name="acesso_nubank" value="1" style="width: 18px; height: 18px; accent-color: #6366f1;">
-                    <span>Nubank & Apple Pay</span>
+                    <input type="checkbox" id="perm_nubank" name="acesso_nubank" value="1" style="width: 18px; height: 18px; accent-color: #a855f7;">
+                    <span style="display: inline-flex; align-items: center; gap: 6px;">
+                        <span style="width: 8px; height: 8px; border-radius: 50%; background: #c084fc;"></span>
+                        <span>Nubank & Apple Pay</span>
+                    </span>
                 </label>
 
                 <div style="border-top: 1px solid var(--border); margin-top: 8px; padding-top: 12px;">

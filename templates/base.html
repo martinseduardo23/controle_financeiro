@@ -7,7 +7,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}?v=v13_inputs_embed">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}?v=v14_badge_colors">
     <style>
         /* Estilos Definitivos para Inputs e Senhas (Zero dependência de cache de CSS) */
         .password-input-group {
@@ -75,6 +75,40 @@
             align-items: center !important;
             gap: 6px !important;
             line-height: 1.4 !important;
+        }
+        /* Badges de Módulos: Mercado Livre (Azul), InfinitePay (Amarelo), Nubank (Roxo) */
+        .badge-info, .badge-mercadolivre, .badge-mercadopago {
+            background: rgba(14, 165, 233, 0.12) !important;
+            color: #38bdf8 !important;
+            border: 1px solid rgba(14, 165, 233, 0.3) !important;
+            padding: 3px 8px !important;
+            border-radius: 9999px !important;
+            font-size: 10.5px !important;
+            font-weight: 600 !important;
+            display: inline-flex !important;
+            align-items: center !important;
+        }
+        .badge-infinitepay {
+            background: rgba(234, 179, 8, 0.12) !important;
+            color: #facc15 !important;
+            border: 1px solid rgba(234, 179, 8, 0.35) !important;
+            padding: 3px 8px !important;
+            border-radius: 9999px !important;
+            font-size: 10.5px !important;
+            font-weight: 600 !important;
+            display: inline-flex !important;
+            align-items: center !important;
+        }
+        .badge-nubank {
+            background: rgba(168, 85, 247, 0.12) !important;
+            color: #c084fc !important;
+            border: 1px solid rgba(168, 85, 247, 0.35) !important;
+            padding: 3px 8px !important;
+            border-radius: 9999px !important;
+            font-size: 10.5px !important;
+            font-weight: 600 !important;
+            display: inline-flex !important;
+            align-items: center !important;
         }
     </style>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
