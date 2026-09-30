@@ -1,4 +1,5 @@
 import os
+import re
 import time
 import base64
 import hmac
@@ -68,6 +69,23 @@ def verificar_senha(senha: str, hash_armazenado: str) -> Tuple[bool, bool]:
     # Se válido e temos hasher Argon2id, sinaliza para fazer o upgrade
     precisa_rehash = valido and (_hasher is not None)
     return valido, precisa_rehash
+
+
+def validar_forca_senha(senha: str) -> Tuple[bool, str]:
+    """
+    Valida os requisitos de complexidade de senha:
+    - No mínimo 8 caracteres
+    - Pelo menos uma letra maiúscula (A-Z)
+    - Pelo menos um caractere especial (!@#$%^&* etc.)
+    Retorna (True, "") ou (False, mensagem_amigavel).
+    """
+    if not senha or len(senha) < 8:
+        return False, "A senha deve ter no mínimo 8 caracteres."
+    if not re.search(r"[A-Z]", senha):
+        return False, "A senha deve conter pelo menos uma letra maiúscula (A-Z)."
+    if not re.search(r"[\W_]", senha):
+        return False, "A senha deve conter pelo menos um caractere especial (ex: @, #, $, %, &, !)."
+    return True, ""
 
 
 # =========================================================

@@ -379,7 +379,7 @@ def migrar_schema_sqlite():
 def inicializar_dados():
     from services.usuario_service import criar_usuario
     if not Usuario.query.first():
-        criar_usuario("admin", "admin123", is_admin=True)
+        criar_usuario("admin", "admin123", is_admin=True, validar_complexidade=False)
 
 
 # =========================================================

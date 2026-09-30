@@ -22,6 +22,7 @@ from services.security_service import (
     gerar_secret_2fa,
     verificar_codigo_totp,
     gerar_codigos_backup,
+    validar_forca_senha,
     RateLimiter
 )
 import pyotp
@@ -292,6 +293,40 @@ class SecurityTestSuite(unittest.TestCase):
         self.assertTrue(u_restrito.acesso_mercadopago)
         self.assertTrue(u_restrito.acesso_infinitepay)
         self.assertTrue(u_restrito.acesso_nubank)
+
+    # ---------------------------------------------------------
+    # TESTE 10: Requisitos de Complexidade de Senhas
+    # ---------------------------------------------------------
+    def test_10_complexidade_senha(self):
+        # 1. Menos de 8 caracteres
+        valida, msg = validar_forca_senha("Ab1!")
+        self.assertFalse(valida)
+        self.assertIn("8 caracteres", msg)
+
+        # 2. Sem letra maiúscula
+        valida, msg = validar_forca_senha("senhaforte123!")
+        self.assertFalse(valida)
+        self.assertIn("maiúscula", msg)
+
+        # 3. Sem caractere especial
+        valida, msg = validar_forca_senha("SenhaForte123")
+        self.assertFalse(valida)
+        self.assertIn("especial", msg)
+
+        # 4. Senhas válidas com diferentes caracteres especiais
+        self.assertTrue(validar_forca_senha("SenhaForte123!")[0])
+        self.assertTrue(validar_forca_senha("Minha@Senha2026")[0])
+        self.assertTrue(validar_forca_senha("Controle#Financeiro1")[0])
+        self.assertTrue(validar_forca_senha("Seguranca$Maxima9")[0])
+        self.assertTrue(validar_forca_senha("Argon2id_Master")[0])
+
+        # 5. Teste de criar_usuario com senha fraca e com senha forte
+        from services.usuario_service import criar_usuario
+        with self.assertRaises(ValueError):
+            criar_usuario("user_fraco", "fraca123")
+
+        u_ok = criar_usuario("user_forte", "SuperSenha@2026")
+        self.assertIsNotNone(u_ok.id)
 
 
 if __name__ == "__main__":

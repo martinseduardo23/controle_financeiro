@@ -720,14 +720,19 @@ tbody tr:last-child td {
 }
 
 .form-group input[type="text"],
+.form-group input[type="password"],
+.form-group input[type="email"],
 .form-group input[type="date"],
 .form-group input[type="month"],
 .form-group input[type="number"],
+.form-group input[type="search"],
+.form-group input[type="tel"],
 .form-group select,
-.form-group textarea {
+.form-group textarea,
+.form-control {
     width: 100%;
     background: #050507;
-    border: 1px solid var(--border);
+    border: 1px solid rgba(255, 255, 255, 0.12);
     border-radius: var(--radius-md);
     padding: 11px 14px;
     color: var(--text-primary);
@@ -735,14 +740,62 @@ tbody tr:last-child td {
     font-size: 14px;
     transition: var(--transition);
     outline: none;
+    box-sizing: border-box;
 }
 
 .form-group input:focus,
 .form-group select:focus,
-.form-group textarea:focus {
+.form-group textarea:focus,
+.form-control:focus {
     border-color: var(--border-focus);
     box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.2);
     background: #0c0c10;
+}
+
+/* Grupo de input de senha ou token com botão de alternar visibilidade */
+.password-input-group {
+    position: relative;
+    display: flex;
+    align-items: center;
+    width: 100%;
+}
+
+.password-input-group input {
+    width: 100%;
+    padding-right: 44px !important;
+}
+
+.password-toggle-btn {
+    position: absolute;
+    right: 8px;
+    top: 50%;
+    transform: translateY(-50%);
+    background: transparent;
+    border: none;
+    color: var(--text-muted);
+    cursor: pointer;
+    padding: 6px 8px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: var(--radius-sm);
+    transition: color 0.15s, background-color 0.15s;
+    outline: none;
+}
+
+.password-toggle-btn:hover {
+    color: var(--text-primary);
+    background: rgba(255, 255, 255, 0.08);
+}
+
+.password-hint {
+    font-size: 12px;
+    color: var(--text-muted);
+    margin-top: 6px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    line-height: 1.4;
 }
 
 .form-group textarea {

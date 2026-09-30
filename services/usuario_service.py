@@ -2,6 +2,7 @@ from database import db
 from models.usuario import Usuario
 from models.conta import Conta
 from models.categoria import Categoria
+from services.security_service import validar_forca_senha
 
 
 def inicializar_dados_usuario(usuario):
@@ -59,7 +60,8 @@ def criar_usuario(
     is_admin=False,
     acesso_mercadopago=True,
     acesso_infinitepay=True,
-    acesso_nubank=True
+    acesso_nubank=True,
+    validar_complexidade=True
 ):
     """
     Cria um novo usuário no sistema e inicializa seus dados individuais.
@@ -72,7 +74,11 @@ def criar_usuario(
     if existente:
         raise ValueError(f"O usuário '{username}' já existe.")
 
-    if not password or len(password) < 4:
+    if validar_complexidade:
+        valida, msg = validar_forca_senha(password)
+        if not valida:
+            raise ValueError(msg)
+    elif not password or len(password) < 4:
         raise ValueError("A senha deve ter pelo menos 4 caracteres.")
 
     # Se for admin, garante acesso total a todos os módulos

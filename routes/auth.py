@@ -8,7 +8,8 @@ from services.security_service import (
     gerar_uri_provisionamento,
     gerar_qr_code_svg,
     verificar_codigo_totp,
-    gerar_codigos_backup
+    gerar_codigos_backup,
+    validar_forca_senha
 )
 from services.audit_service import registrar_auditoria
 
@@ -313,8 +314,9 @@ def alterar_senha():
             flash("Senha atual incorreta.", "danger")
             return render_template("alterar_senha.html")
 
-        if len(nova_senha) < 8:
-            flash("Por segurança, a nova senha deve conter pelo menos 8 caracteres.", "warning")
+        valida, msg = validar_forca_senha(nova_senha)
+        if not valida:
+            flash(msg, "warning")
             return render_template("alterar_senha.html")
 
         if nova_senha != confirmacao:
@@ -357,8 +359,9 @@ def novo_usuario():
     acesso_infinitepay = bool(request.form.get("acesso_infinitepay"))
     acesso_nubank = bool(request.form.get("acesso_nubank"))
 
-    if len(password) < 8:
-        flash("A senha inicial do novo usuário deve ter pelo menos 8 caracteres.", "warning")
+    valida, msg = validar_forca_senha(password)
+    if not valida:
+        flash(msg, "warning")
         return redirect(url_for("auth.listar_usuarios"))
 
     try:
@@ -421,8 +424,9 @@ def resetar_senha_usuario(id):
         return redirect(url_for("dashboard.dashboard"))
 
     nova_senha = request.form.get("nova_senha") or ""
-    if len(nova_senha) < 8:
-        flash("A senha deve ter pelo menos 8 caracteres.", "warning")
+    valida, msg = validar_forca_senha(nova_senha)
+    if not valida:
+        flash(msg, "warning")
         return redirect(url_for("auth.listar_usuarios"))
 
     usuario = db.session.get(Usuario, id)
