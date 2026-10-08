@@ -227,6 +227,15 @@ Gestão de Usuários - Controle Financeiro
                                 Redefinir Senha
                             </button>
 
+                            <!-- Botão Resetar 2FA (se ativado) -->
+                            {% if u.is_2fa_enabled %}
+                                <form method="POST" action="{{ url_for('auth.resetar_2fa_usuario', id=u.id) }}" onsubmit="return confirm('Deseja resetar o 2FA do usuário {{ u.username }}?');" style="margin: 0;">
+                                    <button type="submit" class="btn btn-secondary btn-sm" style="padding: 4px 8px; font-size: 11px; color: #fbbf24; border-color: rgba(251, 191, 36, 0.4);" title="Desativa o 2FA para que o usuário possa reconfigurar">
+                                        Resetar 2FA
+                                    </button>
+                                </form>
+                            {% endif %}
+
                             <!-- Botão Excluir -->
                             {% if u.id != session.get('usuario_id') %}
                                 <form method="POST" action="{{ url_for('auth.excluir_usuario', id=u.id) }}" onsubmit="return confirm('Tem certeza que deseja excluir o usuário {{ u.username }}? Todas as contas e transações dele serão apagadas definitivamente!');" style="margin: 0;">

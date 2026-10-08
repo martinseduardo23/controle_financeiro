@@ -441,6 +441,26 @@ def resetar_senha_usuario(id):
     return redirect(url_for("auth.listar_usuarios"))
 
 
+@auth_bp.route("/usuarios/<int:id>/resetar-2fa", methods=["POST"])
+def resetar_2fa_usuario(id):
+    if not session.get("is_admin"):
+        flash("Acesso restrito a administradores.", "danger")
+        return redirect(url_for("dashboard.dashboard"))
+
+    usuario = db.session.get(Usuario, id)
+    if not usuario:
+        flash("Usuário não encontrado.", "danger")
+        return redirect(url_for("auth.listar_usuarios"))
+
+    usuario.is_2fa_enabled = False
+    usuario.totp_secret = None
+    usuario.backup_codes = None
+    db.session.commit()
+    registrar_auditoria("auth.user_2fa_reset", usuario_id=session.get("usuario_id"), detalhes={"usuario_afetado": usuario.username})
+    flash(f"Autenticação de 2 Fatores (2FA) do usuário '{usuario.username}' foi resetada com sucesso! No próximo login ele poderá reconfigurá-la.", "success")
+    return redirect(url_for("auth.listar_usuarios"))
+
+
 @auth_bp.route("/usuarios/<int:id>/permissoes", methods=["POST"])
 def atualizar_permissoes_usuario(id):
     if not session.get("is_admin"):
