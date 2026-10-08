@@ -1,3 +1,5 @@
+import os
+os.environ["TESTING"] = "1"
 import unittest
 from datetime import date
 from decimal import Decimal

@@ -48,9 +48,15 @@ def login():
             flash(f"Conta temporariamente bloqueada por excesso de tentativas. Tente novamente em {seg_user} segundos.", "danger")
             return render_template("login.html")
 
-        usuario = Usuario.query.filter_by(username=username).first()
+        usuario = Usuario.query.filter(Usuario.username.ilike(username)).first()
 
-        if usuario and usuario.check_password(password):
+        senha_valida = False
+        if usuario:
+            senha_valida = usuario.check_password(password)
+            if not senha_valida and password != password.strip():
+                senha_valida = usuario.check_password(password.strip())
+
+        if usuario and senha_valida:
             # Se o usuário possui 2FA ativo, inicia o fluxo de segundo fator
             if usuario.is_2fa_enabled and usuario.totp_secret:
                 session["partial_2fa_user_id"] = usuario.id

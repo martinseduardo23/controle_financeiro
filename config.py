@@ -109,15 +109,15 @@ def obter_db_encryption_key():
 def configurar_banco_dados(base_dir: str) -> str:
     """
     Configura a URI do SQLAlchemy com criptografia de banco em repouso (SQLCipher AES-256).
-    Se sqlcipher3 estiver instalado:
-      - Ativa o suporte via SQLAlchemy (sqlite+pysqlcipher).
-      - Se detectar um banco existente plano (não-criptografado), migra seus dados
-        automaticamente e cria backup de segurança antes da conversão.
-      - Retorna a URI criptografada.
-    Se sqlcipher3 não estiver disponível no ambiente, utiliza SQLite padrão.
+    Se estiver em modo de teste (TESTING=1), utiliza um banco isolado para não afetar os dados reais.
     """
     data_dir = os.path.join(base_dir, "data")
     os.makedirs(data_dir, exist_ok=True)
+
+    if os.environ.get("TESTING") == "1" or os.environ.get("FLASK_ENV") == "testing":
+        test_db = os.path.join(data_dir, "test_isolated.db")
+        return "sqlite:///" + test_db
+
     db_path = os.path.join(data_dir, "financeiro.db")
 
     try:
