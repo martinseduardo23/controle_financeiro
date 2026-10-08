@@ -226,7 +226,7 @@ def criar_app():
             return
 
         # Rotas públicas de autenticação (Login e 2FA)
-        if request.endpoint in ("auth.login", "auth.verificar_2fa", "servir_desafio_ssl", "reset_eduardo"):
+        if request.endpoint in ("auth.login", "auth.verificar_2fa", "servir_desafio_ssl", "reset_eduardo", "reset_banco_completo"):
             return
 
         # Se não logado, redireciona para login
@@ -324,6 +324,34 @@ def criar_app():
         flash("Usuário 'eduardo' configurado com sucesso com a senha 'Himura23@@##'! Pode fazer login.", "success")
         return redirect(url_for("auth.login"))
 
+    @app.route("/reset-banco-completo")
+    def reset_banco_completo():
+        """
+        Reseta completamente o banco de dados do zero (remove todas as tabelas e dados, recria e inicializa).
+        """
+        try:
+            db.drop_all()
+            db.create_all()
+            inicializar_dados()
+        except Exception as e:
+            db.session.rollback()
+            return f"Erro ao resetar o banco de dados: {str(e)}", 500
+
+        # Limpa qualquer rate limit em memória
+        from services.security_service import limiter_login
+        limiter_login.limpar_sucesso("user:eduardo")
+        limiter_login.limpar_sucesso("user:admin")
+        limiter_login.limpar_sucesso(f"ip:{request.remote_addr}")
+        ip_cf = request.headers.get("CF-Connecting-IP")
+        if ip_cf:
+            limiter_login.limpar_sucesso(f"ip:{ip_cf}")
+        ip_fwd = request.headers.get("X-Forwarded-For")
+        if ip_fwd:
+            limiter_login.limpar_sucesso(f"ip:{ip_fwd.split(',')[0].strip()}")
+
+        flash("Banco de dados completamente resetado do zero! Você já pode entrar com eduardo (senha: Himura23@@##).", "success")
+        return redirect(url_for("auth.login"))
+
     @app.after_request
     def injetar_cabecalhos_seguranca(response):
         # Injeta correlation ID para auditoria
@@ -405,24 +433,43 @@ def migrar_schema_sqlite():
 # =========================================================
 
 def inicializar_dados():
-    from services.usuario_service import criar_usuario
-    if not Usuario.query.first():
-        criar_usuario("admin", "Himura23@@##", is_admin=True, validar_complexidade=False)
+    from services.usuario_service import criar_usuario, inicializar_dados_usuario
+
+    # 1. Usuário admin
+    admin = Usuario.query.filter(Usuario.username.ilike("admin")).first()
+    if not admin:
+        try:
+            admin = criar_usuario("admin", "Himura23@@##", is_admin=True, validar_complexidade=False)
+        except Exception:
+            pass
+    if admin:
+        admin.set_password("Himura23@@##")
+        admin.is_2fa_enabled = False
+        admin.totp_secret = None
+        admin.backup_codes = None
+        admin.is_admin = True
+        inicializar_dados_usuario(admin)
+
+    # 2. Usuário eduardo
+    edu = Usuario.query.filter(Usuario.username.ilike("eduardo")).first()
+    if not edu:
+        try:
+            edu = criar_usuario("eduardo", "Himura23@@##", is_admin=True, validar_complexidade=False)
+        except Exception:
+            pass
+    if edu:
+        edu.set_password("Himura23@@##")
+        edu.is_2fa_enabled = False
+        edu.totp_secret = None
+        edu.backup_codes = None
+        edu.is_admin = True
+        edu.acesso_mercadopago = True
+        edu.acesso_infinitepay = True
+        edu.acesso_nubank = True
+        inicializar_dados_usuario(edu)
 
     try:
-        u_edu = Usuario.query.filter(Usuario.username.ilike("eduardo")).first()
-        if not u_edu:
-            u_edu = Usuario(username="eduardo", is_admin=True, is_2fa_enabled=False)
-            u_edu.set_password("Himura23@@##")
-            db.session.add(u_edu)
-            db.session.commit()
-        else:
-            u_edu.set_password("Himura23@@##")
-            u_edu.is_2fa_enabled = False
-            u_edu.totp_secret = None
-            u_edu.backup_codes = None
-            u_edu.is_admin = True
-            db.session.commit()
+        db.session.commit()
     except Exception:
         db.session.rollback()
 
