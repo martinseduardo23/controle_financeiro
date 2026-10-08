@@ -105,25 +105,25 @@ def obter_fatura(
     )
 
 
-    if mes == 12:
-
-        ano_vencimento = ano + 1
-        mes_vencimento = 1
-
+    # Se o dia de vencimento for MENOR que o dia de fechamento (ex: fecha dia 25, vence dia 5 do mês seguinte),
+    # o vencimento ocorre no mês seguinte ao fechamento.
+    # Se o dia de vencimento for MAIOR ou IGUAL (ex: fecha dia 1, vence dia 8; fecha dia 20, vence dia 27),
+    # o vencimento ocorre no MESMO mês do fechamento da fatura!
+    if cartao.dia_vencimento < cartao.dia_fechamento:
+        if mes == 12:
+            ano_vencimento = ano + 1
+            mes_vencimento = 1
+        else:
+            ano_vencimento = ano
+            mes_vencimento = mes + 1
     else:
-
         ano_vencimento = ano
-        mes_vencimento = mes + 1
-
+        mes_vencimento = mes
 
     data_vencimento = criar_data_cartao(
-
         ano_vencimento,
-
         mes_vencimento,
-
         cartao.dia_vencimento
-
     )
 
 
@@ -207,13 +207,17 @@ def obter_faturas_da_compra(compra):
 
 def vincular_parcela(
     parcela,
-    cartao
+    cartao,
+    ano_fixo=None,
+    mes_fixo=None
 ):
-
-    ano, mes = periodo_fatura(
-        parcela.data_prevista,
-        cartao.dia_fechamento
-    )
+    if ano_fixo and mes_fixo:
+        ano, mes = ano_fixo, mes_fixo
+    else:
+        ano, mes = periodo_fatura(
+            parcela.data_prevista,
+            cartao.dia_fechamento
+        )
 
     fatura = obter_fatura(
         cartao,
@@ -221,6 +225,7 @@ def vincular_parcela(
         mes
     )
 
+    parcela.fatura = fatura
     parcela.fatura_id = fatura.id
     recalcular_valor_fatura(fatura)
 
@@ -232,20 +237,30 @@ def vincular_parcela(
 # =========================================================
 
 def vincular_parcelas_compra(
-    compra
+    compra,
+    ano_fixo=None,
+    mes_fixo=None
 ):
-
     cartao = compra.cartao
     faturas_afetadas = set()
 
-    for parcela in (
-        compra.parcelas_relacionadas
-    ):
-
-        fatura = vincular_parcela(
-            parcela,
-            cartao
-        )
+    for idx, parcela in enumerate(compra.parcelas_relacionadas):
+        # Se for especificado mês/ano fixo, a 1ª parcela vai nele e subsequentes avançam
+        if ano_fixo and mes_fixo:
+            m = mes_fixo + idx
+            a = ano_fixo + ((m - 1) // 12)
+            m = ((m - 1) % 12) + 1
+            fatura = vincular_parcela(
+                parcela,
+                cartao,
+                ano_fixo=a,
+                mes_fixo=m
+            )
+        else:
+            fatura = vincular_parcela(
+                parcela,
+                cartao
+            )
         faturas_afetadas.add(fatura)
 
     for fatura in faturas_afetadas:

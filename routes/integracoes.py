@@ -229,12 +229,38 @@ def nubank_painel():
         (Conta.nome.ilike("%Nubank%") | Conta.nome.ilike("%NuConta%"))
     ).first()
 
-    # Últimas compras no cartão Nubank deste usuário
+    # Todos os cartões e contas ativas do usuário para seleção no formulário
+    cartoes = Cartao.query.filter_by(usuario_id=usuario_id, ativo=True).order_by(Cartao.nome).all()
+    contas = Conta.query.filter_by(usuario_id=usuario_id, ativa=True).order_by(Conta.nome).all()
+
+    # Gera opções de meses para vincular à fatura
+    from datetime import date
+    meses_nomes = [
+        "", "Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho",
+        "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro"
+    ]
+    hoje = date.today()
+    meses_fatura = []
+    for offset in range(-5, 3):
+        m = hoje.month + offset
+        a = hoje.year + ((m - 1) // 12)
+        m = ((m - 1) % 12) + 1
+        valor_mes = f"{a:04d}-{m:02d}"
+        rotulo_mes = f"{meses_nomes[m]} / {a}"
+        meses_fatura.append({
+            "valor": valor_mes,
+            "rotulo": rotulo_mes,
+            "atual": (a == hoje.year and m == hoje.month)
+        })
+    meses_fatura.reverse()
+
+    # Últimas compras no cartão Nubank (ou no primeiro cartão ativo) deste usuário
+    cartao_ref = cartao_nu or (cartoes[0] if cartoes else None)
     ultimas_compras = []
-    if cartao_nu:
+    if cartao_ref:
         ultimas_compras = (
             CompraCartao.query
-            .filter_by(cartao_id=cartao_nu.id, usuario_id=usuario_id)
+            .filter_by(cartao_id=cartao_ref.id, usuario_id=usuario_id)
             .order_by(CompraCartao.data_compra.desc(), CompraCartao.id.desc())
             .limit(10)
             .all()
@@ -256,6 +282,9 @@ def nubank_painel():
         webhook_url=webhook_url,
         cartao_nu=cartao_nu,
         conta_nu=conta_nu,
+        cartoes=cartoes,
+        contas=contas,
+        meses_fatura=meses_fatura,
         ultimas_compras=ultimas_compras,
         ultimos_lancamentos_conta=ultimos_lancamentos_conta
     )
@@ -376,10 +405,22 @@ def nubank_importar_arquivo():
         return redirect(url_for("integracoes.nubank_painel"))
 
     destino = request.form.get("destino", tipo_detectado)
-    resultado = importar_lote_nubank(transacoes, destino=destino, usuario_id=usuario_id)
+    cartao_id = request.form.get("cartao_id")
+    conta_id = request.form.get("conta_id")
+    fatura_mes_ano = request.form.get("fatura_mes_ano")
 
+    resultado = importar_lote_nubank(
+        transacoes,
+        destino=destino,
+        usuario_id=usuario_id,
+        cartao_id=cartao_id,
+        conta_id=conta_id,
+        fatura_mes_ano=fatura_mes_ano
+    )
+
+    dest_nome = resultado.get("destino_nome", "Cartão")
     flash(
-        f"Importação concluída com sucesso! {resultado['importados']} transações adicionadas ({resultado['duplicados']} já existentes foram ignoradas).",
+        f"Importação em '{dest_nome}' concluída com sucesso! {resultado['importados']} transação(ões) adicionada(s) ({resultado['duplicados']} já existentes foram ignoradas).",
         "success"
     )
     return redirect(url_for("integracoes.nubank_painel"))

@@ -1,4 +1,4 @@
-﻿{% extends "base.html" %}
+{% extends "base.html" %}
 
 {% block title %}
 Integração Nubank & Apple Pay - Controle Financeiro
@@ -109,17 +109,71 @@ Integração Nubank & Apple Pay - Controle Financeiro
 
             <div class="form-group">
                 <label for="destino">Destino das transações:</label>
-                <select id="destino" name="destino" style="background: #050507;">
-                    <option value="cartao">Cartão de Crédito Nubank (Fatura de Compras)</option>
+                <select id="destino" name="destino" style="background: #050507;" onchange="alternarCamposDestino()">
+                    <option value="cartao" selected>Cartão de Crédito Nubank (Fatura de Compras)</option>
                     <option value="conta">Conta Corrente Nubank (Extrato da NuConta)</option>
                 </select>
                 <span style="font-size: 12px; color: var(--text-muted); margin-top: 6px; display: block;">
-                    O sistema detecta automaticamente se você enviar a fatura do cartão ou extrato da conta.
+                    Selecione se o arquivo enviado é uma fatura de cartão de crédito ou extrato da conta corrente.
+                </span>
+            </div>
+
+            <!-- SELEÇÃO DO CARTÃO DE CRÉDITO -->
+            <div class="form-group" id="grupo_cartao">
+                <label for="cartao_id">Qual Cartão de Crédito receberá as compras?</label>
+                <select id="cartao_id" name="cartao_id" style="background: #050507;">
+                    {% if cartoes %}
+                        {% for c in cartoes %}
+                        <option value="{{ c.id }}" {% if cartao_nu and c.id == cartao_nu.id %}selected{% elif loop.first and not cartao_nu %}selected{% endif %}>
+                            💳 {{ c.nome }} ({{ c.banco }}{% if c.ultimos_digitos %} •••• {{ c.ultimos_digitos }}{% endif %}) — Fecha dia {{ c.dia_fechamento }} / Vence dia {{ c.dia_vencimento }}
+                        </option>
+                        {% endfor %}
+                    {% endif %}
+                    <option value="criar_novo">+ Criar novo cartão 'Nubank Roxinho' automaticamente</option>
+                </select>
+                <span style="font-size: 12px; color: var(--text-muted); margin-top: 6px; display: block;">
+                    As compras e parcelas serão vinculadas às faturas deste cartão.
+                </span>
+            </div>
+
+            <!-- SELEÇÃO DA FATURA (MÊS / ANO) -->
+            <div class="form-group" id="grupo_fatura">
+                <label for="fatura_mes_ano">Vincular à Fatura de Referência (Opcional):</label>
+                <select id="fatura_mes_ano" name="fatura_mes_ano" style="background: #050507;">
+                    <option value="auto" selected>⚡ Automático (calcular pelo dia de fechamento do cartão)</option>
+                    {% if meses_fatura %}
+                        {% for mf in meses_fatura %}
+                        <option value="{{ mf.valor }}">
+                            📅 Fatura de {{ mf.rotulo }}{% if mf.atual %} (Mês Atual){% endif %}
+                        </option>
+                        {% endfor %}
+                    {% endif %}
+                </select>
+                <span style="font-size: 12px; color: var(--text-muted); margin-top: 6px; display: block;">
+                    Selecione um mês caso queira concentrar todas as transações deste arquivo em uma fatura específica.
+                </span>
+            </div>
+
+            <!-- SELEÇÃO DA CONTA CORRENTE (NUCONTA) -->
+            <div class="form-group" id="grupo_conta" style="display: none;">
+                <label for="conta_id">Qual Conta Corrente receberá os lançamentos?</label>
+                <select id="conta_id" name="conta_id" style="background: #050507;">
+                    {% if contas %}
+                        {% for conta in contas %}
+                        <option value="{{ conta.id }}" {% if conta_nu and conta.id == conta_nu.id %}selected{% elif loop.first and not conta_nu %}selected{% endif %}>
+                            🏦 {{ conta.nome }} ({{ conta.tipo }})
+                        </option>
+                        {% endfor %}
+                    {% endif %}
+                    <option value="criar_nova">+ Criar nova conta 'Nubank (NuConta)' automaticamente</option>
+                </select>
+                <span style="font-size: 12px; color: var(--text-muted); margin-top: 6px; display: block;">
+                    Os lançamentos de débito e crédito serão registrados nesta conta bancária.
                 </span>
             </div>
 
             <div style="background: rgba(16, 185, 129, 0.06); border: 1px solid rgba(16, 185, 129, 0.2); border-radius: var(--radius-md); padding: 12px 14px; margin-bottom: 20px; font-size: 12.5px; color: #a7f3d0; line-height: 1.5;">
-                🛡️ <strong>Proteção contra duplicatas:</strong> Se você já registrou compras pelo Apple Pay neste mês, o importador reconhece e <strong>não duplica</strong>!
+                🛡️ <strong>Proteção contra duplicatas & Organização:</strong> O importador reconhece parcelas (ex: 2/5), categoriza estabelecimentos automaticamente e <strong>não duplica</strong> compras já existentes!
             </div>
 
             <button type="submit" class="btn btn-primary" style="width: 100%; background: #820ad1; border-color: #820ad1;">
@@ -290,6 +344,28 @@ Integração Nubank & Apple Pay - Controle Financeiro
 </div>
 
 <script>
+function alternarCamposDestino() {
+    const destinoEl = document.getElementById("destino");
+    const grupoCartao = document.getElementById("grupo_cartao");
+    const grupoFatura = document.getElementById("grupo_fatura");
+    const grupoConta = document.getElementById("grupo_conta");
+
+    if (!destinoEl) return;
+    const destino = destinoEl.value;
+
+    if (destino === "cartao") {
+        if (grupoCartao) grupoCartao.style.display = "block";
+        if (grupoFatura) grupoFatura.style.display = "block";
+        if (grupoConta) grupoConta.style.display = "none";
+    } else {
+        if (grupoCartao) grupoCartao.style.display = "none";
+        if (grupoFatura) grupoFatura.style.display = "none";
+        if (grupoConta) grupoConta.style.display = "block";
+    }
+}
+
+document.addEventListener("DOMContentLoaded", alternarCamposDestino);
+
 function copiarWebhookNu() {
     const input = document.getElementById("webhook-url-nu");
     input.select();

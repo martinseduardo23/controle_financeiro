@@ -1,67 +1,26 @@
 {% extends "base.html" %}
 
 {% block title %}
+{% if cartao %}
+Faturas: {{ cartao.nome }} - Controle Financeiro
+{% else %}
 Faturas dos Cartões - Controle Financeiro
+{% endif %}
 {% endblock %}
 
 {% block content %}
 
-{% if cartoes is not none %}
-<!-- ESCOLHA DO CARTÃO -->
-<div class="page-header">
-    <div class="page-header-content">
-        <h1>Faturas dos Cartões</h1>
-        <p>Selecione um cartão para visualizar o histórico de faturas e pagamentos.</p>
-    </div>
-</div>
-
-<div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 20px;">
-    {% for cartao in cartoes %}
-    <div style="background: linear-gradient(135deg, #18181f 0%, #0a0a0d 100%); border: 1px solid var(--border); border-radius: var(--radius-xl); padding: 24px; box-shadow: var(--shadow-md);">
-        <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 20px;">
-            <div>
-                <span style="font-size: 11px; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-muted); display: block;">{{ cartao.banco }}</span>
-                <strong style="font-size: 18px; color: var(--text-primary);">{{ cartao.nome }}</strong>
-            </div>
-            <span class="badge badge-info">Dia {{ cartao.dia_vencimento }}</span>
-        </div>
-
-        <div style="font-family: monospace; font-size: 15px; letter-spacing: 2px; color: var(--text-secondary); margin-bottom: 20px;">
-            •••• •••• •••• {{ cartao.ultimos_digitos if cartao.ultimos_digitos else '----' }}
-        </div>
-
-        <div style="background: rgba(0, 0, 0, 0.25); border-radius: var(--radius-md); padding: 12px 14px; margin-bottom: 20px; display: flex; justify-content: space-between;">
-            <div>
-                <span style="font-size: 11px; color: var(--text-muted); display: block;">Limite</span>
-                <strong style="color: var(--text-primary);">R$ {{ cartao.limite|moeda }}</strong>
-            </div>
-            <div>
-                <span style="font-size: 11px; color: var(--text-muted); display: block;">Fechamento</span>
-                <strong style="color: var(--text-primary);">Dia {{ cartao.dia_fechamento }}</strong>
-            </div>
-        </div>
-
-        <a href="{{ url_for('faturas_cartao.faturas_cartao', cartao_id=cartao.id) }}" class="btn btn-primary" style="width: 100%;">
-            Ver Faturas deste Cartão →
-        </a>
-    </div>
-    {% else %}
-    <div class="empty-state" style="grid-column: 1 / -1;">
-        <div class="empty-state-icon">💳</div>
-        <strong>Nenhum cartão ativo encontrado</strong>
-        <span>Cadastre um cartão para começar a controlar as faturas.</span>
-    </div>
-    {% endfor %}
-</div>
-
-{% else %}
+{% if cartao %}
 <!-- FATURAS DO CARTÃO ESPECÍFICO -->
 <div class="page-header">
     <div class="page-header-content">
         <h1>Faturas: {{ cartao.nome }}</h1>
-        <p>{{ cartao.banco }} · Vencimento todo dia {{ cartao.dia_vencimento }}</p>
+        <p>{{ cartao.banco }} · Fechamento dia {{ cartao.dia_fechamento }} · Vencimento todo dia {{ cartao.dia_vencimento }}</p>
     </div>
     <div class="page-header-actions">
+        <a href="{{ url_for('integracoes.nubank_painel') }}" class="btn btn-primary" style="background: #820ad1; border-color: #820ad1;">
+            📥 Importar Fatura CSV
+        </a>
         <a href="{{ url_for('faturas_cartao.listar') }}" class="btn btn-secondary">
             ← Escolher outro cartão
         </a>
@@ -155,7 +114,7 @@ Faturas dos Cartões - Controle Financeiro
                         <div class="empty-state">
                             <div class="empty-state-icon">🧾</div>
                             <strong>Nenhuma fatura registrada para este cartão</strong>
-                            <span>As faturas são criadas automaticamente conforme você registra compras parceladas.</span>
+                            <span>As faturas são criadas automaticamente conforme você registra compras ou importa o extrato CSV do Nubank.</span>
                         </div>
                     </td>
                 </tr>
@@ -163,6 +122,61 @@ Faturas dos Cartões - Controle Financeiro
             </tbody>
         </table>
     </div>
+</div>
+
+{% else %}
+<!-- ESCOLHA DO CARTÃO -->
+<div class="page-header">
+    <div class="page-header-content">
+        <h1>Faturas dos Cartões</h1>
+        <p>Selecione um cartão para visualizar o histórico de faturas e pagamentos.</p>
+    </div>
+    <div class="page-header-actions">
+        <a href="{{ url_for('integracoes.nubank_painel') }}" class="btn btn-primary" style="background: #820ad1; border-color: #820ad1;">
+            📥 Importar Fatura CSV do Nubank
+        </a>
+    </div>
+</div>
+
+<div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 20px;">
+    {% if cartoes %}
+        {% for c in cartoes %}
+        <div style="background: linear-gradient(135deg, #18181f 0%, #0a0a0d 100%); border: 1px solid var(--border); border-radius: var(--radius-xl); padding: 24px; box-shadow: var(--shadow-md);">
+            <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 20px;">
+                <div>
+                    <span style="font-size: 11px; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-muted); display: block;">{{ c.banco }}</span>
+                    <strong style="font-size: 18px; color: var(--text-primary);">{{ c.nome }}</strong>
+                </div>
+                <span class="badge badge-info">Vence dia {{ c.dia_vencimento }}</span>
+            </div>
+
+            <div style="font-family: monospace; font-size: 15px; letter-spacing: 2px; color: var(--text-secondary); margin-bottom: 20px;">
+                •••• •••• •••• {{ c.ultimos_digitos if c.ultimos_digitos else '----' }}
+            </div>
+
+            <div style="background: rgba(0, 0, 0, 0.25); border-radius: var(--radius-md); padding: 12px 14px; margin-bottom: 20px; display: flex; justify-content: space-between;">
+                <div>
+                    <span style="font-size: 11px; color: var(--text-muted); display: block;">Limite</span>
+                    <strong style="color: var(--text-primary);">R$ {{ c.limite|moeda }}</strong>
+                </div>
+                <div>
+                    <span style="font-size: 11px; color: var(--text-muted); display: block;">Fechamento</span>
+                    <strong style="color: var(--text-primary);">Dia {{ c.dia_fechamento }}</strong>
+                </div>
+            </div>
+
+            <a href="{{ url_for('faturas_cartao.faturas_cartao', cartao_id=c.id) }}" class="btn btn-primary" style="width: 100%;">
+                Ver Faturas deste Cartão →
+            </a>
+        </div>
+        {% endfor %}
+    {% else %}
+        <div class="empty-state" style="grid-column: 1 / -1;">
+            <div class="empty-state-icon">💳</div>
+            <strong>Nenhum cartão ativo encontrado</strong>
+            <span>Cadastre um cartão para começar a controlar as faturas.</span>
+        </div>
+    {% endif %}
 </div>
 {% endif %}
 

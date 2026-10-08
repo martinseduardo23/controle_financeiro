@@ -49,7 +49,8 @@ def listar():
 
     return render_template(
         "faturas_cartao.html",
-        cartoes=cartoes
+        cartoes=cartoes,
+        cartao=None
     )
 
 
@@ -66,6 +67,26 @@ def faturas_cartao(cartao_id):
     if not cartao or cartao.usuario_id != usuario_id:
         flash("Cartão não encontrado.", "danger")
         return redirect(url_for("faturas_cartao.listar"))
+
+    # Auto-cura: vincula quaisquer parcelas do cartão que estejam sem fatura
+    from models import CompraCartao, ParcelaCartao
+    from services.faturas_cartao import vincular_parcela, recalcular_valor_fatura
+
+    parcelas_sem_fatura = (
+        ParcelaCartao.query
+        .join(CompraCartao)
+        .filter(CompraCartao.cartao_id == cartao.id, ParcelaCartao.fatura_id.is_(None))
+        .all()
+    )
+    if parcelas_sem_fatura:
+        for p in parcelas_sem_fatura:
+            vincular_parcela(p, cartao)
+        db.session.commit()
+
+    # Recalcula valores de faturas para sincronização precisa
+    for f in cartao.faturas:
+        recalcular_valor_fatura(f)
+    db.session.commit()
 
     faturas = sorted(
         cartao.faturas,
@@ -89,8 +110,9 @@ def faturas_cartao(cartao_id):
     )
 
     return render_template(
-        "faturas_cartao_lista.html" if False else "faturas_cartao.html", # fallback
+        "faturas_cartao.html",
         cartao=cartao,
+        cartoes=None,
         faturas=faturas,
         total_aberto=total_aberto,
         total_pago=total_pago
